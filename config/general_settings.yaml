@@ -1,0 +1,16 @@
+stack_sizes:
+  Intermediate: 6
+  Buy: 12
+  Commodities: 8
+  Sell: 130
+  Snatch: 80
+  Standards: 5
+location_info:
+  0: Inventory
+  2: Bank
+  4: Mailbox
+  10: Auctions
+auction_type_labels:
+  completedAuctions: "sell_price"
+  completedBidsBuyouts: "buy_price"
+  failedAuctions: "failed"

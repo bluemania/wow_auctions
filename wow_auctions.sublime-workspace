@@ -1,0 +1,795 @@
+{
+	"auto_complete":
+	{
+		"selected_items":
+		[
+			[
+				"Swift",
+				"Swiftthistle"
+			],
+			[
+				"items_",
+				"items_of_interest"
+			],
+			[
+				"get",
+				"get_general_settings"
+			],
+			[
+				"chara",
+				"character_needs"
+			],
+			[
+				"date",
+				"date"
+			],
+			[
+				"exc",
+				"exclude_list"
+			],
+			[
+				"json",
+				"json_text"
+			],
+			[
+				"proce",
+				"for_processing"
+			],
+			[
+				"for",
+				"for_processing"
+			],
+			[
+				"zip",
+				"zip_files_processed"
+			],
+			[
+				"see",
+				"seen_show"
+			],
+			[
+				"mast",
+				"master_keys"
+			],
+			[
+				"base",
+				"base_path"
+			]
+		]
+	},
+	"buffers":
+	[
+		{
+			"file": "README.md",
+			"settings":
+			{
+				"buffer_size": 721,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "pricer/config.py",
+			"settings":
+			{
+				"buffer_size": 488,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "run.py",
+			"settings":
+			{
+				"buffer_size": 2245,
+				"encoding": "UTF-8",
+				"line_ending": "Unix",
+				"name": "\"\"\" Runs the main program with command line option"
+			}
+		},
+		{
+			"file": "pricer/sources.py",
+			"settings":
+			{
+				"buffer_size": 8794,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "config/user_settings.yaml",
+			"settings":
+			{
+				"buffer_size": 553,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"contents": "\"\"\"\nThis script contains analysis of the cleaned panda parquet sources\nIt creates outputs for dashboard and lua policy updates\n\"\"\"\n\nfrom pricer import config, utils\n\nimport pandas as pd\nimport seaborn as sns\nimport matplotlib.pyplot as plt\n\nsns.set(rc={\"figure.figsize\": (11.7, 8.27)})\n\nimport logging\n\nlogger = logging.getLogger(__name__)\nconfig.set_logging(logger)\n\n\ndef analyse_item_prices(full_pricing=False, test=False):\n    \"\"\"\n    Generate item prices based on all past auction activity and scans\n    \"\"\"\n    auction_activity = pd.read_parquet(\"data/full/auction_activity.parquet\")\n    auction_activity = auction_activity[\n        [\"item\", \"timestamp\", \"price_per\", \"auction_type\"]\n    ]\n\n    auction_scan_minprice = pd.read_parquet(\"data/full/auction_scan_minprice.parquet\")\n\n    df_auction_prices = auction_scan_minprice.append(auction_activity)\n\n    if full_pricing:\n        items = df_auction_prices[\"item\"].unique()\n    else:\n        items = utils.load_items()\n\n    price_history = df_auction_prices.set_index([\"item\", \"timestamp\"]).sort_index()[\n        \"price_per\"\n    ]\n\n    if full_pricing:\n        item_prices = {\n            item: price_history.loc[item].ewm(alpha=0.2).mean().iloc[-1]\n            for item in items\n        }\n    else:\n        # Only calculate for our item list; get backup price if present\n        item_prices = {}\n        for item, details in items.items():\n            price = details.get(\"backup_price\")\n            if not price:\n                price = price_history.loc[item].ewm(alpha=0.2).mean().iloc[-1]\n            item_prices[item] = price\n\n    item_prices = pd.DataFrame.from_dict(item_prices, orient=\"index\")\n    item_prices.index.name = \"item\"\n    item_prices.columns = [\"market_price\"]\n\n    if test:\n        return None  # avoid saves\n\n    item_prices.to_parquet(\"data/intermediate/item_prices.parquet\", compression=\"gzip\")\n\n    logger.debug(f\"Item prices calculated. {len(item_prices)} records\")\n\n\ndef analyse_sales_performance(test=False):\n    \"\"\"\n    Produces charts and tables to help measure performace\n    \"\"\"\n\n    item_prices = pd.read_parquet(\"data/intermediate/item_prices.parquet\")\n    user_items = utils.load_items()\n\n    inventory_full = pd.read_parquet(\"data/full/inventory.parquet\")\n    inventory_trade = inventory_full[inventory_full[\"item\"].isin(user_items)]\n\n    inventory_trade = pd.merge(\n        inventory_trade, item_prices, how=\"left\", left_on=\"item\", right_index=True\n    )\n    inventory_trade[\"total_value\"] = (\n        inventory_trade[\"count\"] * inventory_trade[\"market_price\"]\n    )\n    inventory_value = (\n        inventory_trade.groupby([\"timestamp\", \"character\"])\n        .sum()[\"total_value\"]\n        .unstack()\n    )\n\n    monies_full = pd.read_parquet(\"data/full/monies.parquet\")\n    monies_full = (\n        monies_full.reset_index().set_index([\"timestamp\", \"index\"])[\"monies\"].unstack()\n    )\n\n    inv_mule = inventory_value[\"Amazona\"] + inventory_value[\"Amazoni\"]\n    inv_rest = inventory_value.sum(axis=1) - inv_mule\n\n    monies_mule = (\n        monies_full[\"Amazona - Grobbulus\"] + monies_full[\"Amazoni - Grobbulus\"]\n    )\n    monies_mule.name = \"Mule monies\"\n    monies_rest = monies_full.sum(axis=1) - monies_mule\n\n    holdings = pd.DataFrame(monies_mule)\n    holdings[\"Rest monies\"] = monies_rest\n    holdings[\"Mule inventory\"] = inv_mule.values\n    holdings[\"Rest inventory\"] = inv_rest.values\n\n    holdings[\"Total holdings\"] = holdings.sum(axis=1)\n    holdings = (holdings / 10000).astype(int)\n\n    sns.set()\n    sns.set_style(\"whitegrid\")\n    sns.despine()\n\n    plt = sns.lineplot(data=holdings[[\"Mule monies\", \"Mule inventory\"]], color=\"b\")\n    plt = sns.lineplot(data=holdings[\"Total holdings\"], color=\"black\").set_title(\n        \"Total holdings\"\n    )\n\n    latest_inventory = inventory_trade[\n        inventory_trade[\"timestamp\"] == inventory_trade[\"timestamp\"].max()\n    ]\n    latest_inventory[\"total_value\"] = (latest_inventory[\"total_value\"] / 10000).round(2)\n    latest_inventory = latest_inventory.groupby(\"item\").sum()[[\"count\", \"total_value\"]]\n    latest_inventory = latest_inventory.sort_values(\"total_value\", ascending=False)\n\n    earnings = pd.DataFrame([holdings.iloc[-10], holdings.iloc[-1]])\n    earnings.loc[str(earnings.index[1] - earnings.index[0])] = (\n        earnings.iloc[1] - earnings.iloc[0]\n    )\n    earnings.index = earnings.index.astype(str)\n\n    if test:\n        return None  # avoid saves\n    plt.figure.savefig(\"data/outputs/holdings.png\")\n    latest_inventory.to_parquet(\n        \"data/outputs/latest_inventory_value.parquet\", compression=\"gzip\"\n    )\n    earnings.to_parquet(\"data/outputs/earnings_days.parquet\", compression=\"gzip\")\n\n\ndef analyse_auction_success(MAX_SUCCESS=250, MIN_SUCCESS=10):\n    \"\"\"\n    Produces dataframe of recent successful auctions\n    \"\"\"\n    df_success = pd.read_parquet(\"data/full/auction_activity.parquet\")\n\n    # Look at the most recent X sold or failed auctions\n    df_success = df_success[df_success[\"auction_type\"].isin([\"sell_price\", \"failed\"])]\n    df_success[\"rank\"] = df_success.groupby([\"item\"])[\"timestamp\"].rank(ascending=False)\n\n    # Limit to recent successful auctions\n    df_success = df_success[df_success[\"rank\"] <= MAX_SUCCESS]\n    df_success[\"auction_success\"] = df_success[\"auction_type\"].replace(\n        {\"sell_price\": 1, \"failed\": 0}\n    )\n    # Ensure theres at least some auctions for a resonable ratio\n    df_success = df_success[df_success[\"rank\"] >= MIN_SUCCESS]\n\n    # Calcualte success%\n    df_success = df_success.groupby(\"item\")[\"auction_success\"].mean()\n    return df_success\n\n\ndef analyse_item_min_sell_price(MIN_PROFIT_MARGIN=1000, MAT_DEV=0.5, test=False):\n    \"\"\"\n    Calculate minimum sell price for potions given raw item cost, deposit loss, AH cut, and min profit\n    \"\"\"\n\n    user_items = utils.load_items()\n\n    # item_prices = pd.read_parquet('intermediate/item_prices.parquet')\n\n    item_prices = pd.read_parquet(\"data/intermediate/booty_data.parquet\")\n    item_prices[\"market_price\"] = item_prices[\"recent\"] + (\n        item_prices[\"stddev\"] * MAT_DEV\n    )\n\n    item_prices.loc[\"Crystal Vial\"] = 400\n    item_prices.loc[\"Leaded Vial\"] = 32\n    item_prices.loc[\"Empty Vial\"] = 3\n\n    # Given the average recent buy price, calculate material costs per item\n\n    user_items = {\n        key: value\n        for key, value in user_items.items()\n        if value.get(\"group\") in [\"Buy\", \"Sell\"]\n    }\n\n    item_costs = {}\n    for item, details in user_items.items():\n        material_cost = 0\n        for ingredient, count in details.get(\"made_from\", {}).items():\n            material_cost += item_prices.loc[ingredient, \"market_price\"] * count\n        if material_cost is not 0:\n            item_costs[item] = int(material_cost)\n\n    df_success = analyse_auction_success()\n\n    item_min_sale = pd.DataFrame.from_dict(item_costs, orient=\"index\")\n    item_min_sale.index.name = \"item\"\n    item_min_sale.columns = [\"mat_cost\"]\n\n    item_min_sale = item_min_sale.join(df_success)\n\n    full_deposit = pd.Series(\n        {item: details.get(\"full_deposit\") for item, details in user_items.items()}\n    )\n    full_deposit.name = \"deposit\"\n\n    item_min_sale = item_min_sale.join(full_deposit).dropna()\n\n    item_min_sale[\"min_list_price\"] = (\n        (\n            item_min_sale[\"mat_cost\"]\n            + (item_min_sale[\"deposit\"] * (1 - item_min_sale[\"auction_success\"]))\n        )\n        + MIN_PROFIT_MARGIN\n    ) * 1.05\n\n    if test:\n        return None  # avoid saves\n    item_min_sale[[\"min_list_price\"]].to_parquet(\n        \"data/intermediate/min_list_price.parquet\", compression=\"gzip\"\n    )\n\n\ndef analyse_sell_data(test=False):\n    \"\"\"\n    Creates dataframe of intellegence around the selling market conditions\n\n    \"\"\"\n\n    # Get our calculated reserve price\n    item_min_sale = pd.read_parquet(\"data/intermediate/min_list_price.parquet\")\n\n    # Get latest minprice per item\n    # Note this is subject to spiking when someone puts a very low price on a single auction\n    auction_scan_minprice = pd.read_parquet(\n        \"data/intermediate/auction_scan_minprice.parquet\"\n    )\n    auction_scan_minprice = auction_scan_minprice.set_index(\"item\")[\"price_per\"]\n    auction_scan_minprice.name = \"market_price\"\n\n    df = item_min_sale.join(auction_scan_minprice)\n\n    # If item isnt appearing in market atm (NaN), fill with doubled min list price\n    df[\"market_price\"] = df[\"market_price\"].fillna(df[\"min_list_price\"] * 2)\n\n    # Create sell price from market price, create check if lower than reserve\n    df[\"sell_price\"] = (df[\"market_price\"] * 0.9933).astype(int)  # Undercut %\n    df[\"infeasible\"] = (df[\"min_list_price\"] >= df[\"sell_price\"]).astype(int)\n    df[\"min_list_price\"] = df[\"min_list_price\"].astype(int)\n    df[\"profit_per_item\"] = df[\"sell_price\"] - df[\"min_list_price\"]\n\n    # Get latest auction data to get the entire sell listing\n    auction_data = pd.read_parquet(\"data/intermediate/auction_scandata.parquet\")\n    auction_data = auction_data[auction_data[\"item\"].isin(item_min_sale.index)]\n    auction_data = auction_data[auction_data[\"price_per\"] > 0]\n\n    # Find the minimum price per item, join back\n    auction_data = pd.merge(\n        auction_data, df[\"market_price\"], how=\"left\", left_on=\"item\", right_index=True\n    )\n\n    # Find my minimum price per item, join back (if exists)\n    my_auction_mins = (\n        auction_data[auction_data[\"agent\"] == \"Amazona\"].groupby(\"item\").min()\n    )\n    my_auction_mins = my_auction_mins[\"price_per\"]\n    my_auction_mins.name = \"my_min\"\n    auction_data = pd.merge(\n        auction_data, my_auction_mins, how=\"left\", left_on=\"item\", right_index=True\n    )\n    auction_data = auction_data.dropna()  # Ignores items I'm not selling\n\n    # Find items below my min price (i.e. competition); get count of items undercutting\n    undercut_count = auction_data[auction_data[\"price_per\"] < auction_data[\"my_min\"]]\n    undercut_count = undercut_count.groupby(\"item\").sum()[\"count\"]\n    undercut_count.name = \"undercut_count\"\n\n    df = df.join(undercut_count)\n    df[\"undercut_count\"] = df[\"undercut_count\"].fillna(0).astype(int)\n\n    # If my min price is the same as the current min price and the same as the listing price, i'm winning\n    my_min_is_market = auction_data[\"my_min\"] == auction_data[\"market_price\"]\n    my_min_is_list = auction_data[\"my_min\"] == auction_data[\"price_per\"]\n    auction_leads = (\n        auction_data[my_min_is_market & my_min_is_list].groupby(\"item\").sum()[\"count\"]\n    )\n    auction_leads.name = \"auction_leads\"\n\n    df = df.join(auction_leads)\n    df[\"auction_leads\"] = df[\"auction_leads\"].fillna(0).astype(int)\n\n    # Get table showing how much inventory is where; auctions, bank/inv/mail, alt.\n    # Can help determine how much more to sell depending what is in auction house now\n    inventory_full = pd.read_parquet(\"data/full/inventory.parquet\")\n    inventory_full = inventory_full[\n        inventory_full[\"character\"].isin([\"Amazoni\", \"Amazona\"])\n    ]\n    inventory_full = inventory_full[inventory_full[\"item\"].isin(item_min_sale.index)]\n    inventory_full = inventory_full[\n        inventory_full[\"timestamp\"].max() == inventory_full[\"timestamp\"]\n    ]\n\n    df[\"auctions\"] = (\n        inventory_full[inventory_full[\"location\"] == \"Auctions\"].groupby(\"item\").sum()\n    )\n    df[\"auctions\"] = df[\"auctions\"].fillna(0).astype(int)\n\n    df[\"inventory\"] = (\n        inventory_full[\n            (inventory_full[\"character\"] == \"Amazona\")\n            & (inventory_full[\"location\"] != \"Auctions\")\n        ]\n        .groupby(\"item\")\n        .sum()\n    )\n    df[\"inventory\"] = df[\"inventory\"].fillna(0).astype(int)\n\n    df[\"immediate_inv\"] = (\n        inventory_full[\n            (inventory_full[\"character\"] == \"Amazona\")\n            & (inventory_full[\"location\"] == \"Inventory\")\n        ]\n        .groupby(\"item\")\n        .sum()\n    )\n    df[\"immediate_inv\"] = df[\"immediate_inv\"].fillna(0).astype(int)\n\n    df[\"storage\"] = (\n        inventory_full[inventory_full[\"character\"] == \"Amazoni\"].groupby(\"item\").sum()\n    )\n    df[\"storage\"] = df[\"storage\"].fillna(0).astype(int)\n\n    if test:\n        return None  # avoid saves\n    df.to_parquet(\"data/outputs/sell_policy.parquet\", compression=\"gzip\")\n\n\ndef apply_sell_policy(stack=1, leads=15, duration=\"m\", update=True, test=False):\n    \"\"\"\n    Given a datatable of the sell environment, create sell policy and save to WoW\n    \"\"\"\n\n    df_sell_policy = pd.read_parquet(\"data/outputs/sell_policy.parquet\")\n\n    for item, row in df_sell_policy.iterrows():\n\n        current_leads = row.loc[\"auction_leads\"]\n        aucs = row.loc[\"auctions\"]\n        inv = row.loc[\"immediate_inv\"]\n\n        # Could optionally leave one item remaining\n        # stacks = max(int(inv / stack) - int(leave_one), 0)\n\n        stacks = max(int(inv / stack), 0)\n        available_to_sell = stacks * stack\n\n        sell_count = 0\n        while current_leads < leads and available_to_sell > 0:\n            current_leads += stack\n            aucs += stack\n            available_to_sell -= stack\n            sell_count += 1\n\n        df_sell_policy.loc[item, \"stack\"] = stack\n\n        if sell_count > 0 and df_sell_policy.loc[item, \"infeasible\"] == 0:\n            df_sell_policy.loc[item, \"sell_count\"] = sell_count\n            df_sell_policy.loc[item, \"auction_leads\"] = current_leads\n            df_sell_policy.loc[item, \"immediate_inv\"] -= sell_count * stack\n            df_sell_policy.loc[item, \"auctions\"] = aucs\n        else:\n            df_sell_policy.loc[item, \"sell_count\"] = inv + 1\n\n    df_sell_policy[\"sell_count\"] = df_sell_policy[\"sell_count\"].astype(int)\n    df_sell_policy[\"stack\"] = df_sell_policy[\"stack\"].astype(int)\n    df_sell_policy[\"auction_leads\"] = df_sell_policy[\"auction_leads\"].astype(int)\n    df_sell_policy[\"auctions\"] = df_sell_policy[\"auctions\"].astype(int)\n\n    if update and not test:\n        df_sell_policy.to_parquet(\n            \"data/outputs/sell_policy.parquet\", compression=\"gzip\"\n        )\n\n    duration = {\"s\": 720, \"m\": 1440, \"l\": 2880}.get(duration)\n    item_codes = utils.get_item_codes()\n\n    # Seed new appraiser\n    new_appraiser = {\n        \"bid.markdown\": 0,\n        \"columnsortcurDir\": 1,\n        \"columnsortcurSort\": 6,\n        \"duration\": 720,\n        \"bid.deposit\": True,\n    }\n\n    # Iterate through items setting policy\n    for item, d in df_sell_policy.iterrows():\n        code = item_codes[item]\n\n        new_appraiser[f\"item.{code}.fixed.bid\"] = int(d[\"sell_price\"] + d[\"infeasible\"])\n        new_appraiser[f\"item.{code}.fixed.buy\"] = int(d[\"sell_price\"])\n        new_appraiser[f\"item.{code}.match\"] = False\n        new_appraiser[f\"item.{code}.model\"] = \"fixed\"\n        new_appraiser[f\"item.{code}.number\"] = int(d[\"sell_count\"])\n        new_appraiser[f\"item.{code}.stack\"] = int(d[\"stack\"])\n        new_appraiser[f\"item.{code}.bulk\"] = True\n        new_appraiser[f\"item.{code}.duration\"] = duration\n\n    # Read client lua, replace with\n    data = utils.read_lua(\"Auc-Advanced\", merge_account_sources=False)\n    data = data.get(\"396255466#1\")\n    data[\"AucAdvancedConfig\"][\"profile.Default\"][\"util\"][\"appraiser\"] = new_appraiser\n\n    if test:\n        return None  # avoid saves\n    utils.write_lua(data)\n\n\ndef apply_buy_policy(MAT_DEV=0, test=False):\n    \"\"\"\n    Determines herbs to buy based on potions in inventory. \n    Always buys at or below current market price.\n    \"\"\"\n\n    # TODO; remove self_demand from this list, not a big deal\n    # TODO need to subtract out oils (stoneshield) etc\n\n    items = utils.load_items()\n    sell_policy = pd.read_parquet(\"data/outputs/sell_policy.parquet\")\n\n    # Determine how many potions I have, and how many need to be replaced\n    replenish = (\n        sell_policy[\"auctions\"] + sell_policy[\"inventory\"] + sell_policy[\"storage\"]\n    )\n    replenish.name = \"inventory\"\n    replenish = pd.DataFrame(replenish)\n\n    for potion in replenish.index:\n        replenish.loc[potion, \"max\"] = items.get(potion).get(\"max_inventory\", 60)\n\n    replenish[\"inventory_target\"] = (replenish[\"max\"] - replenish[\"inventory\"]).apply(\n        lambda x: max(0, x)\n    )\n    replenish = replenish.join(analyse_auction_success())\n\n    # Downweight requirements according to recent auction success\n    replenish[\"target\"] = (\n        replenish[\"inventory_target\"] * replenish[\"auction_success\"]\n    ).astype(int)\n\n    # From potions required, get herbs required\n    herbs_required = pd.Series()\n    for potion, quantity in replenish[\"target\"].iteritems():\n        for herb, count in items.get(potion).get(\"made_from\").items():\n            if herb in herbs_required:\n                herbs_required.loc[herb] += count * quantity\n            else:\n                herbs_required.loc[herb] = count * quantity\n\n                herbs_required.name = \"herbs_needed\"\n    herbs = pd.DataFrame(herbs_required)\n\n    # Add item codes from beancounter, used for entering into snatch\n    item_codes = utils.get_item_codes()\n    herbs = herbs.join(pd.Series(item_codes, name=\"code\"))\n\n    # Remove herbs already in inventory\n    inventory = pd.read_parquet(\"data/intermediate/inventory.parquet\")\n    herbs = herbs.join(inventory.groupby(\"item\").sum()[\"count\"]).fillna(0).astype(int)\n    herbs[\"herbs_purchasing\"] = (herbs[\"herbs_needed\"] - herbs[\"count\"]).apply(\n        lambda x: max(0, x)\n    )\n\n    # Cleanup\n    herbs = herbs.drop([\"Crystal Vial\", \"Empty Vial\", \"Leaded Vial\"])\n    herbs = herbs.sort_index()\n\n    # Get market values\n    # item_prices = pd.read_parquet('intermediate/item_prices.parquet')\n\n    item_prices = pd.read_parquet(\"data/intermediate/booty_data.parquet\")\n    item_prices[\"market_price\"] = item_prices[\"recent\"] - (\n        item_prices[\"stddev\"] * MAT_DEV\n    )\n\n    # Clean up auction data\n    auction_data = pd.read_parquet(\"data/intermediate/auction_scandata.parquet\")\n    auction_data = auction_data[auction_data[\"item\"].isin(items)]\n    auction_data = auction_data[auction_data[\"price\"] > 0]\n    auction_data = auction_data.sort_values(\"price_per\")\n    auction_data[\"price_per\"] = auction_data[\"price_per\"].astype(int)\n\n    for herb, count in herbs[\"herbs_purchasing\"].iteritems():\n        # Always buy at way below market\n        buy_price = item_prices.loc[herb, \"market_price\"] * 0.3\n\n        # Filter to herbs below market price\n        listings = auction_data[auction_data[\"item\"] == herb]\n        listings = listings[\n            listings[\"price_per\"] < (item_prices.loc[herb, \"market_price\"])\n        ]\n        listings[\"cumsum\"] = listings[\"count\"].cumsum()\n\n        # Filter to lowest priced herbs for the quantity needed\n        herbs_needed = herbs.loc[herb, \"herbs_purchasing\"]\n        listings = listings[listings[\"cumsum\"] < herbs_needed]\n\n        # If there are herbs available after filtering...\n        if listings.shape[0] > 0:\n            # Reject the highest priced item, in case there are 100s of listings at that price (conservative)\n            not_last_priced = listings[\n                listings[\"price_per\"] != listings[\"price_per\"].iloc[-1]\n            ]\n            if not_last_priced.shape[0] > 0:\n                buy_price = not_last_priced[\"price_per\"].iloc[-1]\n\n        herbs.loc[herb, \"buy_price\"] = buy_price\n\n    herbs[\"buy_price\"] = herbs[\"buy_price\"].astype(int)\n\n    # Get snatch data, populate and save back\n    data = utils.read_lua(\"Auc-Advanced\", merge_account_sources=False)\n    data = data.get(\"396255466#1\")\n\n    snatch = data[\"AucAdvancedData\"][\"UtilSearchUiData\"][\"Current\"][\"snatch.itemsList\"]\n\n    for herb, row in herbs.iterrows():\n        snatch[f\"{row['code']}:0:0\"][\"price\"] = int(row[\"buy_price\"])\n\n    data[\"AucAdvancedData\"][\"UtilSearchUiData\"][\"Current\"][\"snatch.itemsList\"] = snatch\n\n    logger.debug(herbs.columns)\n    logger.debug(herbs.head())\n    herbs = herbs[[\"herbs_purchasing\", \"buy_price\"]]\n\n    if test:\n        return None  # avoid saves\n    utils.write_lua(data)\n    herbs.to_parquet(\"data/outputs/buy_policy.parquet\", compression=\"gzip\")\n",
+			"file": "pricer/analysis.py",
+			"file_size": 21272,
+			"file_write_time": 132391426206368928,
+			"settings":
+			{
+				"buffer_size": 19902,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "pricer/utils.py",
+			"settings":
+			{
+				"buffer_size": 6440,
+				"line_ending": "Unix"
+			}
+		}
+	],
+	"build_system": "Packages/Python/Python.sublime-build",
+	"build_system_choices":
+	[
+		[
+			[
+				[
+					"Packages/Python/Python.sublime-build",
+					""
+				],
+				[
+					"Packages/Python/Python.sublime-build",
+					"Syntax Check"
+				]
+			],
+			[
+				"Packages/Python/Python.sublime-build",
+				""
+			]
+		]
+	],
+	"build_varint": "",
+	"command_palette":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+			[
+				"install",
+				"Package Control: Install Package"
+			],
+			[
+				"json",
+				"Pretty JSON: Format (Pretty Print) JSON"
+			],
+			[
+				"pretty json",
+				"Pretty JSON: Format (Pretty Print) JSON"
+			],
+			[
+				"jsonTree",
+				"JsonTree: Show Tree"
+			]
+		],
+		"width": 0.0
+	},
+	"console":
+	{
+		"height": 178.0,
+		"history":
+		[
+		]
+	},
+	"distraction_free":
+	{
+		"menu_visible": true,
+		"show_minimap": false,
+		"show_open_files": false,
+		"show_tabs": false,
+		"side_bar_visible": false,
+		"status_bar_visible": false
+	},
+	"expanded_folders":
+	[
+		"/Users/nicholasjenkins/Documents/wow_auctions",
+		"/Users/nicholasjenkins/Documents/wow_auctions/.github",
+		"/Users/nicholasjenkins/Documents/wow_auctions/.github/workflows",
+		"/Users/nicholasjenkins/Documents/wow_auctions/config",
+		"/Users/nicholasjenkins/Documents/wow_auctions/data",
+		"/Users/nicholasjenkins/Documents/wow_auctions/data/outputs",
+		"/Users/nicholasjenkins/Documents/wow_auctions/logs"
+	],
+	"file_history":
+	[
+		"/Users/nicholasjenkins/Documents/wow_auctions/config/items.yaml",
+		"/Users/nicholasjenkins/Documents/wow_auctions/config/general_settings.yaml",
+		"/Users/nicholasjenkins/Documents/wow_auctions/testing.txt",
+		"/Users/nicholasjenkins/Documents/wow_auctions/.gitignore",
+		"/Users/nicholasjenkins/Documents/wow_auctions/README.md",
+		"/Users/nicholasjenkins/Documents/wow_auctions/.github/workflows/black.yml",
+		"/Users/nicholasjenkins/Documents/wow_auctions/requirements.txt",
+		"/Users/nicholasjenkins/Documents/wow_auctions/.pre-commit-config.yaml",
+		"/Users/nicholasjenkins/Documents/wow_auctions/logs/config.log",
+		"/Users/nicholasjenkins/Documents/wow_auctions/logs/pricer.utils.log",
+		"/Users/nicholasjenkins/Documents/wow_auctions/logs/pricer.sources.log",
+		"/Users/nicholasjenkins/Documents/wow_auctions/logs/pricer.analysis.log",
+		"/Users/nicholasjenkins/Documents/wow_auctions/logs/__main__.log",
+		"/Users/nicholasjenkins/Documents/wow_auctions/config.py",
+		"/Users/nicholasjenkins/Documents/wow_auctions/pricer/testing.py",
+		"/Users/nicholasjenkins/Documents/wow_auctions/run.log",
+		"/Applications/World of Warcraft/_classic_/Interface/AddOns/MapFader/MapFader.lua",
+		"/Users/nicholasjenkins/Documents/personalsite/local/2020-07-08_wow-auctions-development-status_study-games-analysis.md",
+		"/Users/nicholasjenkins/Documents/personalsite/local/2019-07-10_personal_guide-to-a-weeks-holiday-in-australia_travel-australia.md ",
+		"/Users/nicholasjenkins/Documents/personalsite/local/2019-12-22_professional_getting-started-with-new-work-environments_consulting-career-travel.md",
+		"/Users/nicholasjenkins/Documents/wow_auctions/data/outputs/potions.png",
+		"/Users/nicholasjenkins/Documents/wow_auctions/data/.gitkeep",
+		"/Users/nicholasjenkins/Documents/personalsite/local/2020-07-07_personal_programming-and-analytics-in-games_study-games-analysis.md",
+		"/Users/nicholasjenkins/Documents/personalsite/local/2020-07-07_professional_increasing-software-development-expertise_study-career.md",
+		"/Users/nicholasjenkins/Documents/wow_auctions/pricer/analysis.py",
+		"/Users/nicholasjenkins/Documents/wow_auctions/pricer/sources.py",
+		"/Users/nicholasjenkins/Documents/wow_auctions/pricer/utils.py",
+		"/Users/nicholasjenkins/Documents/wow_auctions/utils.py",
+		"/Users/nicholasjenkins/Documents/wow_auctions/analysis.py",
+		"/Users/nicholasjenkins/Documents/wow_auctions/sources.py",
+		"/Users/nicholasjenkins/Documents/wow_auctions/pricer/__init__.py",
+		"/Users/nicholasjenkins/Documents/wow_auctions/outputs/sell_policy.parquet",
+		"/Applications/World of Warcraft/_classic_/WTF/Account/396255466#1/SavedVariables/Auc-Advanced.lua",
+		"/Users/nicholasjenkins/Library/Jupyter/runtime/nbserver-2632-open.html",
+		"/Users/nicholasjenkins/Library/Jupyter/runtime/nbserver-694-open.html",
+		"/Users/nicholasjenkins/Documents/wow_auctions/intermediate/items_enriched.yaml",
+		"/Users/nicholasjenkins/Documents/wow_auctions/config/items_of_interest.yaml",
+		"/Users/nicholasjenkins/Documents/wow_auctions/config/recipes.yaml",
+		"/Users/nicholasjenkins/Documents/wow_auctions/data/BeanCounter.lua",
+		"/Users/nicholasjenkins/Documents/wow_auctions/config/self_demand.yaml",
+		"/Users/nicholasjenkins/Documents/wow_auctions/config/settings.yaml",
+		"/Users/nicholasjenkins/Documents/wow_auctions/intermediate/auctions_full.parquet",
+		"/Users/nicholasjenkins/Documents/wow_auctions/data/ArkInventory.lua",
+		"/Applications/World of Warcraft/_classic_/WTF/Account/BLUEM/SavedVariables/Auc-Advanced.lua",
+		"/Users/nicholasjenkins/Documents/wow_auctions/config/recipes.dot",
+		"/Users/nicholasjenkins/Documents/wow_auctions/cp.sh",
+		"/Users/nicholasjenkins/Documents/wow_auctions/inventory.yaml",
+		"/Users/nicholasjenkins/Documents/wow_auctions/self_demand.yaml",
+		"/Users/nicholasjenkins/Documents/wow_auctions/recipes.yaml",
+		"/Users/nicholasjenkins/Documents/wow_auctions/items_of_interest.yaml",
+		"/Users/nicholasjenkins/Documents/wow_auctions/config.yaml",
+		"/Users/nicholasjenkins/Documents/wow_auctions/old/slots.yaml",
+		"/Users/nicholasjenkins/Documents/wow_auctions/copy_data.sh",
+		"/Applications/World of Warcraft/_classic_/WTF/Account/BLUEM/SavedVariables/ArkInventory.lua",
+		"/Users/nicholasjenkins/Documents/soccer_betting_sim/scrape/year_-2006-2007_page_1.txt",
+		"/Users/nicholasjenkins/Library/Jupyter/runtime/nbserver-1124-open.html",
+		"/Users/nicholasjenkins/Documents/personalmonies/snapshots/2020-03-01.yaml",
+		"/Users/nicholasjenkins/Documents/personalmonies/statement_parsing.yaml",
+		"/Users/nicholasjenkins/Documents/personalmonies/statements/2020-03-01/activity.csv",
+		"/Users/nicholasjenkins/Documents/personalmonies/README.md",
+		"/Users/nicholasjenkins/Documents/personalmonies/template.yaml",
+		"/Users/nicholasjenkins/Library/Jupyter/runtime/nbserver-22700-open.html",
+		"/Users/nicholasjenkins/Downloads/WhatsApp Chat with TThomas.txt",
+		"/Users/nicholasjenkins/Google Drive/Documents/07_Tax/US Tax 2019/Foreign_tax.txt",
+		"/Users/nicholasjenkins/Documents/wow_auctions/sales_approach.txt",
+		"/Users/nicholasjenkins/Documents/wow_auctions/gold.yaml",
+		"/Users/nicholasjenkins/Documents/wow_auctions/slots.yaml",
+		"/Users/nicholasjenkins/Documents/wow_auctions/BeanCounter.lua",
+		"/Users/nicholasjenkins/Documents/wow_auctions/Elixir of Defense.yaml",
+		"/Applications/World of Warcraft/_classic_/Interface/AddOns/BeanCounter/BeanCounter.lua",
+		"/Users/nicholasjenkins/Library/Jupyter/runtime/nbserver-5521-open.html",
+		"/Users/nicholasjenkins/Documents/personalmonies/snapshots/2020-01-10.yaml",
+		"/Applications/World of Warcraft/_classic_/WTF/Account/BLUEM/SavedVariables/Auc-ScanData.lua",
+		"/Users/nicholasjenkins/Documents/personalsite/local/2019-07-06_personal_guide-to-a-great-time-in-porto_travel-portugal.md",
+		"/Users/nicholasjenkins/Documents/personalsite/local/2020-01-12_personal_big-list-of-things-to-do-nyc_travel-usa-organising.md",
+		"/Users/nicholasjenkins/Documents/personalsite/docker-compose.yml",
+		"/Users/nicholasjenkins/Documents/personalsite/personalsite/views.py",
+		"/Users/nicholasjenkins/Documents/personalsite/dockerfile",
+		"/Users/nicholasjenkins/Documents/personalsite/README.md",
+		"/Users/nicholasjenkins/Documents/personalsite/personalsite/config/config.py",
+		"/Users/nicholasjenkins/Documents/personalsite/personalsite/__init__.py",
+		"/Users/nicholasjenkins/Documents/personalsite/env/requirements_conda.txt",
+		"/Users/nicholasjenkins/Documents/personalsite/personalsite/config/config.yaml",
+		"/Users/nicholasjenkins/Documents/personalsite/.gitignore",
+		"/Users/nicholasjenkins/Documents/personalsite/personalsite/config/base_config.py",
+		"/Users/nicholasjenkins/Documents/personalsite/run.py",
+		"/Users/nicholasjenkins/Documents/personalsite/personalsite/file_parsing.py",
+		"/Users/nicholasjenkins/Documents/personalsite/environment/requirements_noconda.txt",
+		"/Users/nicholasjenkins/Documents/personalsite/environment/requirements_conda.txt",
+		"/Users/nicholasjenkins/Documents/personalsite/env/requirements_noconda.txt",
+		"/Users/nicholasjenkins/Library/Jupyter/runtime/nbserver-12532-open.html",
+		"/Users/nicholasjenkins/Documents/personalsite/personalsite/templates/index.html",
+		"/Users/nicholasjenkins/Documents/personalsite/local/2019-12-22_personal_a-short-weight-loss-journey_lifestyle-personalprojects.md",
+		"/Users/nicholasjenkins/Library/Jupyter/runtime/nbserver-2545-open.html",
+		"/Users/nicholasjenkins/Downloads/clubdata.sql",
+		"/Users/nicholasjenkins/Library/Jupyter/runtime/nbserver-1525-open.html",
+		"/Users/nicholasjenkins/Library/Jupyter/runtime/nbserver-4959-open.html",
+		"/Users/nicholasjenkins/Library/Jupyter/runtime/nbserver-1136-open.html",
+		"/Users/nicholasjenkins/Google Drive/Documents/07_Tax/Tax 2018-19/My Tax Notes.txt",
+		"/Users/nicholasjenkins/Library/Jupyter/runtime/nbserver-11529-open.html",
+		"/Users/nicholasjenkins/Documents/apartment_choice_simulator/examples.txt",
+		"/Users/nicholasjenkins/Google Drive/Documents/04_ID information/849-90-2226 SSN Add pin.txt",
+		"/Users/nicholasjenkins/Documents/personalsite/local/2019-07-17_personal_australian-wedding-on-a-budget_lifestyle-australia-organising.md ",
+		"/Users/nicholasjenkins/Google Drive/Documents/09_Legal/login gov us backup codes.txt",
+		"/Users/nicholasjenkins/Documents/personalsite/local/2018-11-08_personal_my-digital-nomad-packing_list_travel-gear-lifestyle-digitalnomad-packing.md",
+		"/Users/nicholasjenkins/Documents/personalsite/local/2019-07-04_personal_guide-to-a-long-weekend-in-hobart_travel-australia.md",
+		"/Users/nicholasjenkins/Library/Jupyter/runtime/nbserver-592-open.html",
+		"/Users/nicholasjenkins/Documents/nsw_edu/data/facebook-ardlethncs.json",
+		"/Users/nicholasjenkins/Documents/nsw_edu/zips_to_json.py",
+		"/Users/nicholasjenkins/Downloads/downloaded_schools/facebook-ardlethncs/posts/posts_1.json",
+		"/Users/nicholasjenkins/Documents/nsw_edu/README.md",
+		"/Users/nicholasjenkins/Google Drive/Icon\r",
+		"/Users/nicholasjenkins/Documents/nsw_edu/data/facebook-armidalecitypublicschool.json",
+		"/Users/nicholasjenkins/Documents/nsw_edu/data/facebook-anzacparkpublicschool.json",
+		"/Users/nicholasjenkins/Documents/nsw_edu/data/facebook-annangrovepublicschool.json",
+		"/Users/nicholasjenkins/Documents/nsw_edu/data/facebook-261186860575991.json",
+		"/Users/nicholasjenkins/Downloads/facebook-armidalecitypublicschool/posts/posts_1.json",
+		"/Users/nicholasjenkins/Google Drive/Documents/ID information/_manifest_and_numbers.txt",
+		"/Users/nicholasjenkins/Desktop/Re_ Sublet inquiry.eml",
+		"/Users/nicholasjenkins/Downloads/Access Key ID",
+		"/Users/nicholasjenkins/Google Drive/_NOTES/190224.txt",
+		"/Users/nicholasjenkins/Google Drive/_NOTES/wedding purchase and hire.txt",
+		"/Users/nicholasjenkins/Desktop/Large confetti"
+	],
+	"find":
+	{
+		"height": 30.0
+	},
+	"find_in_files":
+	{
+		"height": 175.0,
+		"where_history":
+		[
+			"/Users/nicholasjenkins/Documents/wow_auctions",
+			"<open files>",
+			"/Users/nicholasjenkins/Documents/wow_auctions",
+			"<current file>",
+			"/Users/nicholasjenkins/Documents/wow_auctions",
+			"<current file>"
+		]
+	},
+	"find_state":
+	{
+		"case_sensitive": false,
+		"find_history":
+		[
+			"self",
+			"max_stac",
+			"max_stack",
+			"self_demand",
+			"leave",
+			"duration",
+			"leave_one",
+			"leads",
+			"stack_size",
+			"test",
+			"leave_one",
+			"factor",
+			"sources.generate_auction_csandata",
+			"verbose",
+			"debug",
+			"verbose",
+			"print",
+			"factor",
+			"_parquet",
+			"read_multiple_parquet",
+			"dump_lua",
+			"write_lua",
+			"get_item_codes",
+			"get_and_format_auction_data",
+			"get_general_settings",
+			"load_items",
+			"read_lua",
+			"source_merge",
+			"generate_new_pricer_file",
+			"settings",
+			"general_settings",
+			"MAT_DEV",
+			"group: Snatch",
+			"snatch_group",
+			"gromsb",
+			"lua",
+			"plot",
+			"apply_sell_policy",
+			"material_cost = 0",
+			"item_prices",
+			"details",
+			"inventory",
+			"lesser invis",
+			"fortitude",
+			"fire protect",
+			".nan",
+			"empty vi",
+			"squid",
+			"tender wolf",
+			"tender wold",
+			"Khadgar's Whiskers",
+			"empty vial",
+			"cost",
+			"load_items",
+			"df['category'] = df['item'].apply(lambda x:",
+			"get_items",
+			"get_interesting_items_and_stacks",
+			"get_interest",
+			"raw=",
+			"get_interesting_items_and_stacks",
+			"  made_from: {}",
+			"greater in",
+			"elixir of great",
+			"greater intellect",
+			"Emili",
+			"get_",
+			"recipe",
+			"items_of",
+			"settings = ",
+			"path_settings",
+			"settings",
+			"get_inventory",
+			"4402:",
+			"small flame",
+			":",
+			"item.12360.",
+			"oily b",
+			"small flame sac",
+			"thorium",
+			":\\s\\d*",
+			":\\s1*",
+			"[*]",
+			"arcane"
+		],
+		"highlight": true,
+		"in_selection": false,
+		"preserve_case": false,
+		"regex": false,
+		"replace_history":
+		[
+			"utils.read_multiple_parquet",
+			"utils.dump_lua",
+			"utils.write_lua",
+			"utils.get_item_codes",
+			"utils.get_and_format_auction_data",
+			"utils.get_general_settings",
+			"utils.load_items",
+			"utils.read_lua",
+			"group: Buy",
+			"group",
+			"",
+			"\\n",
+			" ",
+			""
+		],
+		"reverse": false,
+		"show_context": true,
+		"use_buffer2": true,
+		"whole_word": false,
+		"wrap": true
+	},
+	"groups":
+	[
+		{
+			"selected": 0,
+			"sheets":
+			[
+				{
+					"buffer": 0,
+					"file": "README.md",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 721,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								721,
+								721
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Markdown/Markdown.sublime-syntax"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 0,
+					"type": "text"
+				},
+				{
+					"buffer": 1,
+					"file": "pricer/config.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 488,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								16,
+								16
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Python/Python.sublime-syntax",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 5,
+					"type": "text"
+				},
+				{
+					"buffer": 2,
+					"file": "run.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 2245,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								107,
+								107
+							]
+						],
+						"settings":
+						{
+							"auto_complete_triggers":
+							[
+								{
+									"characters": "<",
+									"selector": "text.html"
+								},
+								{
+									"characters": ".",
+									"selector": "source.python - string - comment - constant.numeric"
+								}
+							],
+							"auto_name": "\"\"\" Runs the main program with command line option",
+							"syntax": "Packages/Python/Python.sublime-syntax",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 1,
+					"type": "text"
+				},
+				{
+					"buffer": 3,
+					"file": "pricer/sources.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 8794,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								661,
+								669
+							]
+						],
+						"settings":
+						{
+							"auto_complete_triggers":
+							[
+								{
+									"characters": "<",
+									"selector": "text.html"
+								},
+								{
+									"characters": ".",
+									"selector": "source.python - string - comment - constant.numeric"
+								}
+							],
+							"syntax": "Packages/Python/Python.sublime-syntax",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 4,
+					"type": "text"
+				},
+				{
+					"buffer": 4,
+					"file": "config/user_settings.yaml",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 553,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								553,
+								553
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/YAML/YAML.sublime-syntax",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 2,
+					"type": "text"
+				},
+				{
+					"buffer": 5,
+					"file": "pricer/analysis.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 19902,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								4657,
+								4657
+							]
+						],
+						"settings":
+						{
+							"auto_complete_triggers":
+							[
+								{
+									"characters": "<",
+									"selector": "text.html"
+								},
+								{
+									"characters": ".",
+									"selector": "source.python - string - comment - constant.numeric"
+								}
+							],
+							"syntax": "Packages/Python/Python.sublime-syntax",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 3,
+					"type": "text"
+				},
+				{
+					"buffer": 6,
+					"file": "pricer/utils.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 6440,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								1979,
+								1979
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Python/Python.sublime-syntax",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 6,
+					"type": "text"
+				}
+			]
+		}
+	],
+	"incremental_find":
+	{
+		"height": 30.0
+	},
+	"input":
+	{
+		"height": 42.0
+	},
+	"layout":
+	{
+		"cells":
+		[
+			[
+				0,
+				0,
+				1,
+				1
+			]
+		],
+		"cols":
+		[
+			0.0,
+			1.0
+		],
+		"rows":
+		[
+			0.0,
+			1.0
+		]
+	},
+	"menu_visible": true,
+	"output.exec":
+	{
+		"height": 364.0
+	},
+	"output.find_results":
+	{
+		"height": 0.0
+	},
+	"pinned_build_system": "",
+	"project": "wow_auctions.sublime-project",
+	"replace":
+	{
+		"height": 56.0
+	},
+	"save_all_on_build": true,
+	"select_file":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"select_project":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"select_symbol":
+	{
+		"height": 120.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 592.0
+	},
+	"selected_group": 0,
+	"settings":
+	{
+	},
+	"show_minimap": true,
+	"show_open_files": false,
+	"show_tabs": true,
+	"side_bar_visible": true,
+	"side_bar_width": 246.0,
+	"status_bar_visible": true,
+	"template_settings":
+	{
+	}
+}
