@@ -8,3 +8,5 @@ data/*
 
 logs/*
 !logs/.gitkeep 
+
+notebooks/*
