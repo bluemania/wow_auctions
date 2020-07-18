@@ -8,7 +8,7 @@ def set_logging(logger):
     formatter = logging.Formatter("%(asctime)s:%(name)s:%(message)s")
 
     file_handler = logging.FileHandler(f"logs/{logger.name}.log")
-    file_handler.setLevel(logging.INFO)
+    file_handler.setLevel(logging.DEBUG)
     file_handler.setFormatter(formatter)
 
     stream_handler = logging.StreamHandler()

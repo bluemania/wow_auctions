@@ -28,21 +28,30 @@ def generate_inventory(test=False, run_dt=None):
     """ Reads and reformats the Arkinventory data file into a pandas dataframe
     Loads yaml files to specify item locations and specific items of interest
     Saves down parquet file ready to go
+    When in test mode, loading and calcs are performed but no file saves
+    Otherwise, 
+    * Saves current analysis as intermediate
+    * Loads full
+    * Saves full-backup
+    * Appends intermediate to full
+    * Saves updated full
     """
     settings = utils.get_general_settings()
     characters = utils.read_lua("ArkInventory")["ARKINVDB"]["global"]["player"]["data"]
 
-    # Search through inventory data to create dictionary of all items and counts, also counts total monies
+    # Search through inventory data to create dictionary of all items and counts
+    # Also counts total monies
     monies = {}
     character_inventories = defaultdict(str)
     raw_data = []
 
-    for ckey in characters:
-        character = characters[ckey]
+    for ckey, character in characters.items():
         character_name = ckey.split(" ")[0]
         character_inventories[character_name] = {}
 
-        monies[ckey] = int(character.get("info").get("money", 0))
+        character_money = int(character.get("info").get("money", 0))
+        monies[ckey] = character_money
+        logger.debug(f"Reading character info {character_name}, has money {character_money}")
 
         # Get Bank, Inventory, Character, Mailbox etc
         location_slots = character.get("location", [])
@@ -95,17 +104,16 @@ def generate_inventory(test=False, run_dt=None):
     )
 
     inventory_repo = pd.read_parquet("data/full/inventory.parquet")
-    inventory_repo.to_parquet("data/full_backup/inventory.parquet", compression="gzip")
-
     monies_repo = pd.read_parquet("data/full/monies.parquet")
-    monies_repo.to_parquet("data/full_backup/monies.parquet", compression="gzip")
 
     updated = "*not*"
     if df["timestamp"].max() > inventory_repo["timestamp"].max():
         updated = ""
+        inventory_repo.to_parquet("data/full_backup/inventory.parquet", compression="gzip")
         inventory_repo = inventory_repo.append(df)
         inventory_repo.to_parquet("data/full/inventory.parquet", compression="gzip")
 
+        monies_repo.to_parquet("data/full_backup/monies.parquet", compression="gzip")
         monies_repo = monies_repo.append(df_monies)
         monies_repo.to_parquet("data/full/monies.parquet", compression="gzip")
 
