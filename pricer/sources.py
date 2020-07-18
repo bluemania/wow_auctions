@@ -13,6 +13,17 @@ logger = logging.getLogger(__name__)
 config.set_logging(logger)
 
 
+def generate_time_played(test=False, run_dt=None, played=None, clean_session=False):
+    """
+    Function is run when the user specifies a time played at cli
+    Time played may be automated in future, however, the good thing
+    about specifying time played manually atm is we know this is a 
+    'clean session' (i.e all inventory accounted / mailboxes checked)
+    May move to a 'clean session' flag.
+    """
+    return None
+
+
 def generate_inventory(test=False, run_dt=None):
     """ Reads and reformats the Arkinventory data file into a pandas dataframe
     Loads yaml files to specify item locations and specific items of interest
