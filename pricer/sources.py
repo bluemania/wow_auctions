@@ -13,14 +13,23 @@ logger = logging.getLogger(__name__)
 config.set_logging(logger)
 
 
-def generate_time_played(test=False, run_dt=None, played=None, clean_session=False):
+def generate_time_played(test=False, run_dt=None, clean_session=False, played=None):
     """
-    Function is run when the user specifies a time played at cli
-    Time played may be automated in future, however, the good thing
-    about specifying time played manually atm is we know this is a 
-    'clean session' (i.e all inventory accounted / mailboxes checked)
-    May move to a 'clean session' flag.
+    Creates a record of time played on character along with program run time
+    This is useful for calcs involving real time vs game time
+    and in relation to gold earnt (i.e. gold per hour)
+    Time played may be automated in future, however we specify 'clean_session'
+    to flag when all inventory accounted for, with mailboxes checked.
+
+    When in test mode, loading and calcs are performed but no file saves
+    Otherwise, saves current analysis as intermediate, loads full, saves backup, 
+    append interm, and save full
     """
+    print(test)
+    print(run_dt)    
+    print(clean_session)
+    print(played)
+    print(utils.get_seconds_played(played))    
     return None
 
 
@@ -28,13 +37,10 @@ def generate_inventory(test=False, run_dt=None):
     """ Reads and reformats the Arkinventory data file into a pandas dataframe
     Loads yaml files to specify item locations and specific items of interest
     Saves down parquet file ready to go
+
     When in test mode, loading and calcs are performed but no file saves
-    Otherwise, 
-    * Saves current analysis as intermediate
-    * Loads full
-    * Saves full-backup
-    * Appends intermediate to full
-    * Saves updated full
+    Otherwise, saves current analysis as intermediate and loads full
+    If the data has updated since last run; save backup, append interm, save full
     """
     settings = utils.get_general_settings()
     characters = utils.read_lua("ArkInventory")["ARKINVDB"]["global"]["player"]["data"]

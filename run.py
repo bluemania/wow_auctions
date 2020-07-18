@@ -12,9 +12,11 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
 
-def analyse(test=False, run_dt=None):
+def analyse(test=False, run_dt=None, clean_session=False, played=None):
     """ Load sources, calculate prices, create policies
     """
+    sources.generate_time_played(test=test, run_dt=run_dt, 
+                                 clean_session=clean_session, played=played)
     sources.generate_booty_data()
     sources.generate_auction_scandata(test=test)
     sources.generate_auction_activity(test=test)
@@ -41,20 +43,18 @@ if __name__ == "__main__":
     parser.add_argument("-m1", help="Mid policy 5stack", action="store_true")
     parser.add_argument("-m2", help="Mid policy 1stack", action="store_true")
     parser.add_argument("-l1", help="Long policy 5stack", action="store_true")
-    parser.add_argument("-played",
-        help="Indicate time played in '00d-00h-00m-00s' format to help us calculate gold/hour")
+    parser.add_argument("-cs", 
+        help="Flag program run as a clean session", action="store_true")
+    parser.add_argument("-played", default='00d-00h-00m-00s',
+        help="Manually specify time played in '00d-00h-00m-00s' format. Used to calculate gold/hour")
 
     args = parser.parse_args()
 
     if args.np:
         utils.generate_new_pricer_file()
 
-    # if args.played:
-    #     logger.debug("Calculating seconds played")
-    #     utils.get_seconds_played(args.played)
-
     if args.a:
-        analyse(test=args.t, run_dt=run_dt)
+        analyse(test=args.t, run_dt=run_dt, clean_session=args.cs, played=args.played)
 
     # Sell policies
     if args.s1:
