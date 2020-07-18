@@ -25,12 +25,26 @@ def generate_time_played(test=False, run_dt=None, clean_session=False, played=No
     Otherwise, saves current analysis as intermediate, loads full, saves backup, 
     append interm, and save full
     """
-    print(test)
-    print(run_dt)    
-    print(clean_session)
-    print(played)
-    print(utils.get_seconds_played(played))    
-    return None
+    
+    # Calculate and save to intermediate
+    data = {'timestamp': run_dt,
+            'played_raw': played,
+            'played_seconds': utils.get_seconds_played(played),
+            'clean_session': clean_session
+            }
+    df_played = pd.DataFrame(pd.Series(data)).T
+    
+    if test:
+        return None # avoid saves
+    
+    df_played.to_parquet('data/intermediate/time_played.parquet', compression="gzip")
+    
+    played_repo = pd.read_parquet("data/full/time_played.parquet")
+    played_repo.to_parquet("data/full_backup/time_played.parquet", compression="gzip")
+    played_repo = played_repo.append(df_played)
+    played_repo.to_parquet("data/full/time_played.parquet", compression="gzip")
+
+    print(f"Time played recorded, marked as clean_session: {clean_session}")
 
 
 def generate_inventory(test=False, run_dt=None):
