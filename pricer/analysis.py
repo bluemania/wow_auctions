@@ -94,18 +94,19 @@ def analyse_sales_performance(test=False):
     )
 
     inv_mule = inventory_value["Amazona"] + inventory_value["Amazoni"]
+    inv_mule.name = "Mule Inventory"
+
     inv_rest = inventory_value.sum(axis=1) - inv_mule
+    inv_rest.name = "Other Inventory"
 
     monies_mule = (
         monies_full["Amazona - Grobbulus"] + monies_full["Amazoni - Grobbulus"]
     )
     monies_mule.name = "Mule monies"
     monies_rest = monies_full.sum(axis=1) - monies_mule
+    monies_rest.name = "Other Monies"
 
-    holdings = pd.DataFrame(monies_mule)
-    holdings["Rest monies"] = monies_rest
-    holdings["Mule inventory"] = inv_mule.values
-    holdings["Rest inventory"] = inv_rest.values
+    holdings = pd.DataFrame([monies_mule, monies_rest, inv_mule, inv_rest]).T
 
     holdings["Total holdings"] = holdings.sum(axis=1)
     holdings = (holdings / 10000).astype(int)

@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 config.set_logging(logger)
 
 
-def generate_inventory(test=False):
+def generate_inventory(test=False, run_dt=None):
     """ Reads and reformats the Arkinventory data file into a pandas dataframe
     Loads yaml files to specify item locations and specific items of interest
     Saves down parquet file ready to go
@@ -66,13 +66,13 @@ def generate_inventory(test=False):
     cols = ["character", "location", "item", "count", "timestamp"]
     df = pd.DataFrame(raw_data)
 
-    df["timestamp"] = dt.now()
+    df["timestamp"] = run_dt
     df.columns = cols
 
     df_monies = pd.Series(monies)
     df_monies.name = "monies"
     df_monies = pd.DataFrame(df_monies)
-    df_monies["timestamp"] = dt.now()
+    df_monies["timestamp"] = run_dt
 
     if test:
         return None  # avoid saves
