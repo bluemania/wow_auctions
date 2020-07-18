@@ -54,7 +54,7 @@ if __name__ == "__main__":
     #     utils.get_seconds_played(args.played)
 
     if args.a:
-        analyse(test=args.t, run_dt)
+        analyse(test=args.t, run_dt=run_dt)
 
     # Sell policies
     if args.s1:

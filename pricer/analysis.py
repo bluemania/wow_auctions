@@ -102,22 +102,22 @@ def analyse_sales_performance(test=False):
     monies_mule = (
         monies_full["Amazona - Grobbulus"] + monies_full["Amazoni - Grobbulus"]
     )
-    monies_mule.name = "Mule monies"
+    monies_mule.name = "Mule Monies"
     monies_rest = monies_full.sum(axis=1) - monies_mule
     monies_rest.name = "Other Monies"
 
     holdings = pd.DataFrame([monies_mule, monies_rest, inv_mule, inv_rest]).T
 
-    holdings["Total holdings"] = holdings.sum(axis=1)
+    holdings["Total Holdings"] = holdings.sum(axis=1)
     holdings = (holdings / 10000).astype(int)
 
     sns.set()
     sns.set_style("whitegrid")
     sns.despine()
 
-    plt = sns.lineplot(data=holdings[["Mule monies", "Mule inventory"]], color="b")
-    plt = sns.lineplot(data=holdings["Total holdings"], color="black").set_title(
-        "Total holdings"
+    plt = sns.lineplot(data=holdings[["Mule Monies", "Mule Inventory"]], color="b")
+    plt = sns.lineplot(data=holdings["Total Holdings"], color="black").set_title(
+        "Total Holdings"
     )
 
     latest_inventory = inventory_trade[
