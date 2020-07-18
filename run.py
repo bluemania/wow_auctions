@@ -20,7 +20,7 @@ def analyse(test=False, run_dt=None):
     sources.generate_auction_activity(test=test)
     sources.generate_inventory(test=test, run_dt=run_dt)
     analysis.analyse_item_prices()
-    analysis.analyse_sales_performance(time_played=time_played)
+    analysis.analyse_sales_performance()
     analysis.analyse_item_min_sell_price(MAT_DEV=0)
     analysis.analyse_sell_data()
     analysis.apply_buy_policy(MAT_DEV=0)
