@@ -120,6 +120,30 @@ def analyse_sales_performance(test=False):
         "Total Holdings"
     )
 
+
+    # Combine the holdings information with game time played
+    # For gold per hour analysis
+    played_repo = pd.read_parquet("data/full/time_played.parquet")
+    df_gold_hour = holdings.join(played_repo.set_index('timestamp'))
+
+    # Only care about occassions where we've flagged a clean session in cli
+    df_gold_hour = df_gold_hour[df_gold_hour['clean_session']==True]
+
+    # Record hours played since we implemented played time
+    df_gold_hour['played_seconds'] = df_gold_hour['played_seconds'] - df_gold_hour['played_seconds'].min()
+    df_gold_hour['played_hours'] = df_gold_hour['played_seconds'] / (60 * 60)
+
+    # Calculate incremental versus last period, setting first period to 0
+    df_gold_hour['inc_hold'] = (df_gold_hour['Total Holdings'] - df_gold_hour['Total Holdings'].shift(1)).fillna(0)
+    df_gold_hour['inc_hours'] = (df_gold_hour['played_hours'] - df_gold_hour['played_hours'].shift(1)).fillna(0)
+
+    df_gold_hour['gold_per_hour'] = df_gold_hour['inc_hold'] / df_gold_hour['inc_hours']
+
+    recent_gold_hour = df_gold_hour.iloc[-1].loc['gold_per_hour'].round(2)
+    recent_timestamp = df_gold_hour.iloc[-1].name
+    print(f"Most recent gold per hour: {recent_gold_hour}, last recorded: {str(recent_timestamp)}")
+
+
     latest_inventory = inventory_trade[
         inventory_trade["timestamp"] == inventory_trade["timestamp"].max()
     ]
