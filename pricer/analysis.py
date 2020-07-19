@@ -139,6 +139,7 @@ def analyse_sales_performance(test=False):
 
     df_gold_hour['gold_per_hour'] = df_gold_hour['inc_hold'] / df_gold_hour['inc_hours']
 
+    # Needs to be tested in case breaks on first run
     recent_gold_hour = df_gold_hour.iloc[-1].loc['gold_per_hour'].round(2)
     recent_timestamp = df_gold_hour.iloc[-1].name
     print(f"Most recent gold per hour: {recent_gold_hour}, last recorded: {str(recent_timestamp)}")
