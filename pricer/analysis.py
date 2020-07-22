@@ -8,13 +8,10 @@ from pricer import config, utils
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
-
-sns.set(rc={"figure.figsize": (11.7, 8.27)})
-
 import logging
 
+sns.set(rc={"figure.figsize": (11.7, 8.27)})
 logger = logging.getLogger(__name__)
-config.set_logging(logger)
 
 
 def analyse_item_prices(full_pricing=False, test=False):
@@ -62,7 +59,7 @@ def analyse_item_prices(full_pricing=False, test=False):
 
     item_prices.to_parquet("data/intermediate/item_prices.parquet", compression="gzip")
 
-    logger.debug(f"Item prices calculated. {len(item_prices)} records")
+    logger.info(f"Item prices calculated. {len(item_prices)} records")
 
 
 def analyse_sales_performance(test=False):
@@ -146,8 +143,8 @@ def analyse_sales_performance(test=False):
     # Gold per hour may vary over runs due to market price calc of inventory
     recent_gold_hour = df_gold_hour.iloc[-1].loc['gold_per_hour'].round(2)
     recent_timestamp = df_gold_hour.iloc[-1].name
-    print(f"Time played: {total_time_played}, Total gold/hour: {all_time_gold_hour}")
-    print(f"Most recent gold per hour: {recent_gold_hour}, last recorded: {str(recent_timestamp)}")
+    logging.info(f"Time played: {total_time_played}, Total gold/hour: {all_time_gold_hour}")
+    logging.print(f"Most recent gold per hour: {recent_gold_hour}, last recorded: {str(recent_timestamp)}")
 
     latest_inventory = inventory_trade[
         inventory_trade["timestamp"] == inventory_trade["timestamp"].max()
