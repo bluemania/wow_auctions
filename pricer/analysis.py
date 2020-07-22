@@ -144,7 +144,7 @@ def analyse_sales_performance(test=False):
     recent_gold_hour = df_gold_hour.iloc[-1].loc['gold_per_hour'].round(2)
     recent_timestamp = df_gold_hour.iloc[-1].name
     logging.info(f"Time played: {total_time_played}, Total gold/hour: {all_time_gold_hour}")
-    logging.print(f"Most recent gold per hour: {recent_gold_hour}, last recorded: {str(recent_timestamp)}")
+    logging.info(f"Most recent gold per hour: {recent_gold_hour}, last recorded: {str(recent_timestamp)}")
 
     latest_inventory = inventory_trade[
         inventory_trade["timestamp"] == inventory_trade["timestamp"].max()
