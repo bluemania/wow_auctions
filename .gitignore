@@ -10,3 +10,4 @@ logs/*
 !logs/.gitkeep 
 
 notebooks/*
+pricer.egg-info
