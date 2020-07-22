@@ -9,8 +9,21 @@ from datetime import datetime as dt
 import logging
 
 pd.options.mode.chained_assignment = None  # default='warn'
+
 logger = logging.getLogger(__name__)
-config.set_logging(logger)
+logger.setLevel(logging.DEBUG)
+
+formatter = logging.Formatter("%(asctime)s:%(name)s:%(message)s")
+
+file_handler = logging.FileHandler(f"logs/{logger.name}.log")
+file_handler.setLevel(logging.DEBUG)
+file_handler.setFormatter(formatter)
+
+stream_handler = logging.StreamHandler()
+stream_handler.setFormatter(formatter)
+
+logger.addHandler(file_handler)
+logger.addHandler(stream_handler)
 
 
 def generate_time_played(test=False, run_dt=None, clean_session=False, played=None):

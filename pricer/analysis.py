@@ -14,7 +14,19 @@ sns.set(rc={"figure.figsize": (11.7, 8.27)})
 import logging
 
 logger = logging.getLogger(__name__)
-config.set_logging(logger)
+logger.setLevel(logging.DEBUG)
+
+formatter = logging.Formatter("%(asctime)s:%(name)s:%(message)s")
+
+file_handler = logging.FileHandler(f"logs/{logger.name}.log")
+file_handler.setLevel(logging.DEBUG)
+file_handler.setFormatter(formatter)
+
+stream_handler = logging.StreamHandler()
+stream_handler.setFormatter(formatter)
+
+logger.addHandler(file_handler)
+logger.addHandler(stream_handler)
 
 
 def analyse_item_prices(full_pricing=False, test=False):
