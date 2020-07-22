@@ -29,6 +29,9 @@ poetry run python run.py -a
 
 There are many command line options; -a will run primary analysis (except for sell policies). Please refer to the scripts for further information.
 
+### License
+All assets and code are under the MIT LICENSE and in the public domain unless specified otherwise.
+
 #### TODO
 
 * Create additional selling profile for min-bid max-buy high-volume. May require splitting the function more carefully
