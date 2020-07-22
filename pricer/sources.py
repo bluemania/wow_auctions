@@ -13,25 +13,65 @@ logger = logging.getLogger(__name__)
 config.set_logging(logger)
 
 
-def generate_inventory(test=False):
+def generate_time_played(test=False, run_dt=None, clean_session=False, played=None):
+    """
+    Creates a record of time played on character along with program run time
+    This is useful for calcs involving real time vs game time
+    and in relation to gold earnt (i.e. gold per hour)
+    Time played may be automated in future, however we specify 'clean_session'
+    to flag when all inventory accounted for, with mailboxes checked.
+
+    When in test mode, loading and calcs are performed but no file saves
+    Otherwise, saves current analysis as intermediate, loads full, saves backup, 
+    append interm, and save full
+    """
+    
+    # Calculate and save to intermediate
+    data = {'timestamp': run_dt,
+            'played_raw': played,
+            'played_seconds': utils.get_seconds_played(played),
+            'clean_session': clean_session
+            }
+    df_played = pd.DataFrame(pd.Series(data)).T
+    
+    if test:
+        return None # avoid saves
+    
+    df_played.to_parquet('data/intermediate/time_played.parquet', compression="gzip")
+    
+    played_repo = pd.read_parquet("data/full/time_played.parquet")
+    played_repo.to_parquet("data/full_backup/time_played.parquet", compression="gzip")
+    played_repo = played_repo.append(df_played)
+    played_repo.to_parquet("data/full/time_played.parquet", compression="gzip")
+
+    print(f"Time played recorded, marked as clean_session: {clean_session}")
+
+
+def generate_inventory(test=False, run_dt=None):
     """ Reads and reformats the Arkinventory data file into a pandas dataframe
     Loads yaml files to specify item locations and specific items of interest
     Saves down parquet file ready to go
+
+    When in test mode, loading and calcs are performed but no file saves
+    Otherwise, saves current analysis as intermediate and loads full
+    If the data has updated since last run; save backup, append interm, save full
     """
     settings = utils.get_general_settings()
     characters = utils.read_lua("ArkInventory")["ARKINVDB"]["global"]["player"]["data"]
 
-    # Search through inventory data to create dictionary of all items and counts, also counts total monies
+    # Search through inventory data to create dictionary of all items and counts
+    # Also counts total monies
     monies = {}
     character_inventories = defaultdict(str)
     raw_data = []
 
-    for ckey in characters:
-        character = characters[ckey]
+    for ckey, character in characters.items():
         character_name = ckey.split(" ")[0]
         character_inventories[character_name] = {}
 
-        monies[ckey] = int(character.get("info").get("money", 0))
+        character_money = int(character.get("info").get("money", 0))
+        monies[ckey] = character_money
+        logger.debug(f"Reading character info {character_name}, has money {character_money}")
 
         # Get Bank, Inventory, Character, Mailbox etc
         location_slots = character.get("location", [])
@@ -66,13 +106,13 @@ def generate_inventory(test=False):
     cols = ["character", "location", "item", "count", "timestamp"]
     df = pd.DataFrame(raw_data)
 
-    df["timestamp"] = dt.now()
+    df["timestamp"] = run_dt
     df.columns = cols
 
     df_monies = pd.Series(monies)
     df_monies.name = "monies"
     df_monies = pd.DataFrame(df_monies)
-    df_monies["timestamp"] = dt.now()
+    df_monies["timestamp"] = run_dt
 
     if test:
         return None  # avoid saves
@@ -84,17 +124,16 @@ def generate_inventory(test=False):
     )
 
     inventory_repo = pd.read_parquet("data/full/inventory.parquet")
-    inventory_repo.to_parquet("data/full_backup/inventory.parquet", compression="gzip")
-
     monies_repo = pd.read_parquet("data/full/monies.parquet")
-    monies_repo.to_parquet("data/full_backup/monies.parquet", compression="gzip")
 
     updated = "*not*"
     if df["timestamp"].max() > inventory_repo["timestamp"].max():
         updated = ""
+        inventory_repo.to_parquet("data/full_backup/inventory.parquet", compression="gzip")
         inventory_repo = inventory_repo.append(df)
         inventory_repo.to_parquet("data/full/inventory.parquet", compression="gzip")
 
+        monies_repo.to_parquet("data/full_backup/monies.parquet", compression="gzip")
         monies_repo = monies_repo.append(df_monies)
         monies_repo.to_parquet("data/full/monies.parquet", compression="gzip")
 

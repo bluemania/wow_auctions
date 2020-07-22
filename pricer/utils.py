@@ -26,6 +26,24 @@ logger.addHandler(file_handler)
 logger.addHandler(stream_handler)
 
 
+def get_seconds_played(time_played: str) -> int:
+    """
+    Converts a string representation of time played to seconds
+    """
+    try:
+        days, hours, mins, seconds = time_played.split('-')
+    except ValueError as error:
+        logger.error(error)
+        raise ValueError("Play time not formatted correctly; needs to be '00d-00h-00m-00s'")
+
+    total_seconds = (int(days[:-1]) * 24 * 60 * 60 +
+                     int(hours[:-1]) * 60 * 60 + 
+                     int(mins[:-1]) * 60 + 
+                     int(seconds[:-1]))
+    
+    return total_seconds
+
+
 def generate_new_pricer_file():
     """ Generates a blank pricer file of items of interest. This is used to fill in the latest pricing
     information from booty bay gazette. This is done in game using a self build addon with the /pricer command    

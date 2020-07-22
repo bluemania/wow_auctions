@@ -94,30 +94,60 @@ def analyse_sales_performance(test=False):
     )
 
     inv_mule = inventory_value["Amazona"] + inventory_value["Amazoni"]
+    inv_mule.name = "Mule Inventory"
+
     inv_rest = inventory_value.sum(axis=1) - inv_mule
+    inv_rest.name = "Other Inventory"
 
     monies_mule = (
         monies_full["Amazona - Grobbulus"] + monies_full["Amazoni - Grobbulus"]
     )
-    monies_mule.name = "Mule monies"
+    monies_mule.name = "Mule Monies"
     monies_rest = monies_full.sum(axis=1) - monies_mule
+    monies_rest.name = "Other Monies"
 
-    holdings = pd.DataFrame(monies_mule)
-    holdings["Rest monies"] = monies_rest
-    holdings["Mule inventory"] = inv_mule.values
-    holdings["Rest inventory"] = inv_rest.values
+    holdings = pd.DataFrame([monies_mule, monies_rest, inv_mule, inv_rest]).T
 
-    holdings["Total holdings"] = holdings.sum(axis=1)
+    holdings["Total Holdings"] = holdings.sum(axis=1)
     holdings = (holdings / 10000).astype(int)
 
     sns.set()
     sns.set_style("whitegrid")
     sns.despine()
 
-    plt = sns.lineplot(data=holdings[["Mule monies", "Mule inventory"]], color="b")
-    plt = sns.lineplot(data=holdings["Total holdings"], color="black").set_title(
-        "Total holdings"
+    plt = sns.lineplot(data=holdings[["Mule Monies", "Mule Inventory"]], color="b")
+    plt = sns.lineplot(data=holdings["Total Holdings"], color="black").set_title(
+        "Total Holdings"
     )
+
+
+    # Combine the holdings information with game time played
+    # For gold per hour analysis
+    played_repo = pd.read_parquet("data/full/time_played.parquet")
+    df_gold_hour = holdings.join(played_repo.set_index('timestamp'))
+
+    # Only care about occassions where we've flagged a clean session in cli
+    df_gold_hour = df_gold_hour[df_gold_hour['clean_session']==True]
+
+    # Record hours played since we implemented played time
+    df_gold_hour['played_seconds'] = df_gold_hour['played_seconds'] - df_gold_hour['played_seconds'].min()
+    df_gold_hour['played_hours'] = df_gold_hour['played_seconds'] / (60 * 60)
+
+    # Calculate incremental versus last period, setting first period to 0
+    df_gold_hour['inc_hold'] = (df_gold_hour['Total Holdings'] - df_gold_hour['Total Holdings'].shift(1)).fillna(0)
+    df_gold_hour['inc_hours'] = (df_gold_hour['played_hours'] - df_gold_hour['played_hours'].shift(1)).fillna(0)
+
+    df_gold_hour['gold_per_hour'] = df_gold_hour['inc_hold'] / df_gold_hour['inc_hours']
+
+    total_time_played = df_gold_hour['inc_hours'].sum()
+    all_time_gold_hour = (df_gold_hour['inc_hold'].sum() / total_time_played).round(2)
+
+    # TODO Needs to be tested in case breaks on first run
+    # Gold per hour may vary over runs due to market price calc of inventory
+    recent_gold_hour = df_gold_hour.iloc[-1].loc['gold_per_hour'].round(2)
+    recent_timestamp = df_gold_hour.iloc[-1].name
+    print(f"Time played: {total_time_played}, Total gold/hour: {all_time_gold_hour}")
+    print(f"Most recent gold per hour: {recent_gold_hour}, last recorded: {str(recent_timestamp)}")
 
     latest_inventory = inventory_trade[
         inventory_trade["timestamp"] == inventory_trade["timestamp"].max()
