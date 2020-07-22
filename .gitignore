@@ -10,5 +10,3 @@ logs/*
 !logs/.gitkeep 
 
 notebooks/*
-
-pypi-token.pypi
