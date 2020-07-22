@@ -26,6 +26,8 @@ def set_loggers(base_logger=None, v=False, vv=False):
         logger.addHandler(stream_handler)
 
 # Load global user settings such as paths
+# This should handle any rstrips
+# This should add account information (automatically)
 with open("config/user_settings.yaml", "r") as f:
     us = yaml.load(f, Loader=yaml.FullLoader)
 

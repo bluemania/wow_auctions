@@ -35,7 +35,7 @@ def generate_time_played(test=False, run_dt=None, clean_session=False, played=No
     
     if test:
         return None # avoid saves
-    
+
     df_played.to_parquet('data/intermediate/time_played.parquet', compression="gzip")
     
     played_repo = pd.read_parquet("data/full/time_played.parquet")
@@ -43,7 +43,7 @@ def generate_time_played(test=False, run_dt=None, clean_session=False, played=No
     played_repo = played_repo.append(df_played)
     played_repo.to_parquet("data/full/time_played.parquet", compression="gzip")
 
-    print(f"Time played recorded, marked as clean_session: {clean_session}")
+    logger.info(f"Time played recorded, marked as clean_session: {clean_session}")
 
 
 def generate_inventory(test=False, run_dt=None):
@@ -118,7 +118,7 @@ def generate_inventory(test=False, run_dt=None):
     df.to_parquet("data/intermediate/inventory.parquet", compression="gzip")
     df_monies.to_parquet("data/intermediate/monies.parquet", compression="gzip")
 
-    logger.debug(
+    logger.info(
         f"Inventory formatted. {len(df)} records, {int(df_monies['monies'].sum()/10000)} total money across chars"
     )
 
@@ -138,7 +138,7 @@ def generate_inventory(test=False, run_dt=None):
 
     unique_periods = len(inventory_repo["timestamp"].unique())
 
-    logger.debug(
+    logger.info(
         f"Inventory full repository. {len(inventory_repo)} records with {unique_periods} snapshots. Repository has {updated} been updated this run"
     )
 
@@ -163,7 +163,7 @@ def generate_auction_scandata(test=False):
         compression="gzip",
     )
 
-    logger.debug(f"Auction scandata loaded and cleaned. {len(auction_data)} records")
+    logger.info(f"Auction scandata loaded and cleaned. {len(auction_data)} records")
 
     items = utils.load_items()
     auction_scan_minprice = auction_data.copy()
@@ -256,7 +256,7 @@ def generate_auction_activity(test=False):
 
     if test:
         return None  # avoid saves
-    logger.debug(f"Auction actions full repository. {df.shape[0]} records")
+    logger.info(f"Auction actions full repository. {df.shape[0]} records")
     df.to_parquet("data/full/auction_activity.parquet", compression="gzip")
 
 
@@ -276,4 +276,4 @@ def generate_booty_data():
         compression="gzip",
     )
 
-    logger.debug(f"Generating booty data {pricerdata.shape[0]}")
+    logger.info(f"Generating booty data {pricerdata.shape[0]}")
