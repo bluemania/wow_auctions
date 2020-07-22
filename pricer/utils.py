@@ -2,28 +2,16 @@
 This file contains shorter utilities to write/save raw files, and change data formats
 """
 
+from pricer import config
+
 import yaml
 import pandas as pd
 from slpp import slpp as lua  # pip install git+https://github.com/SirAnthony/slpp
 from datetime import datetime as dt
 import os
-
 import logging
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
-
-formatter = logging.Formatter("%(asctime)s:%(name)s:%(message)s")
-
-file_handler = logging.FileHandler(f"logs/{__name__}.log")
-file_handler.setLevel(logging.INFO)
-file_handler.setFormatter(formatter)
-
-stream_handler = logging.StreamHandler()
-stream_handler.setFormatter(formatter)
-
-logger.addHandler(file_handler)
-logger.addHandler(stream_handler)
 
 
 def get_seconds_played(time_played: str) -> int:
@@ -59,7 +47,8 @@ def generate_new_pricer_file():
     # Replace last ',' with '}'
     pricer_file[-1] = pricer_file[-1][:-1] + "}"
 
-    pricer_path = "/Applications/World of Warcraft/_classic_/Interface/AddOns/Pricer/items_of_interest.lua"
+    pricer_path = f"{config.us.get('warcraft_path').rstrip('/')}/Interface/AddOns/Pricer/items_of_interest.lua"
+    logger.debug(f"Saving pricer addon file to {pricer_path}")
 
     with open(pricer_path, "w") as f:
         f.write("\n".join(pricer_file))
@@ -87,9 +76,11 @@ def read_lua(
 ):
     """ Attempts to read lua from the given locations
     """
+    # TODO automatically detect accounts
     account_data = {key: None for key in accounts}
     for account_name in account_data.keys():
-        path_live = f"/Applications/World of Warcraft/_classic_/WTF/Account/{account_name}/SavedVariables/{datasource}.lua"
+        path_live = f"{config.us.get('warcraft_path').rstrip('/')}/WTF/Account/{account_name}/SavedVariables/{datasource}.lua"
+        logger.debug(f"Loading Addon lua from {path_live}")
 
         with open(path_live, "r") as f:
             account_data[account_name] = lua.decode("{" + f.read() + "}")
@@ -117,7 +108,9 @@ def get_general_settings():
 def get_and_format_auction_data():
     """ Reads the raw scandata dict dump and converts to usable dataframe    
     """
-    path_live = f"/Applications/World of Warcraft/_classic_/WTF/Account/396255466#1/SavedVariables/Auc-ScanData.lua"
+    # TODO remove account info
+    path_live = f"{config.us.get('warcraft_path').rstrip('/')}/WTF/Account/396255466#1/SavedVariables/Auc-ScanData.lua"
+    logger.debug(f"Loading Addon auction data from {path_live}")
 
     ropes = []
     with open(path_live, "r") as f:
@@ -191,7 +184,8 @@ def write_lua(data, account="396255466#1", name="Auc-Advanced"):
     for key in data.keys():
         lua_print += f"{key} = " + dump_lua(data[key]) + "\n"
 
-    location = f"/Applications/World of Warcraft/_classic_/WTF/Account/{account}/SavedVariables/{name}.lua"
+    location = f"{config.us.get('warcraft_path').rstrip('/')}/WTF/Account/{account}/SavedVariables/{name}.lua"
+    logger.debug(f"Saving Addon lua to {location}")
     with open(location, "w") as f:
         f.write(lua_print)
 
@@ -216,13 +210,18 @@ def dump_lua(data):
         t += ", ".join([f'["{k}"]={dump_lua(v)}' for k, v in data.items()])
         t += "}"
         return t
-    logger.warning(f"Unknown type {type(data)}")
+    logger.warning(f"Lua parsing error; unknown type {type(data)}")
 
 
 def read_multiple_parquet(loc):
+    """ Given a directory path, scan for parquet files, 
+        Load and concatenate, returning the full dataframe
+    """
     files = os.listdir(loc)
-    df_total = pd.read_parquet(f"{loc}{files[0]}")
-    for file in files[1:]:
+    logger.debug(f"Loading multiple ({len(files)}) parquet files from {loc}")
+    df_list = []
+    for file in files:
         df = pd.read_parquet(f"{loc}{file}")
-        df_total.append(df)
+        df_list.append(df)
+    df_total = pd.concat(df_list)
     return df
