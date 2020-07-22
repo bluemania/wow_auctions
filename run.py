@@ -32,7 +32,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     config.set_loggers(base_logger=logger, v=args.v, vv=args.vv)
-    logger.info("Program start")
+    logger.info("Program started, arguments parsed")
+    logger.debug(args)
 
     if args.np:
         utils.generate_new_pricer_file()

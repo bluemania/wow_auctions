@@ -1,3 +1,4 @@
+import yaml
 import logging
 
 def set_loggers(base_logger=None, v=False, vv=False):
@@ -23,3 +24,8 @@ def set_loggers(base_logger=None, v=False, vv=False):
 
         logger.addHandler(file_handler)
         logger.addHandler(stream_handler)
+
+# Load global user settings such as paths
+with open("config/user_settings.yaml", "r") as f:
+    us = yaml.load(f, Loader=yaml.FullLoader)
+

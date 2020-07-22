@@ -2,6 +2,8 @@
 This file contains shorter utilities to write/save raw files, and change data formats
 """
 
+from pricer import config
+
 import yaml
 import pandas as pd
 from slpp import slpp as lua  # pip install git+https://github.com/SirAnthony/slpp
@@ -45,7 +47,8 @@ def generate_new_pricer_file():
     # Replace last ',' with '}'
     pricer_file[-1] = pricer_file[-1][:-1] + "}"
 
-    pricer_path = "/Applications/World of Warcraft/_classic_/Interface/AddOns/Pricer/items_of_interest.lua"
+    pricer_path = f"{config.us.get('warcraft_path').rstrip('/')}/Interface/AddOns/Pricer/items_of_interest.lua"
+    logger.info(f"Saving pricer addon file to {pricer_path}")
 
     with open(pricer_path, "w") as f:
         f.write("\n".join(pricer_file))
