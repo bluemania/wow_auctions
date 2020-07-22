@@ -7,23 +7,9 @@ import pandas as pd
 from slpp import slpp as lua  # pip install git+https://github.com/SirAnthony/slpp
 from datetime import datetime as dt
 import os
-
 import logging
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
-
-formatter = logging.Formatter("%(asctime)s:%(name)s:%(message)s")
-
-file_handler = logging.FileHandler(f"logs/{logger.name}.log")
-file_handler.setLevel(logging.DEBUG)
-file_handler.setFormatter(formatter)
-
-stream_handler = logging.StreamHandler()
-stream_handler.setFormatter(formatter)
-
-logger.addHandler(file_handler)
-logger.addHandler(stream_handler)
 
 
 def get_seconds_played(time_played: str) -> int:
