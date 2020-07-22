@@ -8,22 +8,23 @@ Related article here: https://www.nickjenkins.com.au/articles/personal/2020/07/0
 
 The program is currently under development and is not currently designed for third party use.
 
-### Environment setup
+### Requirements
 
-Project uses Python 3.7, which is required to run the code. The following is used to add library dependencies.
+You will need Python 3.7 and World of Warcraft: Classic installed locally on your machine.
+
+This project uses [poetry](https://python-poetry.org/) to manage dependencies and versioning.
 
 ```bash
-virtualenv venv
-. venv/bin/activate
-pip install -r requirements.txt
+poetry install
 ```
 
 ### Running the script
 
-To run the script, run the following from command line.
+After the above setup, to run the script enter the following on command line.
 
 ```bash
-python run.py -a
+poetry shell
+poetry run python run.py -a
 ```
 
 There are many command line options; -a will run primary analysis (except for sell policies). Please refer to the scripts for further information.
