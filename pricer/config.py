@@ -10,7 +10,7 @@ def set_loggers(base_logger=None, v=False, vv=False):
     else:
         log_level = 30
 
-    loggers = [base_logger] + [logging.getLogger(name) for name in logging.root.manager.loggerDict if 'pricer' in name]
+    loggers = [base_logger] + [logging.getLogger(name) for name in logging.root.manager.loggerDict if 'pricer.' in name]
     for logger in loggers:
         logger.setLevel(log_level)
         formatter = logging.Formatter("%(asctime)s:%(name)s:%(message)s")

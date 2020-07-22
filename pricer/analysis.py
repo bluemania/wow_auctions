@@ -136,15 +136,15 @@ def analyse_sales_performance(test=False):
 
     df_gold_hour['gold_per_hour'] = df_gold_hour['inc_hold'] / df_gold_hour['inc_hours']
 
-    total_time_played = df_gold_hour['inc_hours'].sum()
+    total_time_played = df_gold_hour['inc_hours'].sum().round(2)
     all_time_gold_hour = (df_gold_hour['inc_hold'].sum() / total_time_played).round(2)
 
     # TODO Needs to be tested in case breaks on first run
     # Gold per hour may vary over runs due to market price calc of inventory
     recent_gold_hour = df_gold_hour.iloc[-1].loc['gold_per_hour'].round(2)
     recent_timestamp = df_gold_hour.iloc[-1].name
-    logging.info(f"Time played: {total_time_played}, Total gold/hour: {all_time_gold_hour}")
-    logging.info(f"Most recent gold per hour: {recent_gold_hour}, last recorded: {str(recent_timestamp)}")
+    logger.info(f"Time played: {total_time_played}, Total gold/hour: {all_time_gold_hour}")
+    logger.info(f"Most recent gold per hour: {recent_gold_hour}, last recorded: {str(recent_timestamp)}")
 
     latest_inventory = inventory_trade[
         inventory_trade["timestamp"] == inventory_trade["timestamp"].max()
