@@ -1,0 +1,6 @@
+:mod:`pricer.testing`
+=====================
+
+.. py:module:: pricer.testing
+
+

@@ -1,0 +1,81 @@
+:mod:`pricer.sources`
+=====================
+
+.. py:module:: pricer.sources
+
+.. autoapi-nested-parse::
+
+   This script reads raw sources and converts into more standard panda parquets
+
+
+
+Module Contents
+---------------
+
+
+Functions
+~~~~~~~~~
+
+.. autoapisummary::
+
+   pricer.sources.generate_time_played
+   pricer.sources.generate_inventory
+   pricer.sources.generate_auction_scandata
+   pricer.sources.generate_auction_activity
+   pricer.sources.generate_booty_data
+
+
+.. data:: chained_assignment
+   
+
+   
+
+.. data:: logger
+   
+
+   
+
+.. function:: generate_time_played(test=False, run_dt=None, clean_session=False, played=None)
+
+   Creates a record of time played on character along with program run time
+   This is useful for calcs involving real time vs game time
+   and in relation to gold earnt (i.e. gold per hour)
+   Time played may be automated in future, however we specify 'clean_session'
+   to flag when all inventory accounted for, with mailboxes checked.
+
+   When in test mode, loading and calcs are performed but no file saves
+   Otherwise, saves current analysis as intermediate, loads full, saves backup, 
+   append interm, and save full
+
+
+.. function:: generate_inventory(test=False, run_dt=None)
+
+   Reads and reformats the Arkinventory data file into a pandas dataframe
+   Loads yaml files to specify item locations and specific items of interest
+   Saves down parquet file ready to go
+
+   When in test mode, loading and calcs are performed but no file saves
+   Otherwise, saves current analysis as intermediate and loads full
+   If the data has updated since last run; save backup, append interm, save full
+
+
+.. function:: generate_auction_scandata(test=False)
+
+   Snapshot of all AH prices from latest scan
+   Reads the raw scandata from both accounts, cleans and pulls latest only
+   Saves latest scandata to intermediate and adds to a full database with backup
+
+
+.. function:: generate_auction_activity(test=False)
+
+   Generates auction history parquet file with auctions of interest.
+   Reads and parses Beancounter auction history across all characters
+   Works the data into a labelled and cleaned pandas before parquet saves
+
+
+.. function:: generate_booty_data()
+
+   Get and save booty bay data
+       
+
+
