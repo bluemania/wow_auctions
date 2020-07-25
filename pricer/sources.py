@@ -1,5 +1,8 @@
 """
-This script reads raw sources and converts into more standard panda parquets
+This script reads lua data sources
+from the WoW addon directory
+performs data cleaning
+and converts into regular and tabularized parquet format
 """
 from pricer import config, utils
 
@@ -7,25 +10,34 @@ import pandas as pd
 from collections import defaultdict
 from datetime import datetime as dt
 import logging
+from datetime import datetime
 
 pd.options.mode.chained_assignment = None  # default='warn'
 logger = logging.getLogger(__name__)
 
 
-def generate_time_played(test=False, run_dt=None, clean_session=False, played=None):
-    """
-    Creates a record of time played on character along with program run time
+def generate_time_played(test: bool=False, run_dt: datetime=None,
+                         clean_session: bool = False, played: str=''):
+    """Save user specified record of time played in game.
+
+    Creates a record of time played on character mapped to program run time
     This is useful for calcs involving real time vs game time
-    and in relation to gold earnt (i.e. gold per hour)
-    Time played may be automated in future, however we specify 'clean_session'
-    to flag when all inventory accounted for, with mailboxes checked.
+    therefore gold earnt per hour.
+    Time played may be automated in future, however we retain 'clean_session'
+    as a user specified flag to indicate inventory is stable (no missing items).
 
     When in test mode, loading and calcs are performed but no file saves
     Otherwise, saves current analysis as intermediate, loads full, saves backup, 
     append interm, and save full
+
+    Args:
+        test: when test is True, return None before any data saving
+            operations occur. This preserves states for future runs.
+        run_dt: The common session runtime
+        clean_session: User specified flag indicating inventory is stable
+        played: timeline string in '00d-00h-00m-00s' format
     """
-    
-    # Calculate and save to intermediate
+    # Convert string to seconds, structure data into pandas
     data = {'timestamp': run_dt,
             'played_raw': played,
             'played_seconds': utils.get_seconds_played(played),
