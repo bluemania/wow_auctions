@@ -16,7 +16,7 @@ pd.options.mode.chained_assignment = None  # default='warn'
 logger = logging.getLogger(__name__)
 
 
-def generate_time_played(test: bool=False, run_dt: datetime=None,
+def generate_time_played(test: bool=False, run_dt: datetime.date=None,
                          clean_session: bool = False, played: str=''):
     """Save user specified record of time played in game.
 
