@@ -1,5 +1,13 @@
-""" 
-Runs the main program with command line options
+"""
+Main entry point for pricer program.
+
+Accepts command line arguments to alter program function. Users can:
+ * Initialize the program to perform setup tasks
+ * Perform test runs (no data saving)
+ * Perform AH analysis
+ * Apply selling policies
+Declares the session datetime variable (run_dt)
+Pre-release; functionality likely to change significantly.
 """
 from pricer import config, sources, analysis, utils
 
