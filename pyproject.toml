@@ -35,6 +35,8 @@ sphinx = "^3.1.2"
 sphinx-autoapi = "^1.4.0"
 pre-commit = "^2.6.0"
 darglint = "^1.5.2"
+pytest-sugar = "^0.9.4"
+pyan = {git = "https://github.com/jdb78/pyan.git"}
 
 [build-system]
 requires = ["poetry>=0.12"]
