@@ -5,239 +5,196 @@
 # made_from is the recipe for the item including vials. Referenced items must be included in this doc
 
 Arcane Crystal:
+  ideal_holding: 6
+  max_holding: 18
   full_deposit: 1200
   group: Buy
-Arcane Elixir:
-  full_deposit: 240
+Arcanite Bar:
+  ideal_holding: 6
+  max_holding: 12
+  group: Sell
+Thorium Bar:
+  group: Other
+
+Black Lotus:
+  group: Other
+
+# 1255 potions, 251 stacks
+# Roughly 304 stacks of materials
+Flask of the Titans:
+  full_deposit: 500 #check
   group: Sell
   made_from:
-    Blindweed: 1
+    Gromsblood: 30
+    Stonescale Eel: 10
+    Black Lotus: 1
+    Crystal Vial: 1 
+  ideal_holding: 5
+Elixir of Fortitude:
+  full_deposit: 60 
+  group: Sell
+  made_from:
+    Goldthorn: 1
+    Leaded Vial: 1
+    Wild Steelbloom: 1 
+  ideal_holding: 100
+Elixir of Giants:
+  full_deposit: 420 
+  group: Sell
+  made_from:
+    Crystal Vial: 1
+    Gromsblood: 1
+    Sungrass: 1 
+  ideal_holding: 125
+Elixir of Greater Agility:
+  full_deposit: 360 
+  group: Sell
+  made_from:
     Crystal Vial: 1
     Goldthorn: 1
-Arcanite Bar:
-  full_deposit: null
+    Sungrass: 1
+  ideal_holding: 100
+Elixir of Superior Defense:
+  full_deposit: 300
   group: Sell
+  made_from:
+    Crystal Vial: 1
+    Leaded Vial: 2
+    Stonescale Eel: 2
+    Sungrass: 1 
+  ideal_holding: 100
+Elixir of the Mongoose:
+  full_deposit: 744
+  group: Sell
+  made_from:
+    Crystal Vial: 1
+    Mountain Silversage: 2
+    Plaguebloom: 2   
+  ideal_holding: 100
+Fire Protection Potion:
+  full_deposit: 96 
+  group: Sell
+  made_from:
+    Empty Vial: 1
+    Firefin Snapper: 2
+    Leaded Vial: 1
+    Small Flame Sac: 1  
+  ideal_holding: 100
+Free Action Potion:
+  full_deposit: 36
+  group: Sell
+  made_from:
+    Empty Vial: 2
+    Leaded Vial: 1
+    Oily Blackmouth: 4
+    Stranglekelp: 1 
+  ideal_holding: 125
+Greater Arcane Protection Potion:
+  full_deposit: 444
+  group: Sell
+  made_from:
+    Crystal Vial: 1
+    Dream Dust: 1
+    Dreamfoil: 1 
+  ideal_holding: 50
+Greater Stoneshield Potion:
+  full_deposit: 444
+  group: Sell
+  made_from:
+    Crystal Vial: 1
+    Leaded Vial: 3
+    Stonescale Eel: 3
+    Thorium Ore: 1 
+  ideal_holding: 50
+Invisibility Potion:
+  full_deposit: 300
+  group: Sell
+  made_from:
+    Crystal Vial: 1
+    Ghost Mushroom: 1
+    Sungrass: 1 
+  ideal_holding: 100
+Limited Invulnerability Potion:
+  full_deposit: 12
+  group: Sell
+  made_from:
+    Blindweed: 2
+    Crystal Vial: 1
+    Ghost Mushroom: 1 
+  ideal_holding: 100
+Mighty Rage Potion:
+  full_deposit: 300
+  group: Sell
+  made_from:
+    Crystal Vial: 1
+    Gromsblood: 3  
+  ideal_holding: 100
+Swiftness Potion:
+  full_deposit: 12
+  group: Sell
+  made_from:
+    Briarthorn: 1
+    Empty Vial: 1
+    Swiftthistle: 1 
+  ideal_holding: 100
+
 Blackmouth Oil:
   full_deposit: 100
   group: Other
   made_from:
     Empty Vial: 1
     Oily Blackmouth: 2
-Blindweed:
-  full_deposit: null
-  group: Buy
-Dream Dust:
-  full_deposit: null
-  group: Buy
-Dreamfoil:
-  full_deposit: null
-  group: Buy
-Elixir of Fortitude:
-  full_deposit: 60
-  max_inventory: 60  
-  group: Sell
-  made_from:
-    Goldthorn: 1
-    Leaded Vial: 1
-    Wild Steelbloom: 1
-Elixir of Giants:
-  full_deposit: 420
-  max_inventory: 120  
-  group: Sell
-  made_from:
-    Crystal Vial: 1
-    Gromsblood: 1
-    Sungrass: 1
-Elixir of Greater Agility:
-  full_deposit: 360
-  max_inventory: 120  
-  group: Sell
-  made_from:
-    Crystal Vial: 1
-    Goldthorn: 1
-    Sungrass: 1
-Swiftthistle:
-  full_deposit: null
-  group: Buy
-Briarthorn:
-  full_deposit: null
-  group: Buy
-Elixir of Shadow Power:
-  full_deposit: 19
-  max_inventory: 60  
-  group: Sell
-  made_from:
-    Crystal Vial: 1
-    Ghost Mushroom: 3
-Elixir of Superior Defense:
-  full_deposit: 300
-  max_inventory: 60  
-  group: Sell
-  made_from:
-    Crystal Vial: 1
-    Leaded Vial: 2
-    Stonescale Eel: 2
-    Sungrass: 1  
-Elixir of the Mongoose:
-  full_deposit: 744
-  max_inventory: 100  
-  group: Sell
-  made_from:
-    Crystal Vial: 1
-    Mountain Silversage: 2
-    Plaguebloom: 2  
-Fadeleaf:
-  full_deposit: null
-  group: Buy
 Fire Oil:
   full_deposit: null
   group: Other
   made_from:
     Empty Vial: 1
     Firefin Snapper: 2
-Fire Protection Potion:
-  full_deposit: 96
-  max_inventory: 100  
-  group: Sell
-  made_from:
-    Empty Vial: 1
-    Firefin Snapper: 2
-    Leaded Vial: 1
-    Small Flame Sac: 1 
-Firefin Snapper:
-  full_deposit: null
-  group: Buy
-Free Action Potion:
-  full_deposit: 36
-  max_inventory: 120  
-  group: Sell
-  made_from:
-    Empty Vial: 2
-    Leaded Vial: 1
-    Oily Blackmouth: 4
-    Stranglekelp: 1  
-Ghost Mushroom:
-  full_deposit: null
-  group: Buy
-Goldthorn:
-  full_deposit: null
-  group: Buy
-Grave Moss:
-  full_deposit: null
-  group: Buy
-Greater Arcane Protection Potion:
-  full_deposit: 444
-  max_inventory: 60  
-  group: Sell
-  made_from:
-    Crystal Vial: 1
-    Dream Dust: 1
-    Dreamfoil: 1  
-Greater Eternal Essence:
-  full_deposit: null
-  group: Other
-Greater Shadow Protection Potion:
-  full_deposit: 240
-  max_inventory: 40  
-  group: Sell
-  made_from:
-    Crystal Vial: 1
-    Dreamfoil: 1
-    Fadeleaf: 4
-    Grave Moss: 4
-    Leaded Vial: 1  
-Greater Stoneshield Potion:
-  full_deposit: 444
-  max_inventory: 80  
-  group: Sell
-  made_from:
-    Crystal Vial: 1
-    Leaded Vial: 3
-    Stonescale Eel: 3
-    Thorium Ore: 1
-Gromsblood:
-  full_deposit: null
-  group: Buy
-Invisibility Potion:
-  full_deposit: 300
-  max_inventory: 80  
-  group: Sell
-  made_from:
-    Crystal Vial: 1
-    Ghost Mushroom: 1
-    Sungrass: 1
-Lesser Eternal Essence:
-  full_deposit: null
-  group: Other
-Lesser Invisibility Potion:
-  full_deposit: 60
-  group: Other
-  made_from:
-    Fadeleaf: 1
-    Leaded Vial: 1
-    Wild Steelbloom: 1
-Limited Invulnerability Potion:
-  full_deposit: 12
-  group: Sell
-  max_inventory: 100  
-  made_from:
-    Blindweed: 2
-    Crystal Vial: 1
-    Ghost Mushroom: 1
-Major Healing Potion:
-  full_deposit: null
-  group: Other
-Mighty Rage Potion:
-  full_deposit: 300
-  max_inventory: 120
-  group: Sell
-  made_from:
-    Crystal Vial: 1
-    Gromsblood: 3 
-Mountain Silversage:
-  full_deposit: null
-  group: Buy
-Oily Blackmouth:
-  full_deposit: null
-  group: Buy
-Plaguebloom:
-  full_deposit: null
-  group: Buy
-Small Flame Sac:
-  full_deposit: null
-  group: Buy
-Stonescale Eel:
-  full_deposit: null
-  group: Buy
 Stonescale Oil:
   full_deposit: null
   group: Other
   made_from:
     Leaded Vial: 1
     Stonescale Eel: 1
+
+Oily Blackmouth:
+  group: Buy 
+Firefin Snapper:
+  group: Buy   
+Stonescale Eel:
+  group: Buy
+
+Blindweed:
+  group: Buy
+Briarthorn:
+  group: Buy  
+Dream Dust:
+  group: Buy
+Dreamfoil:
+  group: Buy
+Swiftthistle:
+  group: Buy
+Ghost Mushroom:
+  group: Buy
+Goldthorn:
+  group: Buy
+Gromsblood:
+  group: Buy
+Mountain Silversage:
+  group: Buy
+Plaguebloom:
+  group: Buy
+Small Flame Sac:
+  group: Buy
 Stranglekelp:
-  full_deposit: null
   group: Buy
 Sungrass:
-  full_deposit: null
   group: Buy
-Swiftness Potion:
-  full_deposit: 12
-  max_inventory: 40  
-  group: Sell
-  made_from:
-    Briarthorn: 1
-    Empty Vial: 1
-    Swiftthistle: 1
-Thorium Bar:
-  full_deposit: null
-  group: Other
 Thorium Ore:
-  full_deposit: null
   group: Buy
 Wild Steelbloom:
-  full_deposit: null
   group: Buy
+
 Crystal Vial:
   backup_price: 400
   group: Other
