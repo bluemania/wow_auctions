@@ -117,37 +117,46 @@ def analyse_sales_performance(test=False):
         "Total Holdings"
     )
 
-
     # Combine the holdings information with game time played
     # For gold per hour analysis
     played_repo = pd.read_parquet("data/full/time_played.parquet")
-    df_gold_hour = holdings.join(played_repo.set_index('timestamp'))
+    df_gold_hour = holdings.join(played_repo.set_index("timestamp"))
 
     # Only care about occassions where we've flagged a clean session in cli
-    df_gold_hour = df_gold_hour[df_gold_hour['clean_session']==True]
+    df_gold_hour = df_gold_hour[df_gold_hour["clean_session"] == True]
 
     # Account for time not spent auctioning
-    df_gold_hour['played_offset'] = df_gold_hour['leveling_seconds'].cumsum()
+    df_gold_hour["played_offset"] = df_gold_hour["leveling_seconds"].cumsum()
 
     # Record hours played since we implemented played time
-    df_gold_hour['played_seconds'] = df_gold_hour['played_seconds'] - df_gold_hour['played_offset']
-    df_gold_hour['played_hours'] = df_gold_hour['played_seconds'] / (60 * 60)
+    df_gold_hour["played_seconds"] = (
+        df_gold_hour["played_seconds"] - df_gold_hour["played_offset"]
+    )
+    df_gold_hour["played_hours"] = df_gold_hour["played_seconds"] / (60 * 60)
 
     # Calculate incremental versus last period, setting first period to 0
-    df_gold_hour['inc_hold'] = (df_gold_hour['Total Holdings'] - df_gold_hour['Total Holdings'].shift(1)).fillna(0)
-    df_gold_hour['inc_hours'] = (df_gold_hour['played_hours'] - df_gold_hour['played_hours'].shift(1)).fillna(0)
+    df_gold_hour["inc_hold"] = (
+        df_gold_hour["Total Holdings"] - df_gold_hour["Total Holdings"].shift(1)
+    ).fillna(0)
+    df_gold_hour["inc_hours"] = (
+        df_gold_hour["played_hours"] - df_gold_hour["played_hours"].shift(1)
+    ).fillna(0)
 
-    df_gold_hour['gold_per_hour'] = df_gold_hour['inc_hold'] / df_gold_hour['inc_hours']
+    df_gold_hour["gold_per_hour"] = df_gold_hour["inc_hold"] / df_gold_hour["inc_hours"]
 
-    total_time_played = df_gold_hour['inc_hours'].sum().round(2)
-    all_time_gold_hour = (df_gold_hour['inc_hold'].sum() / total_time_played).round(2)
+    total_time_played = df_gold_hour["inc_hours"].sum().round(2)
+    all_time_gold_hour = (df_gold_hour["inc_hold"].sum() / total_time_played).round(2)
 
     # TODO Needs to be tested in case breaks on first run
     # Gold per hour may vary over runs due to market price calc of inventory
-    recent_gold_hour = df_gold_hour.iloc[-1].loc['gold_per_hour'].round(2)
+    recent_gold_hour = df_gold_hour.iloc[-1].loc["gold_per_hour"].round(2)
     recent_timestamp = df_gold_hour.iloc[-1].name
-    logger.info(f"Time played: {total_time_played}, Total gold/hour: {all_time_gold_hour}")
-    logger.info(f"Most recent gold per hour: {recent_gold_hour}, last recorded: {str(recent_timestamp)}")
+    logger.info(
+        f"Time played: {total_time_played}, Total gold/hour: {all_time_gold_hour}"
+    )
+    logger.info(
+        f"Most recent gold per hour: {recent_gold_hour}, last recorded: {str(recent_timestamp)}"
+    )
 
     latest_inventory = inventory_trade[
         inventory_trade["timestamp"] == inventory_trade["timestamp"].max()
@@ -562,7 +571,11 @@ def apply_buy_policy(MAT_DEV=0, test=False):
     snatch = data["AucAdvancedData"]["UtilSearchUiData"]["Current"]["snatch.itemsList"]
 
     for herb, row in herbs.iterrows():
-        snatch[f"{row['code']}:0:0"]["price"] = int(row["buy_price"])
+        code = f"{row['code']}:0:0"
+        if code not in snatch:
+            raise KeyError(f"{row.name} not in snatch")
+
+        snatch[code]["price"] = int(row["buy_price"])
 
     data["AucAdvancedData"]["UtilSearchUiData"]["Current"]["snatch.itemsList"] = snatch
 
