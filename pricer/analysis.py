@@ -572,7 +572,11 @@ def apply_buy_policy(MAT_DEV=0, test=False):
     snatch = data["AucAdvancedData"]["UtilSearchUiData"]["Current"]["snatch.itemsList"]
 
     for herb, row in herbs.iterrows():
-        snatch[f"{row['code']}:0:0"]["price"] = int(row["buy_price"])
+        code = f"{row['code']}:0:0"
+        if code not in snatch:
+            raise KeyError(f"{row.name} not in snatch")
+
+        snatch[code]["price"] = int(row["buy_price"])
 
     data["AucAdvancedData"]["UtilSearchUiData"]["Current"]["snatch.itemsList"] = snatch
 
