@@ -44,7 +44,7 @@ Functions
 .. function:: generate_new_pricer_file()
 
    Generates a blank pricer file of items of interest. This is used to fill in the latest pricing
-   information from booty bay gazette. This is done in game using a self build addon with the /pricer command    
+   information from booty bay gazette. This is done in game using a self build addon with the /pricer command
 
 
 .. function:: source_merge(a, b, path=None)
@@ -72,7 +72,7 @@ Functions
 
 .. function:: get_and_format_auction_data()
 
-   Reads the raw scandata dict dump and converts to usable dataframe    
+   Reads the raw scandata dict dump and converts to usable dataframe
        
 
 
@@ -93,7 +93,7 @@ Functions
 
 .. function:: read_multiple_parquet(loc)
 
-   Given a directory path, scan for parquet files, 
+   Given a directory path, scan for parquet files,
    Load and concatenate, returning the full dataframe
 
 

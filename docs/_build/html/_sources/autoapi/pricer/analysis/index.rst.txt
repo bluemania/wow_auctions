@@ -65,7 +65,7 @@ Functions
 
 .. function:: apply_buy_policy(MAT_DEV=0, test=False)
 
-   Determines herbs to buy based on potions in inventory. 
+   Determines herbs to buy based on potions in inventory.
    Always buys at or below current market price.
 
 
