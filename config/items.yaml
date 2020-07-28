@@ -17,7 +17,7 @@ Thorium Bar:
   group: Other
 
 Black Lotus:
-  group: Other
+  group: Buy # Set to sell so that it doesnt appear in snatch list
 
 # 1255 potions, 251 stacks
 # Roughly 304 stacks of materials
