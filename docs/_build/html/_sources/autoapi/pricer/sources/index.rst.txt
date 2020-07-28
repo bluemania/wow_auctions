@@ -1,0 +1,93 @@
+:mod:`pricer.sources`
+=====================
+
+.. py:module:: pricer.sources
+
+.. autoapi-nested-parse::
+
+   This script reads lua data sources
+   from the WoW addon directory
+   performs data cleaning
+   and converts into regular and tabularized parquet format
+
+
+
+Module Contents
+---------------
+
+
+Functions
+~~~~~~~~~
+
+.. autoapisummary::
+
+   pricer.sources.generate_time_played
+   pricer.sources.generate_inventory
+   pricer.sources.generate_auction_scandata
+   pricer.sources.generate_auction_activity
+   pricer.sources.generate_booty_data
+
+
+.. data:: chained_assignment
+   
+
+   
+
+.. data:: logger
+   
+
+   
+
+.. function:: generate_time_played(test: bool = False, run_dt: datetime = None, clean_session: bool = False, played: str = '')
+
+   Save user specified record of time played in game.
+
+   Creates a record of time played on character mapped to program run time
+   This is useful for calcs involving real time vs game time
+   therefore gold earnt per hour.
+   Time played may be automated in future, however we retain 'clean_session'
+   as a user specified flag to indicate inventory is stable (no missing items).
+
+   When in test mode, loading and calcs are performed but no file saves
+   Otherwise, saves current analysis as intermediate, loads full, saves backup, 
+   append interm, and save full
+
+   Args:
+       test: when test is True, return None before any data saving
+           operations occur. This preserves states for future runs.
+       run_dt: The common session runtime
+       clean_session: User specified flag indicating inventory is stable
+       played: timeline string in '00d-00h-00m-00s' format
+
+
+.. function:: generate_inventory(test=False, run_dt=None)
+
+   Reads and reformats the Arkinventory data file into a pandas dataframe
+   Loads yaml files to specify item locations and specific items of interest
+   Saves down parquet file ready to go
+
+   When in test mode, loading and calcs are performed but no file saves
+   Otherwise, saves current analysis as intermediate and loads full
+   If the data has updated since last run; save backup, append interm, save full
+
+
+.. function:: generate_auction_scandata(test=False)
+
+   Snapshot of all AH prices from latest scan
+   Reads the raw scandata from both accounts, cleans and pulls latest only
+   Saves latest scandata to intermediate and adds to a full database with backup
+
+
+.. function:: generate_auction_activity(test=False)
+
+   Generates auction history parquet file with auctions of interest.
+   Reads and parses Beancounter auction history across all characters
+   Works the data into a labelled and cleaned pandas before parquet saves
+
+
+.. function:: generate_booty_data()
+
+   Get and save booty bay data
+       
+
+

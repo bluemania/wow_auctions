@@ -1,0 +1,21 @@
+:mod:`pricer.config`
+====================
+
+.. py:module:: pricer.config
+
+
+Module Contents
+---------------
+
+
+Functions
+~~~~~~~~~
+
+.. autoapisummary::
+
+   pricer.config.set_loggers
+
+
+.. function:: set_loggers(base_logger=None, v=False, vv=False)
+
+

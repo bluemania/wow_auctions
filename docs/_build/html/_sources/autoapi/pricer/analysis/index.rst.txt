@@ -1,0 +1,71 @@
+:mod:`pricer.analysis`
+======================
+
+.. py:module:: pricer.analysis
+
+.. autoapi-nested-parse::
+
+   This script contains analysis of the cleaned panda parquet sources
+   It creates outputs for dashboard and lua policy updates
+
+
+
+Module Contents
+---------------
+
+
+Functions
+~~~~~~~~~
+
+.. autoapisummary::
+
+   pricer.analysis.analyse_item_prices
+   pricer.analysis.analyse_sales_performance
+   pricer.analysis.analyse_auction_success
+   pricer.analysis.analyse_item_min_sell_price
+   pricer.analysis.analyse_sell_data
+   pricer.analysis.apply_sell_policy
+   pricer.analysis.apply_buy_policy
+
+
+.. data:: logger
+   
+
+   
+
+.. function:: analyse_item_prices(full_pricing=False, test=False)
+
+   Generate item prices based on all past auction activity and scans
+
+
+.. function:: analyse_sales_performance(test=False)
+
+   Produces charts and tables to help measure performace
+
+
+.. function:: analyse_auction_success(MAX_SUCCESS=250, MIN_SUCCESS=10)
+
+   Produces dataframe of recent successful auctions
+
+
+.. function:: analyse_item_min_sell_price(MIN_PROFIT_MARGIN=1000, MAT_DEV=0.5, test=False)
+
+   Calculate minimum sell price for potions given raw item cost, deposit loss, AH cut, and min profit
+
+
+.. function:: analyse_sell_data(test=False)
+
+   Creates dataframe of intellegence around the selling market conditions
+
+
+.. function:: apply_sell_policy(stack=1, leads=15, duration='m', update=True, test=False)
+
+   Given a datatable of the sell environment, create sell policy and save to WoW
+
+
+.. function:: apply_buy_policy(MAT_DEV=0, test=False)
+
+   Determines herbs to buy based on potions in inventory. 
+   Always buys at or below current market price.
+
+
