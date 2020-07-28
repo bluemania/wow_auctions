@@ -1,31 +1,32 @@
-"""
-This script reads lua data sources
-from the WoW addon directory
-performs data cleaning
-and converts into regular and tabularized parquet format
-"""
-from pricer import config, utils
+"""It is responsible for managing input data sources.
 
-import pandas as pd
+It reads data from WoW interface addons and user specified sources.
+Performs basic validation and data cleaning before
+converting into normalized data tables in parquet format.
+"""
+import logging
 from collections import defaultdict
 from datetime import datetime as dt
-import logging
-from datetime import datetime
+
+import pandas as pd
+
+from pricer import utils
 
 pd.options.mode.chained_assignment = None  # default='warn'
 logger = logging.getLogger(__name__)
 
 
-def generate_time_played(
+def create_playtime_record(
     test: bool = False,
-    run_dt: datetime.date = None,
+    run_dt: dt = None,
     clean_session: bool = False,
     played: str = "",
     level_time: str = "",
-):
-    """Creates a record of time played on character along with program run time
+) -> None:
+    """Preserves record of how we are spending time on our auction character.
 
-    This is useful for calcs involving real time vs game time
+    We record info such as time played (played) or spent leveling (level_time)
+    This is useful for calcs involving real time vs game time,
     therefore gold earnt per hour.
     Time played may be automated in future, however we retain 'clean_session'
     as a user specified flag to indicate inventory is stable (no missing items).
@@ -39,7 +40,15 @@ def generate_time_played(
             operations occur. This preserves states for future runs.
         run_dt: The common session runtime
         clean_session: User specified flag indicating inventory is stable
-        played: timeline string in '00d-00h-00m-00s' format
+        played: Ingame timelike string in '00d-00h-00m-00s' format,
+            this field is a 'total time' field and is expected to relate to
+            the amount of time spent on auctioning alt doing auctions
+        level_time: Ingame timelike string in '00d-00h-00m-00s' format
+            this field helps record instances where we've done other things
+            on our auction character such as leveling, long AFK etc.
+
+    Returns:
+        None
     """
     played_seconds = utils.get_seconds_played(played)
     leveling_seconds = utils.get_seconds_played(level_time)
@@ -72,14 +81,23 @@ def generate_time_played(
     logger.info(f"Time played recorded, marked as clean_session: {clean_session}")
 
 
-def generate_inventory(test=False, run_dt=None):
-    """ Reads and reformats the Arkinventory data file into a pandas dataframe
+def generate_inventory(test: bool = False, run_dt: dt = None) -> None:
+    """Reads and reformats the Arkinventory data file into a pandas dataframe.
+
     Loads yaml files to specify item locations and specific items of interest
     Saves down parquet file ready to go
 
     When in test mode, loading and calcs are performed but no file saves
     Otherwise, saves current analysis as intermediate and loads full
     If the data has updated since last run; save backup, append interm, save full
+
+    Args:
+        test: when test is True, return None before any data saving
+            operations occur. This preserves states for future runs.
+        run_dt: The common session runtime
+
+    Returns:
+        None
     """
     settings = utils.get_general_settings()
     characters = utils.read_lua("ArkInventory")["ARKINVDB"]["global"]["player"]["data"]
@@ -173,10 +191,18 @@ def generate_inventory(test=False, run_dt=None):
     )
 
 
-def generate_auction_scandata(test=False):
-    """ Snapshot of all AH prices from latest scan
+def generate_auction_scandata(test: bool = False) -> None:
+    """Snapshot of all AH prices from latest scan.
+
         Reads the raw scandata from both accounts, cleans and pulls latest only
         Saves latest scandata to intermediate and adds to a full database with backup
+
+    Args:
+        test: when test is True, return None before any data saving
+            operations occur. This preserves states for future runs.
+
+    Returns:
+        None
     """
     auction_data = utils.get_and_format_auction_data()
 
@@ -220,12 +246,10 @@ def generate_auction_scandata(test=False):
         "data/full_backup/auction_scan_minprice.parquet", compression="gzip"
     )
 
-    updated = "*not*"
     if (
         auction_scan_minprice["timestamp"].max()
         > auction_scan_minprice_repo["timestamp"].max()
     ):
-        updated = ""
         auction_scan_minprice_repo = pd.concat(
             [auction_scan_minprice, auction_scan_minprice_repo], axis=0
         )
@@ -234,10 +258,18 @@ def generate_auction_scandata(test=False):
         )
 
 
-def generate_auction_activity(test=False):
-    """ Generates auction history parquet file with auctions of interest.
+def generate_auction_activity(test: bool = False) -> None:
+    """Generates auction history parquet file with auctions of interest.
+
         Reads and parses Beancounter auction history across all characters
         Works the data into a labelled and cleaned pandas before parquet saves
+
+    Args:
+        test: when test is True, return None before any data saving
+            operations occur. This preserves states for future runs.
+
+    Returns:
+        None
     """
     relevant_auction_types = [
         "failedAuctions",
@@ -290,9 +322,8 @@ def generate_auction_activity(test=False):
     df.to_parquet("data/full/auction_activity.parquet", compression="gzip")
 
 
-def generate_booty_data():
-    """ Get and save booty bay data
-    """
+def generate_booty_data() -> None:
+    """Get and save booty bay data."""
     account = "396255466#1"
     pricerdata = utils.read_lua(
         "Pricer", merge_account_sources=False, accounts=[account]

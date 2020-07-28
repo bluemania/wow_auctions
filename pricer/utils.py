@@ -2,14 +2,15 @@
 This file contains shorter utilities to write/save raw files, and change data formats
 """
 
-from pricer import config
-
-import yaml
-import pandas as pd
-from slpp import slpp as lua  # pip install git+https://github.com/SirAnthony/slpp
-from datetime import datetime as dt
-import os
 import logging
+import os
+from datetime import datetime as dt
+
+import pandas as pd
+import yaml
+from slpp import slpp as lua  # pip install git+https://github.com/SirAnthony/slpp
+
+from pricer import config
 
 logger = logging.getLogger(__name__)
 
@@ -19,22 +20,26 @@ def get_seconds_played(time_played: str) -> int:
     Converts a string representation of time played to seconds
     """
     try:
-        days, hours, mins, seconds = time_played.split('-')
+        days, hours, mins, seconds = time_played.split("-")
     except ValueError as error:
         logger.error(error)
-        raise ValueError("Play time not formatted correctly; needs to be '00d-00h-00m-00s'")
+        raise ValueError(
+            "Play time not formatted correctly; needs to be '00d-00h-00m-00s'"
+        )
 
-    total_seconds = (int(days[:-1]) * 24 * 60 * 60 +
-                     int(hours[:-1]) * 60 * 60 + 
-                     int(mins[:-1]) * 60 + 
-                     int(seconds[:-1]))
-    
+    total_seconds = (
+        int(days[:-1]) * 24 * 60 * 60
+        + int(hours[:-1]) * 60 * 60
+        + int(mins[:-1]) * 60
+        + int(seconds[:-1])
+    )
+
     return total_seconds
 
 
 def generate_new_pricer_file():
     """ Generates a blank pricer file of items of interest. This is used to fill in the latest pricing
-    information from booty bay gazette. This is done in game using a self build addon with the /pricer command    
+    information from booty bay gazette. This is done in game using a self build addon with the /pricer command
     """
     items = load_items()
 
@@ -106,7 +111,7 @@ def get_general_settings():
 
 
 def get_and_format_auction_data():
-    """ Reads the raw scandata dict dump and converts to usable dataframe    
+    """ Reads the raw scandata dict dump and converts to usable dataframe
     """
     # TODO remove account info
     path_live = f"{config.us.get('warcraft_path').rstrip('/')}/WTF/Account/396255466#1/SavedVariables/Auc-ScanData.lua"
@@ -214,7 +219,7 @@ def dump_lua(data):
 
 
 def read_multiple_parquet(loc):
-    """ Given a directory path, scan for parquet files, 
+    """ Given a directory path, scan for parquet files,
         Load and concatenate, returning the full dataframe
     """
     files = os.listdir(loc)
