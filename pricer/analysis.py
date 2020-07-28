@@ -126,8 +126,11 @@ def analyse_sales_performance(test=False):
     # Only care about occassions where we've flagged a clean session in cli
     df_gold_hour = df_gold_hour[df_gold_hour['clean_session']==True]
 
+    # Account for time not spent auctioning
+    df_gold_hour['played_offset'] = df_gold_hour['leveling_seconds'].cumsum()
+
     # Record hours played since we implemented played time
-    df_gold_hour['played_seconds'] = df_gold_hour['played_seconds'] - df_gold_hour['played_seconds'].min()
+    df_gold_hour['played_seconds'] = df_gold_hour['played_seconds'] - df_gold_hour['played_offset']
     df_gold_hour['played_hours'] = df_gold_hour['played_seconds'] / (60 * 60)
 
     # Calculate incremental versus last period, setting first period to 0

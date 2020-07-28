@@ -17,10 +17,10 @@ logger = logging.getLogger(__name__)
 
 
 def generate_time_played(test: bool=False, run_dt: datetime.date=None,
-                         clean_session: bool = False, played: str=''):
-    """Save user specified record of time played in game.
+                         clean_session: bool = False, played: str='', level_time: str=''):
+    """
+    Creates a record of time played on character along with program run time
 
-    Creates a record of time played on character mapped to program run time
     This is useful for calcs involving real time vs game time
     therefore gold earnt per hour.
     Time played may be automated in future, however we retain 'clean_session'
@@ -37,14 +37,23 @@ def generate_time_played(test: bool=False, run_dt: datetime.date=None,
         clean_session: User specified flag indicating inventory is stable
         played: timeline string in '00d-00h-00m-00s' format
     """
-    # Convert string to seconds, structure data into pandas
+    played_seconds = utils.get_seconds_played(played)
+    leveling_seconds = utils.get_seconds_played(level_time)
+
+    if leveling_seconds > 0:
+        level_adjust = played_seconds - leveling_seconds
+    else:
+        level_adjust = 0
+
     data = {'timestamp': run_dt,
             'played_raw': played,
             'played_seconds': utils.get_seconds_played(played),
-            'clean_session': clean_session
+            'clean_session': clean_session,
+            'leveling_raw': level_time,
+            'leveling_seconds': level_adjust
             }
     df_played = pd.DataFrame(pd.Series(data)).T
-    
+
     if test:
         return None # avoid saves
 
