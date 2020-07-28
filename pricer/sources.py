@@ -16,10 +16,14 @@ pd.options.mode.chained_assignment = None  # default='warn'
 logger = logging.getLogger(__name__)
 
 
-def generate_time_played(test: bool=False, run_dt: datetime.date=None,
-                         clean_session: bool = False, played: str='', level_time: str=''):
-    """
-    Creates a record of time played on character along with program run time
+def generate_time_played(
+    test: bool = False,
+    run_dt: datetime.date = None,
+    clean_session: bool = False,
+    played: str = "",
+    level_time: str = "",
+):
+    """Creates a record of time played on character along with program run time
 
     This is useful for calcs involving real time vs game time
     therefore gold earnt per hour.
@@ -27,7 +31,7 @@ def generate_time_played(test: bool=False, run_dt: datetime.date=None,
     as a user specified flag to indicate inventory is stable (no missing items).
 
     When in test mode, loading and calcs are performed but no file saves
-    Otherwise, saves current analysis as intermediate, loads full, saves backup, 
+    Otherwise, saves current analysis as intermediate, loads full, saves backup,
     append interm, and save full
 
     Args:
@@ -45,20 +49,21 @@ def generate_time_played(test: bool=False, run_dt: datetime.date=None,
     else:
         level_adjust = 0
 
-    data = {'timestamp': run_dt,
-            'played_raw': played,
-            'played_seconds': utils.get_seconds_played(played),
-            'clean_session': clean_session,
-            'leveling_raw': level_time,
-            'leveling_seconds': level_adjust
-            }
+    data = {
+        "timestamp": run_dt,
+        "played_raw": played,
+        "played_seconds": utils.get_seconds_played(played),
+        "clean_session": clean_session,
+        "leveling_raw": level_time,
+        "leveling_seconds": level_adjust,
+    }
     df_played = pd.DataFrame(pd.Series(data)).T
 
     if test:
-        return None # avoid saves
+        return None  # avoid saves
 
-    df_played.to_parquet('data/intermediate/time_played.parquet', compression="gzip")
-    
+    df_played.to_parquet("data/intermediate/time_played.parquet", compression="gzip")
+
     played_repo = pd.read_parquet("data/full/time_played.parquet")
     played_repo.to_parquet("data/full_backup/time_played.parquet", compression="gzip")
     played_repo = played_repo.append(df_played)
@@ -91,7 +96,9 @@ def generate_inventory(test=False, run_dt=None):
 
         character_money = int(character.get("info").get("money", 0))
         monies[ckey] = character_money
-        logger.debug(f"Reading character info {character_name}, has money {character_money}")
+        logger.debug(
+            f"Reading character info {character_name}, has money {character_money}"
+        )
 
         # Get Bank, Inventory, Character, Mailbox etc
         location_slots = character.get("location", [])
@@ -149,7 +156,9 @@ def generate_inventory(test=False, run_dt=None):
     updated = "*not*"
     if df["timestamp"].max() > inventory_repo["timestamp"].max():
         updated = ""
-        inventory_repo.to_parquet("data/full_backup/inventory.parquet", compression="gzip")
+        inventory_repo.to_parquet(
+            "data/full_backup/inventory.parquet", compression="gzip"
+        )
         inventory_repo = inventory_repo.append(df)
         inventory_repo.to_parquet("data/full/inventory.parquet", compression="gzip")
 
