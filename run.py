@@ -30,6 +30,10 @@ if __name__ == "__main__":
     parser.add_argument("-played", default='00d-00h-00m-00s',
                         help="""Manually specify time played in
                         '00d-00h-00m-00s' format to calculate gold/hour""")
+    parser.add_argument("-level_time", default='00d-00h-00m-00s',
+                        help="""Manually specify time spent leveling in
+                        '00d-00h-00m-00s' format to subtract from 
+                        gold/hour calculations""")    
     parser.add_argument("-v", help="Verbose mode (info)", action="store_true")
     parser.add_argument("-vv", help="Verbose mode (debug)",
                         action="store_true")
@@ -45,8 +49,11 @@ if __name__ == "__main__":
         utils.generate_new_pricer_file()
 
     if args.a:
-        sources.generate_time_played(test=args.t, run_dt=run_dt,
-                                     clean_session=args.cs, played=args.played)
+        sources.generate_time_played(test=args.t, 
+                                     run_dt=run_dt,
+                                     clean_session=args.cs, 
+                                     played=args.played,
+                                     level_time=args.level_time)
         sources.generate_booty_data()
         sources.generate_auction_scandata(test=args.t)
         sources.generate_auction_activity(test=args.t)
