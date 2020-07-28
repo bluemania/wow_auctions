@@ -12,7 +12,7 @@ pd.options.mode.chained_assignment = None  # default='warn'
 logger = logging.getLogger(__name__)
 
 
-def generate_time_played(test=False, run_dt=None, clean_session=False, played=None):
+def generate_time_played(test=False, run_dt=None, clean_session=False, played=None, level_time=None):
     """
     Creates a record of time played on character along with program run time
     This is useful for calcs involving real time vs game time
@@ -25,14 +25,23 @@ def generate_time_played(test=False, run_dt=None, clean_session=False, played=No
     append interm, and save full
     """
     
-    # Calculate and save to intermediate
+    played_seconds = utils.get_seconds_played(played)
+    leveling_seconds = utils.get_seconds_played(level_time)
+
+    if leveling_seconds > 0:
+        level_adjust = played_seconds - leveling_seconds
+    else:
+        level_adjust = 0
+
     data = {'timestamp': run_dt,
             'played_raw': played,
             'played_seconds': utils.get_seconds_played(played),
-            'clean_session': clean_session
+            'clean_session': clean_session,
+            'leveling_raw': level_time,
+            'leveling_seconds': level_adjust
             }
     df_played = pd.DataFrame(pd.Series(data)).T
-    
+
     if test:
         return None # avoid saves
 
