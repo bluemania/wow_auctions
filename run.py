@@ -50,7 +50,7 @@ if __name__ == "__main__":
     parser.add_argument("-vv", help="Verbose mode (debug)", action="store_true")
     args = parser.parse_args()
 
-    config.set_loggers(base_logger=logger, v=args.v, vv=args.vv, test=args.test)
+    config.set_loggers(base_logger=logger, v=args.v, vv=args.vv, test=args.t)
     logger.info("Program started, arguments parsed")
     if args.t:
         logger.warning("TEST MODE enabled. No data saving!")

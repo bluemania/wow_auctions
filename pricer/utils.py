@@ -72,7 +72,7 @@ def source_merge(a: dict, b: dict, path: list = None) -> dict:
             elif a[key] == b[key]:
                 pass  # same leaf value
             else:
-                raise Exception("Conflict at %s" % ".".join(path + [str(key)]))
+                pass #raise Exception("Conflict at %s" % ".".join(path + [str(key)]))
         else:
             a[key] = b[key]
     return a

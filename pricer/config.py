@@ -52,4 +52,4 @@ def set_loggers(
 # This should handle any rstrips
 # This should add account information (automatically)
 with open("config/user_settings.yaml", "r") as f:
-    us = yaml.safe_load(f, Loader=yaml.FullLoader)
+    us = yaml.safe_load(f)
