@@ -1,5 +1,4 @@
-"""
-Main entry point for pricer program.
+"""Main entry point for pricer program.
 
 Accepts command line arguments to alter program function. Users can:
  * Initialize the program to perform setup tasks
@@ -8,37 +7,6 @@ Accepts command line arguments to alter program function. Users can:
  * Apply selling policies
 Declares the session datetime variable (run_dt)
 Pre-release; functionality likely to change significantly.
-
-Ideas on sell policies
-
-Bid price; what is a safe price lowest I'd go?
-Front page blowouts
-Cost to create
-Why cant i bid 1c and it be invalid?
-Can snatch do bids?
-
-As a reinforcement learning problem?
-single potion actions
-- sell hold (binary)
-- stack size
-- bid price (linear)
-- buy price (linear)
-- duration (ordinal)
-reward function
-- profit ** 1.5? + 2s (bias against keeping in inventory)
-features
-other auctions
-- characters
-- number
-- stack size
-- duration
-- bid price
-- buy price
-my auctions
-- item
-
-draw diagram of wow addon flushing
-
 """
 import argparse
 import logging
@@ -82,10 +50,10 @@ if __name__ == "__main__":
     parser.add_argument("-vv", help="Verbose mode (debug)", action="store_true")
     args = parser.parse_args()
 
-    config.set_loggers(base_logger=logger, v=args.v, vv=args.vv)
+    config.set_loggers(base_logger=logger, v=args.v, vv=args.vv, test=args.test)
     logger.info("Program started, arguments parsed")
     if args.t:
-        logger.warning(f"TEST MODE enabled. No data saving!")
+        logger.warning("TEST MODE enabled. No data saving!")
     logger.debug(args)
 
     if args.np:

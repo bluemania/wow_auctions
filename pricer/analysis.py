@@ -1,24 +1,25 @@
-"""
-This script contains analysis of the cleaned panda parquet sources
-It creates outputs for dashboard and lua policy updates
+"""It analyses data sources to form policies and track progress.
+
+* reports on earnings
+* analyses on auction success for items
+* predicts current market price for items
+* analyses the minimum sell price at which we would sell potions
+* produces buying and selling policies, and writes to WoW addon directory
 """
 
 import logging
 
-import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
 
-from pricer import config, utils
+from pricer import utils
 
 sns.set(rc={"figure.figsize": (11.7, 8.27)})
 logger = logging.getLogger(__name__)
 
 
-def analyse_item_prices(full_pricing=False, test=False):
-    """
-    Generate item prices based on all past auction activity and scans
-    """
+def analyse_item_prices(full_pricing: bool = False, test: bool = False) -> None:
+    """Generate item prices based on all past auction activity and scans."""
     auction_activity = pd.read_parquet("data/full/auction_activity.parquet")
     auction_activity = auction_activity[
         ["item", "timestamp", "price_per", "auction_type"]
@@ -63,10 +64,8 @@ def analyse_item_prices(full_pricing=False, test=False):
     logger.info(f"Item prices calculated. {len(item_prices)} records")
 
 
-def analyse_sales_performance(test=False):
-    """
-    Produces charts and tables to help measure performace
-    """
+def analyse_sales_performance(test: bool = False) -> None:
+    """Produces charts and tables to help measure performance."""
 
     item_prices = pd.read_parquet("data/intermediate/item_prices.parquet")
     user_items = utils.load_items()
@@ -181,10 +180,10 @@ def analyse_sales_performance(test=False):
     earnings.to_parquet("data/outputs/earnings_days.parquet", compression="gzip")
 
 
-def analyse_auction_success(MAX_SUCCESS=250, MIN_SUCCESS=10):
-    """
-    Produces dataframe of recent successful auctions
-    """
+def analyse_auction_success(
+    MAX_SUCCESS: int = 250, MIN_SUCCESS: int = 10
+) -> pd.DataFrame:
+    """Produces dataframe of recent successful auctions."""
     df_success = pd.read_parquet("data/full/auction_activity.parquet")
 
     # Look at the most recent X sold or failed auctions
@@ -204,11 +203,13 @@ def analyse_auction_success(MAX_SUCCESS=250, MIN_SUCCESS=10):
     return df_success
 
 
-def analyse_item_min_sell_price(MIN_PROFIT_MARGIN=1000, MAT_DEV=0.5, test=False):
-    """
-    Calculate minimum sell price for potions given raw item cost, deposit loss, AH cut, and min profit
-    """
+def analyse_item_min_sell_price(
+    MIN_PROFIT_MARGIN: int = 1000, MAT_DEV: float = 0.5, test: bool = False
+) -> None:
+    """Calculate min potion sell price given costs.
 
+    i.e. Raw item cost, deposit loss, AH cut, and min profit.
+    """
     user_items = utils.load_items()
 
     # item_prices = pd.read_parquet('intermediate/item_prices.parquet')
@@ -235,7 +236,7 @@ def analyse_item_min_sell_price(MIN_PROFIT_MARGIN=1000, MAT_DEV=0.5, test=False)
         material_cost = 0
         for ingredient, count in details.get("made_from", {}).items():
             material_cost += item_prices.loc[ingredient, "market_price"] * count
-        if material_cost is not 0:
+        if material_cost != 0:
             item_costs[item] = int(material_cost)
 
     df_success = analyse_auction_success()
@@ -268,11 +269,8 @@ def analyse_item_min_sell_price(MIN_PROFIT_MARGIN=1000, MAT_DEV=0.5, test=False)
     )
 
 
-def analyse_sell_data(test=False):
-    """
-    Creates dataframe of intellegence around the selling market conditions
-
-    """
+def analyse_sell_data(test: bool = False) -> None:
+    """Creates dataframe of intellegence around the selling market conditions."""
 
     # Get our calculated reserve price
     item_min_sale = pd.read_parquet("data/intermediate/min_list_price.parquet")
@@ -382,11 +380,14 @@ def analyse_sell_data(test=False):
     df.to_parquet("data/outputs/sell_policy.parquet", compression="gzip")
 
 
-def apply_sell_policy(stack=1, leads=15, duration="m", update=True, test=False):
-    """
-    Given a datatable of the sell environment, create sell policy and save to WoW
-    """
-
+def apply_sell_policy(
+    stack: int = 1,
+    leads: int = 15,
+    duration: str = "m",
+    update: bool = True,
+    test: bool = False,
+) -> None:
+    """Create sell policy and save to WoW Addon given sell environment."""
     df_sell_policy = pd.read_parquet("data/outputs/sell_policy.parquet")
 
     for item, row in df_sell_policy.iterrows():
@@ -463,12 +464,11 @@ def apply_sell_policy(stack=1, leads=15, duration="m", update=True, test=False):
     utils.write_lua(data)
 
 
-def apply_buy_policy(MAT_DEV=0, test=False):
-    """
-    Determines herbs to buy based on potions in inventory.
+def apply_buy_policy(MAT_DEV: int = 0, test: bool = False) -> None:
+    """ Determines herbs to buy based on potions in inventory.
+
     Always buys at or below current market price.
     """
-
     # TODO; remove self_demand from this list, not a big deal
     # TODO need to subtract out oils (stoneshield) etc
 
@@ -537,7 +537,7 @@ def apply_buy_policy(MAT_DEV=0, test=False):
     auction_data = auction_data.sort_values("price_per")
     auction_data["price_per"] = auction_data["price_per"].astype(int)
 
-    for herb, count in herbs["herbs_purchasing"].iteritems():
+    for herb, _ in herbs["herbs_purchasing"].iteritems():
         # Always buy at way below market
         buy_price = item_prices.loc[herb, "market_price"] * 0.3
 
@@ -574,7 +574,7 @@ def apply_buy_policy(MAT_DEV=0, test=False):
     for herb, row in herbs.iterrows():
         code = f"{row['code']}:0:0"
         if code not in snatch:
-            raise KeyError(f"{row.name} not in snatch")
+            raise KeyError(f"{herb} not in snatch")
 
         snatch[code]["price"] = int(row["buy_price"])
 

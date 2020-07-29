@@ -18,6 +18,13 @@ This project uses [poetry](https://python-poetry.org/) to manage dependencies an
 poetry install
 ```
 
+You will also need the following WoW Classic Addons installed to interface with the program:
+
+* ArkInventory
+* Auctioneer
+* Beancounter (comes with Auctioneer)
+
+
 ### Running the script
 
 After the above setup, to run the script enter the following on command line.

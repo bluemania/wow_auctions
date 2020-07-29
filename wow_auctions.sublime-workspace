@@ -63,7 +63,7 @@
 			"file": "pricer/__init__.py",
 			"settings":
 			{
-				"buffer_size": 21,
+				"buffer_size": 522,
 				"line_ending": "Unix"
 			}
 		},
@@ -71,7 +71,8 @@
 			"file": "run.py",
 			"settings":
 			{
-				"buffer_size": 3421,
+				"buffer_size": 3586,
+				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
 		},
@@ -79,15 +80,16 @@
 			"file": "pricer/sources.py",
 			"settings":
 			{
-				"buffer_size": 10848,
+				"buffer_size": 12697,
 				"line_ending": "Unix"
 			}
 		},
 		{
-			"file": "pyproject.toml",
+			"file": "pricer/utils.py",
 			"settings":
 			{
-				"buffer_size": 611,
+				"buffer_size": 7230,
+				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
 		},
@@ -95,7 +97,16 @@
 			"file": "pricer/analysis.py",
 			"settings":
 			{
-				"buffer_size": 21736,
+				"buffer_size": 21991,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "README.md",
+			"settings":
+			{
+				"buffer_size": 1429,
 				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
@@ -104,15 +115,16 @@
 			"file": "pricer/config.py",
 			"settings":
 			{
-				"buffer_size": 1007,
+				"buffer_size": 1690,
+				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
 		},
 		{
-			"file": "pricer/utils.py",
+			"file": "pyproject.toml",
 			"settings":
 			{
-				"buffer_size": 7198,
+				"buffer_size": 1012,
 				"line_ending": "Unix"
 			}
 		}
@@ -144,6 +156,10 @@
 		"last_filter": "",
 		"selected_items":
 		[
+			[
+				"Package Control: remove",
+				"Package Control: Remove Package"
+			],
 			[
 				"install",
 				"Package Control: Install Package"
@@ -182,13 +198,11 @@
 	"expanded_folders":
 	[
 		"/Users/nicholasjenkins/Documents/wow_auctions",
-		"/Users/nicholasjenkins/Documents/wow_auctions/config",
-		"/Users/nicholasjenkins/Documents/wow_auctions/docs",
-		"/Users/nicholasjenkins/Documents/wow_auctions/logs",
 		"/Users/nicholasjenkins/Documents/wow_auctions/pricer"
 	],
 	"file_history":
 	[
+		"/Users/nicholasjenkins/Desktop/ideas.txt",
 		"/Users/nicholasjenkins/Documents/wow_auctions/config/items.yaml",
 		"/Users/nicholasjenkins/Documents/wow_auctions/mypy.ini",
 		"/Users/nicholasjenkins/Documents/wow_auctions/.flake8",
@@ -315,12 +329,11 @@
 		"/Users/nicholasjenkins/Library/Jupyter/runtime/nbserver-11529-open.html",
 		"/Users/nicholasjenkins/Documents/apartment_choice_simulator/examples.txt",
 		"/Users/nicholasjenkins/Google Drive/Documents/04_ID information/849-90-2226 SSN Add pin.txt",
-		"/Users/nicholasjenkins/Documents/personalsite/local/2019-07-17_personal_australian-wedding-on-a-budget_lifestyle-australia-organising.md ",
-		"/Users/nicholasjenkins/Google Drive/Documents/09_Legal/login gov us backup codes.txt"
+		"/Users/nicholasjenkins/Documents/personalsite/local/2019-07-17_personal_australian-wedding-on-a-budget_lifestyle-australia-organising.md "
 	],
 	"find":
 	{
-		"height": 61.0
+		"height": 50.0
 	},
 	"find_in_files":
 	{
@@ -341,6 +354,10 @@
 		"case_sensitive": false,
 		"find_history":
 		[
+			"settings",
+			"character_inventories",
+			"items",
+			"settings",
 			"sphinx",
 			"logger",
 			"logging",
@@ -478,7 +495,7 @@
 	"groups":
 	[
 		{
-			"selected": 4,
+			"selected": 3,
 			"sheets":
 			[
 				{
@@ -487,15 +504,15 @@
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 21,
+						"buffer_size": 522,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								21,
-								21
+								0,
+								0
 							]
 						],
 						"settings":
@@ -506,7 +523,7 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 6,
+					"stack_index": 7,
 					"type": "text"
 				},
 				{
@@ -515,15 +532,15 @@
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 3421,
+						"buffer_size": 3586,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								3069,
-								3069
+								2289,
+								2289
 							]
 						],
 						"settings":
@@ -533,10 +550,10 @@
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 2016.0,
+						"translation.y": 1264.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 3,
+					"stack_index": 6,
 					"type": "text"
 				},
 				{
@@ -545,15 +562,15 @@
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 10848,
+						"buffer_size": 12697,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								10848,
-								10848
+								8554,
+								8554
 							]
 						],
 						"settings":
@@ -563,7 +580,7 @@
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 7486.0,
+						"translation.y": 6045.0,
 						"zoom_level": 1.0
 					},
 					"stack_index": 2,
@@ -571,11 +588,129 @@
 				},
 				{
 					"buffer": 3,
+					"file": "pricer/utils.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 7230,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								3816,
+								3816
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Python/Python.sublime-syntax",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 2690.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 0,
+					"type": "text"
+				},
+				{
+					"buffer": 4,
+					"file": "pricer/analysis.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 21991,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								87,
+								87
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Python/Python.sublime-syntax",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 1,
+					"type": "text"
+				},
+				{
+					"buffer": 5,
+					"file": "README.md",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 1429,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								841,
+								841
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Markdown/Markdown.sublime-syntax"
+						},
+						"translation.x": 0.0,
+						"translation.y": 304.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 5,
+					"type": "text"
+				},
+				{
+					"buffer": 6,
+					"file": "pricer/config.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 1690,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								729,
+								729
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Python/Python.sublime-syntax",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 4,
+					"type": "text"
+				},
+				{
+					"buffer": 7,
 					"file": "pyproject.toml",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 611,
+						"buffer_size": 1012,
 						"regions":
 						{
 						},
@@ -594,97 +729,7 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 1,
-					"type": "text"
-				},
-				{
-					"buffer": 4,
-					"file": "pricer/analysis.py",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 21736,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								21414,
-								21414
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/Python/Python.sublime-syntax",
-							"tab_size": 4,
-							"translate_tabs_to_spaces": true
-						},
-						"translation.x": 0.0,
-						"translation.y": 15954.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 0,
-					"type": "text"
-				},
-				{
-					"buffer": 5,
-					"file": "pricer/config.py",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 1007,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								695,
-								695
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/Python/Python.sublime-syntax",
-							"tab_size": 4,
-							"translate_tabs_to_spaces": true
-						},
-						"translation.x": 0.0,
-						"translation.y": 153.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 5,
-					"type": "text"
-				},
-				{
-					"buffer": 6,
-					"file": "pricer/utils.py",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 7198,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								153,
-								153
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/Python/Python.sublime-syntax",
-							"tab_size": 4,
-							"translate_tabs_to_spaces": true
-						},
-						"translation.x": 0.0,
-						"translation.y": 0.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 4,
+					"stack_index": 3,
 					"type": "text"
 				}
 			]
