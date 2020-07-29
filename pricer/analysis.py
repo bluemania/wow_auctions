@@ -19,7 +19,24 @@ logger = logging.getLogger(__name__)
 
 
 def analyse_item_prices(full_pricing: bool = False, test: bool = False) -> None:
-    """Generate item prices based on all past auction activity and scans."""
+    """It reads auction data and calculates expected item prices.
+
+    Loads all user auction activity (auction sales, buying).
+    * NOTE this method is biased because we tend to buy low and sell high
+    Loads historic minimum price for user specified items of interest.
+    Joins both sources and sorts by date. Calculates the latest expected
+    price using exponential weighted mean. Saves results to parquet.
+
+    Args:
+        full_pricing: Use all item data rather than user specified
+            items of interest. Functionality will be depreciated
+            during upcoming release refactor.
+        test: when True prevents data saving (early return)
+
+    Returns:
+        None
+    """
+    # TODO needs refactor with items of interest
     auction_activity = pd.read_parquet("data/full/auction_activity.parquet")
     auction_activity = auction_activity[
         ["item", "timestamp", "price_per", "auction_type"]
@@ -32,6 +49,7 @@ def analyse_item_prices(full_pricing: bool = False, test: bool = False) -> None:
     if full_pricing:
         items = df_auction_prices["item"].unique()
     else:
+        # Use user specified items of interest
         items = utils.load_items()
 
     price_history = df_auction_prices.set_index(["item", "timestamp"]).sort_index()[
@@ -44,7 +62,7 @@ def analyse_item_prices(full_pricing: bool = False, test: bool = False) -> None:
             for item in items
         }
     else:
-        # Only calculate for our item list; get backup price if present
+        # Only calculate for our item list; get user specified backup price if present
         item_prices = {}
         for item, details in items.items():
             price = details.get("backup_price")

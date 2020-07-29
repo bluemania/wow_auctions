@@ -37,8 +37,7 @@ def create_playtime_record(
     append interm, and save full
 
     Args:
-        test: when test is True, return None before any data saving
-            operations occur. This preserves states for future runs.
+        test: when True prevents data saving (early return)
         run_dt: The common session runtime
         clean_session: User specified flag indicating inventory is stable
         played: Ingame timelike string in '00d-00h-00m-00s' format,
