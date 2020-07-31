@@ -83,8 +83,29 @@ def analyse_item_prices(full_pricing: bool = False, test: bool = False) -> None:
 
 
 def analyse_sales_performance(test: bool = False) -> None:
-    """Produces charts and tables to help measure performance."""
+    """It combines inventory and pricing data to report performance.
 
+    Produces charts and tables to help measure performance.
+    Loads current item prices along with all time inventory
+    and money counts.
+    It calculates value of inventory based
+    on *current item prices*. This will be changed to price at the
+    time of issue in future development, as we cannot perform data
+    versioning.
+    It groups characters into 'mule' and 'other' categories. This will
+    be changed to a config driven approach in future development.
+    Loads use specified time played, and calculates gold p/h. This
+    information is saved to log files.
+    It generates a chart of monies and inventory value over time,
+    which is useful to track long term performance.
+    It saves enriched parquet files with inventory and earnings info.
+
+    Args:
+        test: when True prevents data saving (early return)
+
+    Returns:
+        None
+    """
     item_prices = pd.read_parquet("data/intermediate/item_prices.parquet")
     user_items = utils.load_items()
 
@@ -199,22 +220,38 @@ def analyse_sales_performance(test: bool = False) -> None:
 
 
 def analyse_auction_success(
-    MAX_SUCCESS: int = 250, MIN_SUCCESS: int = 10
-) -> pd.DataFrame:
-    """Produces dataframe of recent successful auctions."""
+    MAX_AUCTIONS: int = 250, MIN_AUCTIONS: int = 10
+) -> pd.Series:
+    """It analyses auction activity data for recent item auction success rate.
+
+    This information is used elsewhere to calculate minimum price which
+    we are willing to sell for.
+
+    It filters auction activity to sold (successful) and failed (unsuccessful)
+    auctions. It creates a time based rank for each item, so we can identify
+    the most recent data per item.
+
+    Args:
+        MAX_AUCTIONS: Filters data to most recent 'MAX_AUCTIONS' ranks.
+        MIN_AUCTIONS: Will not return item data when less than MIN_AUCTIONS.
+
+    Returns:
+        pd.Series: Pandas series of item: auction_success, where auction_success
+            is a float value between 0 and 1.
+    """
     df_success = pd.read_parquet("data/full/auction_activity.parquet")
 
-    # Look at the most recent X sold or failed auctions
+    # Look at the most recent X sold or failed auctions (not bought auctions)
     df_success = df_success[df_success["auction_type"].isin(["sell_price", "failed"])]
     df_success["rank"] = df_success.groupby(["item"])["timestamp"].rank(ascending=False)
 
     # Limit to recent successful auctions
-    df_success = df_success[df_success["rank"] <= MAX_SUCCESS]
+    df_success = df_success[df_success["rank"] <= MAX_AUCTIONS]
     df_success["auction_success"] = df_success["auction_type"].replace(
         {"sell_price": 1, "failed": 0}
     )
     # Ensure theres at least some auctions for a resonable ratio
-    df_success = df_success[df_success["rank"] >= MIN_SUCCESS]
+    df_success = df_success[df_success["rank"] >= MIN_AUCTIONS]
 
     # Calcualte success%
     df_success = df_success.groupby("item")["auction_success"].mean()
@@ -224,9 +261,23 @@ def analyse_auction_success(
 def analyse_item_min_sell_price(
     MIN_PROFIT_MARGIN: int = 1000, MAT_DEV: float = 0.5, test: bool = False
 ) -> None:
-    """Calculate min potion sell price given costs.
+    """It calculates item minimum sell price given costs.
 
-    i.e. Raw item cost, deposit loss, AH cut, and min profit.
+    It loads user specified items of interest. It loads booty bay data for
+    pricing information. * Note this will likely be changed in future development.
+    Filters to user specified items which are classed as 'buy' or 'sell'.
+    Determines minimum sell price given raw ingredient costs, deposit loss from
+    auction fail rate, 5% auction house cut, and a minimum profit margin buffer.
+
+    Args:
+        MIN_PROFIT_MARGIN: User specified 'buffer' to add to prices to help
+            ensure profit. Can be considered the 'min acceptable profit'.
+        MAT_DEV: Adds or subtracts pricing standard deviation. Adding
+            standard deviation means we will only sell items at higher prices.
+        test: when True prevents data saving (early return)
+
+    Returns:
+        None
     """
     user_items = utils.load_items()
 
@@ -242,33 +293,35 @@ def analyse_item_min_sell_price(
     item_prices.loc["Empty Vial"] = 3
 
     # Given the average recent buy price, calculate material costs per item
-
     user_items = {
-        key: value
-        for key, value in user_items.items()
-        if value.get("group") in ["Buy", "Sell"]
+        item_name: item_details
+        for item_name, item_details in user_items.items()
+        if item_details.get("group") in ["Buy", "Sell"]
     }
 
+    # Determine raw material cost for manufactured items
     item_costs = {}
-    for item, details in user_items.items():
+    for item_name, item_details in user_items.items():
         material_cost = 0
-        for ingredient, count in details.get("made_from", {}).items():
+        for ingredient, count in item_details.get("made_from", {}).items():
             material_cost += item_prices.loc[ingredient, "market_price"] * count
         if material_cost != 0:
-            item_costs[item] = int(material_cost)
-
-    df_success = analyse_auction_success()
+            item_costs[item_name] = int(material_cost)
 
     item_min_sale = pd.DataFrame.from_dict(item_costs, orient="index")
     item_min_sale.index.name = "item"
     item_min_sale.columns = ["mat_cost"]
 
-    item_min_sale = item_min_sale.join(df_success)
+    # Adds auction success % per item
+    item_min_sale = item_min_sale.join(analyse_auction_success())
 
     full_deposit = pd.Series(
-        {item: details.get("full_deposit") for item, details in user_items.items()}
+        {
+            item_name: item_details.get("full_deposit")
+            for item_name, item_details in user_items.items()
+        },
+        name="deposit",
     )
-    full_deposit.name = "deposit"
 
     item_min_sale = item_min_sale.join(full_deposit).dropna()
 
@@ -288,8 +341,22 @@ def analyse_item_min_sell_price(
 
 
 def analyse_sell_data(test: bool = False) -> None:
-    """Creates dataframe of intellegence around the selling market conditions."""
+    """It creates a table with latest market information per item.
 
+    Loads minimum listing price/item and current auction minimum price/item.
+    From these, determines if it is feasible to sell items at a profit.
+
+    It loads current auction data to determine if we currently have auctions,
+    and whether they are being undercut.
+
+    Adds inventory data per item, to determine if we have items available for sale.
+
+    Args:
+        test: when True prevents data saving (early return)
+
+    Returns:
+        None
+    """
     # Get our calculated reserve price
     item_min_sale = pd.read_parquet("data/intermediate/min_list_price.parquet")
 
@@ -341,7 +408,8 @@ def analyse_sell_data(test: bool = False) -> None:
     df = df.join(undercut_count)
     df["undercut_count"] = df["undercut_count"].fillna(0).astype(int)
 
-    # If my min price is the same as the current min price and the same as the listing price, i'm winning
+    # If my min price is the same as the current min price and the
+    # same as the listing price, i'm winning
     my_min_is_market = auction_data["my_min"] == auction_data["market_price"]
     my_min_is_list = auction_data["my_min"] == auction_data["price_per"]
     auction_leads = (
@@ -405,7 +473,25 @@ def apply_sell_policy(
     update: bool = True,
     test: bool = False,
 ) -> None:
-    """Create sell policy and save to WoW Addon given sell environment."""
+    """Combines user input & market data to write a sell policy to WoW addon folder.
+
+    Given user specified parameters, create a selling policy across
+    all items, based on the market and inventory information.
+    The sell policy is converted into lua format and saved to the WoW
+    Addon directory for Auctioneer.
+
+    Args:
+        stack: stack size to sell items
+        leads: total number of undercut auctions we want to achieve
+        duration: length of auction
+        update: when True, will re-save the market data after applying the sell
+            policy. This is useful to run a second sell policy without needing to
+            re-run the full analysis.
+        test: when True prevents data saving (early return)
+
+    Returns:
+        None
+    """
     df_sell_policy = pd.read_parquet("data/outputs/sell_policy.parquet")
 
     for item, row in df_sell_policy.iterrows():
@@ -483,13 +569,32 @@ def apply_sell_policy(
 
 
 def apply_buy_policy(MAT_DEV: int = 0, test: bool = False) -> None:
-    """ Determines herbs to buy based on potions in inventory.
+    """Determines herbs to buy based on potions in inventory.
 
-    Always buys at or below current market price.
+    Loads user specified items of interest, and ideal holdings of the items.
+    Loads information on number of potions in inventory.
+    Loads auction success rate for potions, to downweight items that don't sell.
+    Calculates number of herbs required to fill the ideal holdings of potions,
+    minus herbs already held in inventory.
+    Looks through all auction listings of herbs available for sale (volume and price).
+    Sets a buy price at which we buy the right number of herbs to fill demand.
+    We set a minimum buy price such that we can always buy bargain herbs.
+    The buy policy is converted into lua format and saved to the WoW
+    Addon directory for Auctioneer (Snatch). Additionally, the buy policy
+    is saved as a parquet file.
+
+    Args:
+        MAT_DEV: Adds or subtracts pricing standard deviation. Adding
+            standard deviation means we will buy items at higher prices.
+        test: when True prevents data saving (early return)
+
+    Returns:
+        None
+
+    Raises:
+        KeyError: All user specified 'Buy' items must be present in the
+            Auctioneer 'snatch' listing.
     """
-    # TODO; remove self_demand from this list, not a big deal
-    # TODO need to subtract out oils (stoneshield) etc
-
     items = utils.load_items()
     sell_policy = pd.read_parquet("data/outputs/sell_policy.parquet")
 
@@ -501,7 +606,7 @@ def apply_buy_policy(MAT_DEV: int = 0, test: bool = False) -> None:
     replenish = pd.DataFrame(replenish)
 
     for potion in replenish.index:
-        replenish.loc[potion, "max"] = items.get(potion).get("max_inventory", 60)
+        replenish.loc[potion, "max"] = items.get(potion).get("ideal_holding", 60)
 
     replenish["inventory_target"] = (replenish["max"] - replenish["inventory"]).apply(
         lambda x: max(0, x)
@@ -572,7 +677,8 @@ def apply_buy_policy(MAT_DEV: int = 0, test: bool = False) -> None:
 
         # If there are herbs available after filtering...
         if listings.shape[0] > 0:
-            # Reject the highest priced item, in case there are 100s of listings at that price (conservative)
+            # Reject the highest priced item, in case there are 100s of
+            # listings at that price (conservative)
             not_last_priced = listings[
                 listings["price_per"] != listings["price_per"].iloc[-1]
             ]
