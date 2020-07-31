@@ -10,6 +10,7 @@
    It reads data from WoW interface addons and user specified sources.
    Performs basic validation and data cleaning before
    converting into normalized data tables in parquet format.
+   When functions are run in test mode, no data is saved.
 
 
 
@@ -54,8 +55,7 @@ Functions
    append interm, and save full
 
    Args:
-       test: when test is True, return None before any data saving
-           operations occur. This preserves states for future runs.
+       test: when True prevents data saving (early return)
        run_dt: The common session runtime
        clean_session: User specified flag indicating inventory is stable
        played: Ingame timelike string in '00d-00h-00m-00s' format,
@@ -71,19 +71,15 @@ Functions
 
 .. function:: generate_inventory(test: bool = False, run_dt: dt = None) -> None
 
-   Reads and reformats the Arkinventory data file into a pandas dataframe.
+   Read and clean Arkinventory addon data, and save to parquet.
 
-   Loads yaml files to specify item locations and specific items of interest
-   Saves down parquet file ready to go
-
-   When in test mode, loading and calcs are performed but no file saves
-   Otherwise, saves current analysis as intermediate and loads full
-   If the data has updated since last run; save backup, append interm, save full
+   For all characters on all user specified accounts, collates info on
+   monies and inventory. Uses general settings to determine which slots
+   are examined (e.g. mailbox, backpack, auction, bank).
 
    Args:
-       test: when test is True, return None before any data saving
-           operations occur. This preserves states for future runs.
-       run_dt: The common session runtime
+       test: when True prevents data saving (early return)
+       run_dt: Session runtime for data lineage timestampping
 
    Returns:
        None
@@ -91,14 +87,15 @@ Functions
 
 .. function:: generate_auction_scandata(test: bool = False) -> None
 
-   Snapshot of all AH prices from latest scan.
+   Read and clean Auctionneer addon data, and save to parquet.
 
-       Reads the raw scandata from both accounts, cleans and pulls latest only
-       Saves latest scandata to intermediate and adds to a full database with backup
+   Utility function loads addon raw lua auction data from the user
+   specified primary auctioning account. It cleans up and selects columns.
+   Additionally filters results for the minimum price of user specified
+   items of interest.
 
    Args:
-       test: when test is True, return None before any data saving
-           operations occur. This preserves states for future runs.
+       test: when True prevents data saving (early return)
 
    Returns:
        None
@@ -106,14 +103,14 @@ Functions
 
 .. function:: generate_auction_activity(test: bool = False) -> None
 
-   Generates auction history parquet file with auctions of interest.
+   Read and clean BeanCounter addon data, and save to parquet.
 
-       Reads and parses Beancounter auction history across all characters
-       Works the data into a labelled and cleaned pandas before parquet saves
+   For all characters on all user specified accounts, collates info on
+   auction history in terms of failed/succesful sales, and purchases made.
+   Works the data into a labelled and cleaned pandas before parquet saves
 
    Args:
-       test: when test is True, return None before any data saving
-           operations occur. This preserves states for future runs.
+       test: when True prevents data saving (early return)
 
    Returns:
        None
@@ -121,6 +118,10 @@ Functions
 
 .. function:: generate_booty_data() -> None
 
-   Get and save booty bay data.
+   Read BootyBay data (through proxy addon), and save to parquet.
+
+   Temporary process to obtain Booty Bay data through a custom
+   Addon which can interact with Booty Bay data while in-game.
+   Function intended to be depreciated before release.
 
 

@@ -24,7 +24,6 @@ You will also need the following WoW Classic Addons installed to interface with 
 * Auctioneer
 * Beancounter (comes with Auctioneer)
 
-
 ### Running the script
 
 After the above setup, to run the script enter the following on command line.

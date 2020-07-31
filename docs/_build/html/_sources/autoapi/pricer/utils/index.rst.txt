@@ -5,7 +5,9 @@
 
 .. autoapi-nested-parse::
 
-   This file contains shorter utilities to write/save raw files, and change data formats
+   It contains small functions to support data pipeline.
+
+   * Loads and writes raw and cleaned files, changes data formats
 
 
 
@@ -38,62 +40,59 @@ Functions
 
 .. function:: get_seconds_played(time_played: str) -> int
 
-   Converts a string representation of time played to seconds
+   Convert string representation of time played to seconds.
 
 
-.. function:: generate_new_pricer_file()
+.. function:: generate_new_pricer_file() -> None
 
-   Generates a blank pricer file of items of interest. This is used to fill in the latest pricing
-   information from booty bay gazette. This is done in game using a self build addon with the /pricer command
+   Generates a blank pricer file of items of interest.
 
-
-.. function:: source_merge(a, b, path=None)
-
-   merges b into a
+   This is used to fill in the latest pricing info from booty bay gazette.
+   This is done in game using a self build addon with the /pricer command
 
 
-.. function:: read_lua(datasource: str, merge_account_sources=True, accounts=['BLUEM', '396255466#1'])
+.. function:: source_merge(a: dict, b: dict, path: list = None) -> dict
 
-   Attempts to read lua from the given locations
-       
-
-
-.. function:: load_items()
-
-   Loads and returns the user created YAML file of interesting items and their stack sizes
-       
+   Merges b into a.
 
 
-.. function:: get_general_settings()
+.. function:: read_lua(datasource: str, merge_account_sources: bool = True, accounts: list = ['BLUEM', '396255466#1']) -> dict
 
-   Gets general program settings
-       
-
-
-.. function:: get_and_format_auction_data()
-
-   Reads the raw scandata dict dump and converts to usable dataframe
-       
+   Attempts to read lua and merge lua from WoW Addon account locations.
 
 
-.. function:: get_item_codes()
+.. function:: load_items() -> dict
 
-   Reads the beancounter database and produces codes per item dict
-
-
-.. function:: write_lua(data, account='396255466#1', name='Auc-Advanced')
-
-   Write python dict as lua object
+   Loads user specified items of interest.
 
 
-.. function:: dump_lua(data)
+.. function:: get_general_settings() -> dict
 
-   Borrowed code to write python dict as lua format(ish)
+   Gets general program settings such as mappings.
 
 
-.. function:: read_multiple_parquet(loc)
+.. function:: get_and_format_auction_data() -> pd.DataFrame
 
-   Given a directory path, scan for parquet files,
-   Load and concatenate, returning the full dataframe
+   Read raw scandata dict dump and converts to usable dataframe.
+
+
+.. function:: get_item_codes() -> dict
+
+   Read BeanCounter data to create code: item mapping.
+
+
+.. function:: write_lua(data: dict, account: str = '396255466#1', name: str = 'Auc-Advanced') -> None
+
+   Write python dict as lua object.
+
+
+.. function:: dump_lua(data: Any) -> str
+
+   Borrowed code to write python dict as lua format(ish).
+
+
+.. function:: read_multiple_parquet(loc: str) -> pd.DataFrame
+
+   Scan directory path for parquet files, concatenate and return.
 
 

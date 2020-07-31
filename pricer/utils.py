@@ -38,7 +38,7 @@ def get_seconds_played(time_played: str) -> int:
 
 
 def generate_new_pricer_file() -> None:
-    """ Generates a blank pricer file of items of interest.
+    """Generates a blank pricer file of items of interest.
 
     This is used to fill in the latest pricing info from booty bay gazette.
     This is done in game using a self build addon with the /pricer command
@@ -83,7 +83,7 @@ def read_lua(
     merge_account_sources: bool = True,
     accounts: list = ["BLUEM", "396255466#1"],
 ) -> dict:
-    """Attempts to read lua from the given locations."""
+    """Attempts to read lua and merge lua from WoW Addon account locations."""
     # TODO automatically detect accounts
     account_data = {key: None for key in accounts}
     for account_name in account_data.keys():

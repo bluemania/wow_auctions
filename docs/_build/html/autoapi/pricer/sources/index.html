@@ -37,7 +37,8 @@
 <p><p>It is responsible for managing input data sources.</p>
 <p>It reads data from WoW interface addons and user specified sources.
 Performs basic validation and data cleaning before
-converting into normalized data tables in parquet format.</p>
+converting into normalized data tables in parquet format.
+When functions are run in test mode, no data is saved.</p>
 </p>
 <div class="section" id="module-contents">
 <h2>Module Contents<a class="headerlink" href="#module-contents" title="Permalink to this headline">¶</a></h2>
@@ -53,16 +54,16 @@ converting into normalized data tables in parquet format.</p>
 <td><p>Preserves record of how we are spending time on our auction character.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#pricer.sources.generate_inventory" title="pricer.sources.generate_inventory"><code class="xref py py-obj docutils literal notranslate"><span class="pre">generate_inventory</span></code></a>(test: bool = False, run_dt: dt = None)</p></td>
-<td><p>Reads and reformats the Arkinventory data file into a pandas dataframe.</p></td>
+<td><p>Read and clean Arkinventory addon data, and save to parquet.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#pricer.sources.generate_auction_scandata" title="pricer.sources.generate_auction_scandata"><code class="xref py py-obj docutils literal notranslate"><span class="pre">generate_auction_scandata</span></code></a>(test: bool = False)</p></td>
-<td><p>Snapshot of all AH prices from latest scan.</p></td>
+<td><p>Read and clean Auctionneer addon data, and save to parquet.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#pricer.sources.generate_auction_activity" title="pricer.sources.generate_auction_activity"><code class="xref py py-obj docutils literal notranslate"><span class="pre">generate_auction_activity</span></code></a>(test: bool = False)</p></td>
-<td><p>Generates auction history parquet file with auctions of interest.</p></td>
+<td><p>Read and clean BeanCounter addon data, and save to parquet.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#pricer.sources.generate_booty_data" title="pricer.sources.generate_booty_data"><code class="xref py py-obj docutils literal notranslate"><span class="pre">generate_booty_data</span></code></a>()</p></td>
-<td><p>Get and save booty bay data.</p></td>
+<td><p>Read BootyBay data (through proxy addon), and save to parquet.</p></td>
 </tr>
 </tbody>
 </table>
@@ -89,11 +90,8 @@ as a user specified flag to indicate inventory is stable (no missing items).</p>
 Otherwise, saves current analysis as intermediate, loads full, saves backup,
 append interm, and save full</p>
 <dl>
-<dt>Args:</dt><dd><dl class="simple">
-<dt>test: when test is True, return None before any data saving</dt><dd><p>operations occur. This preserves states for future runs.</p>
-</dd>
-</dl>
-<p>run_dt: The common session runtime
+<dt>Args:</dt><dd><p>test: when True prevents data saving (early return)
+run_dt: The common session runtime
 clean_session: User specified flag indicating inventory is stable
 played: Ingame timelike string in ‘00d-00h-00m-00s’ format,</p>
 <blockquote>
@@ -114,18 +112,13 @@ on our auction character such as leveling, long AFK etc.</p>
 <dl class="py function">
 <dt id="pricer.sources.generate_inventory">
 <code class="sig-prename descclassname">pricer.sources.</code><code class="sig-name descname">generate_inventory</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">test</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">False</span></em>, <em class="sig-param"><span class="n">run_dt</span><span class="p">:</span> <span class="n">dt</span> <span class="o">=</span> <span class="default_value">None</span></em><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#pricer.sources.generate_inventory" title="Permalink to this definition">¶</a></dt>
-<dd><p>Reads and reformats the Arkinventory data file into a pandas dataframe.</p>
-<p>Loads yaml files to specify item locations and specific items of interest
-Saves down parquet file ready to go</p>
-<p>When in test mode, loading and calcs are performed but no file saves
-Otherwise, saves current analysis as intermediate and loads full
-If the data has updated since last run; save backup, append interm, save full</p>
-<dl>
-<dt>Args:</dt><dd><dl class="simple">
-<dt>test: when test is True, return None before any data saving</dt><dd><p>operations occur. This preserves states for future runs.</p>
-</dd>
-</dl>
-<p>run_dt: The common session runtime</p>
+<dd><p>Read and clean Arkinventory addon data, and save to parquet.</p>
+<p>For all characters on all user specified accounts, collates info on
+monies and inventory. Uses general settings to determine which slots
+are examined (e.g. mailbox, backpack, auction, bank).</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>test: when True prevents data saving (early return)
+run_dt: Session runtime for data lineage timestampping</p>
 </dd>
 <dt>Returns:</dt><dd><p>None</p>
 </dd>
@@ -135,16 +128,13 @@ If the data has updated since last run; save backup, append interm, save full</p
 <dl class="py function">
 <dt id="pricer.sources.generate_auction_scandata">
 <code class="sig-prename descclassname">pricer.sources.</code><code class="sig-name descname">generate_auction_scandata</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">test</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">False</span></em><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#pricer.sources.generate_auction_scandata" title="Permalink to this definition">¶</a></dt>
-<dd><p>Snapshot of all AH prices from latest scan.</p>
-<blockquote>
-<div><p>Reads the raw scandata from both accounts, cleans and pulls latest only
-Saves latest scandata to intermediate and adds to a full database with backup</p>
-</div></blockquote>
+<dd><p>Read and clean Auctionneer addon data, and save to parquet.</p>
+<p>Utility function loads addon raw lua auction data from the user
+specified primary auctioning account. It cleans up and selects columns.
+Additionally filters results for the minimum price of user specified
+items of interest.</p>
 <dl class="simple">
-<dt>Args:</dt><dd><dl class="simple">
-<dt>test: when test is True, return None before any data saving</dt><dd><p>operations occur. This preserves states for future runs.</p>
-</dd>
-</dl>
+<dt>Args:</dt><dd><p>test: when True prevents data saving (early return)</p>
 </dd>
 <dt>Returns:</dt><dd><p>None</p>
 </dd>
@@ -154,16 +144,12 @@ Saves latest scandata to intermediate and adds to a full database with backup</p
 <dl class="py function">
 <dt id="pricer.sources.generate_auction_activity">
 <code class="sig-prename descclassname">pricer.sources.</code><code class="sig-name descname">generate_auction_activity</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">test</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">False</span></em><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#pricer.sources.generate_auction_activity" title="Permalink to this definition">¶</a></dt>
-<dd><p>Generates auction history parquet file with auctions of interest.</p>
-<blockquote>
-<div><p>Reads and parses Beancounter auction history across all characters
+<dd><p>Read and clean BeanCounter addon data, and save to parquet.</p>
+<p>For all characters on all user specified accounts, collates info on
+auction history in terms of failed/succesful sales, and purchases made.
 Works the data into a labelled and cleaned pandas before parquet saves</p>
-</div></blockquote>
 <dl class="simple">
-<dt>Args:</dt><dd><dl class="simple">
-<dt>test: when test is True, return None before any data saving</dt><dd><p>operations occur. This preserves states for future runs.</p>
-</dd>
-</dl>
+<dt>Args:</dt><dd><p>test: when True prevents data saving (early return)</p>
 </dd>
 <dt>Returns:</dt><dd><p>None</p>
 </dd>
@@ -173,7 +159,10 @@ Works the data into a labelled and cleaned pandas before parquet saves</p>
 <dl class="py function">
 <dt id="pricer.sources.generate_booty_data">
 <code class="sig-prename descclassname">pricer.sources.</code><code class="sig-name descname">generate_booty_data</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#pricer.sources.generate_booty_data" title="Permalink to this definition">¶</a></dt>
-<dd><p>Get and save booty bay data.</p>
+<dd><p>Read BootyBay data (through proxy addon), and save to parquet.</p>
+<p>Temporary process to obtain Booty Bay data through a custom
+Addon which can interact with Booty Bay data while in-game.
+Function intended to be depreciated before release.</p>
 </dd></dl>
 
 </div>

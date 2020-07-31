@@ -5,8 +5,13 @@
 
 .. autoapi-nested-parse::
 
-   This script contains analysis of the cleaned panda parquet sources
-   It creates outputs for dashboard and lua policy updates
+   It analyses data sources to form policies and track progress.
+
+   * reports on earnings
+   * analyses on auction success for items
+   * predicts current market price for items
+   * analyses the minimum sell price at which we would sell potions
+   * produces buying and selling policies, and writes to WoW addon directory
 
 
 
@@ -33,39 +38,160 @@ Functions
 
    
 
-.. function:: analyse_item_prices(full_pricing=False, test=False)
+.. function:: analyse_item_prices(full_pricing: bool = False, test: bool = False) -> None
 
-   Generate item prices based on all past auction activity and scans
+   It reads auction data and calculates expected item prices.
 
+   Loads all user auction activity (auction sales, buying).
+   * NOTE this method is biased because we tend to buy low and sell high
+   Loads historic minimum price for user specified items of interest.
+   Joins both sources and sorts by date. Calculates the latest expected
+   price using exponential weighted mean. Saves results to parquet.
 
-.. function:: analyse_sales_performance(test=False)
+   Args:
+       full_pricing: Use all item data rather than user specified
+           items of interest. Functionality will be depreciated
+           during upcoming release refactor.
+       test: when True prevents data saving (early return)
 
-   Produces charts and tables to help measure performace
-
-
-.. function:: analyse_auction_success(MAX_SUCCESS=250, MIN_SUCCESS=10)
-
-   Produces dataframe of recent successful auctions
-
-
-.. function:: analyse_item_min_sell_price(MIN_PROFIT_MARGIN=1000, MAT_DEV=0.5, test=False)
-
-   Calculate minimum sell price for potions given raw item cost, deposit loss, AH cut, and min profit
-
-
-.. function:: analyse_sell_data(test=False)
-
-   Creates dataframe of intellegence around the selling market conditions
+   Returns:
+       None
 
 
-.. function:: apply_sell_policy(stack=1, leads=15, duration='m', update=True, test=False)
+.. function:: analyse_sales_performance(test: bool = False) -> None
 
-   Given a datatable of the sell environment, create sell policy and save to WoW
+   It combines inventory and pricing data to report performance.
+
+   Produces charts and tables to help measure performance.
+   Loads current item prices along with all time inventory
+   and money counts.
+   It calculates value of inventory based
+   on *current item prices*. This will be changed to price at the
+   time of issue in future development, as we cannot perform data
+   versioning.
+   It groups characters into 'mule' and 'other' categories. This will
+   be changed to a config driven approach in future development.
+   Loads use specified time played, and calculates gold p/h. This
+   information is saved to log files.
+   It generates a chart of monies and inventory value over time,
+   which is useful to track long term performance.
+   It saves enriched parquet files with inventory and earnings info.
+
+   Args:
+       test: when True prevents data saving (early return)
+
+   Returns:
+       None
 
 
-.. function:: apply_buy_policy(MAT_DEV=0, test=False)
+.. function:: analyse_auction_success(MAX_AUCTIONS: int = 250, MIN_AUCTIONS: int = 10) -> pd.Series
+
+   It analyses auction activity data for recent item auction success rate.
+
+   This information is used elsewhere to calculate minimum price which
+   we are willing to sell for.
+
+   It filters auction activity to sold (successful) and failed (unsuccessful)
+   auctions. It creates a time based rank for each item, so we can identify
+   the most recent data per item.
+
+   Args:
+       MAX_AUCTIONS: Filters data to most recent 'MAX_AUCTIONS' ranks.
+       MIN_AUCTIONS: Will not return item data when less than MIN_AUCTIONS.
+
+   Returns:
+       pd.Series: Pandas series of item: auction_success, where auction_success
+           is a float value between 0 and 1.
+
+
+.. function:: analyse_item_min_sell_price(MIN_PROFIT_MARGIN: int = 1000, MAT_DEV: float = 0.5, test: bool = False) -> None
+
+   It calculates item minimum sell price given costs.
+
+   It loads user specified items of interest. It loads booty bay data for
+   pricing information. * Note this will likely be changed in future development.
+   Filters to user specified items which are classed as 'buy' or 'sell'.
+   Determines minimum sell price given raw ingredient costs, deposit loss from
+   auction fail rate, 5% auction house cut, and a minimum profit margin buffer.
+
+   Args:
+       MIN_PROFIT_MARGIN: User specified 'buffer' to add to prices to help
+           ensure profit. Can be considered the 'min acceptable profit'.
+       MAT_DEV: Adds or subtracts pricing standard deviation. Adding
+           standard deviation means we will only sell items at higher prices.
+       test: when True prevents data saving (early return)
+
+   Returns:
+       None
+
+
+.. function:: analyse_sell_data(test: bool = False) -> None
+
+   It creates a table with latest market information per item.
+
+   Loads minimum listing price/item and current auction minimum price/item.
+   From these, determines if it is feasible to sell items at a profit.
+
+   It loads current auction data to determine if we currently have auctions,
+   and whether they are being undercut.
+
+   Adds inventory data per item, to determine if we have items available for sale.
+
+   Args:
+       test: when True prevents data saving (early return)
+
+   Returns:
+       None
+
+
+.. function:: apply_sell_policy(stack: int = 1, leads: int = 15, duration: str = 'm', update: bool = True, test: bool = False) -> None
+
+   Combines user input & market data to write a sell policy to WoW addon folder.
+
+   Given user specified parameters, create a selling policy across
+   all items, based on the market and inventory information.
+   The sell policy is converted into lua format and saved to the WoW
+   Addon directory for Auctioneer.
+
+   Args:
+       stack: stack size to sell items
+       leads: total number of undercut auctions we want to achieve
+       duration: length of auction
+       update: when True, will re-save the market data after applying the sell
+           policy. This is useful to run a second sell policy without needing to
+           re-run the full analysis.
+       test: when True prevents data saving (early return)
+
+   Returns:
+       None
+
+
+.. function:: apply_buy_policy(MAT_DEV: int = 0, test: bool = False) -> None
 
    Determines herbs to buy based on potions in inventory.
-   Always buys at or below current market price.
+
+   Loads user specified items of interest, and ideal holdings of the items.
+   Loads information on number of potions in inventory.
+   Loads auction success rate for potions, to downweight items that don't sell.
+   Calculates number of herbs required to fill the ideal holdings of potions,
+   minus herbs already held in inventory.
+   Looks through all auction listings of herbs available for sale (volume and price).
+   Sets a buy price at which we buy the right number of herbs to fill demand.
+   We set a minimum buy price such that we can always buy bargain herbs.
+   The buy policy is converted into lua format and saved to the WoW
+   Addon directory for Auctioneer (Snatch). Additionally, the buy policy
+   is saved as a parquet file.
+
+   Args:
+       MAT_DEV: Adds or subtracts pricing standard deviation. Adding
+           standard deviation means we will buy items at higher prices.
+       test: when True prevents data saving (early return)
+
+   Returns:
+       None
+
+   Raises:
+       KeyError: All user specified 'Buy' items must be present in the
+           Auctioneer 'snatch' listing.
 
 
