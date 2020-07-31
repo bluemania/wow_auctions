@@ -1,12 +1,19 @@
-""" 
-Runs the main program with command line options
-"""
-from pricer import config, sources, analysis, utils
+"""Main entry point for pricer program.
 
-from datetime import datetime as dt
+Accepts command line arguments to alter program function. Users can:
+ * Initialize the program to perform setup tasks
+ * Perform test runs (no data saving)
+ * Perform AH analysis
+ * Apply selling policies
+Declares the session datetime variable (run_dt)
+Pre-release; functionality likely to change significantly.
+"""
 import argparse
-import warnings
 import logging
+import warnings
+from datetime import datetime as dt
+
+from pricer import analysis, config, sources, utils
 
 warnings.simplefilter(action="ignore")
 logger = logging.getLogger(__name__)
@@ -17,43 +24,49 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="WoW Auctions")
     parser.add_argument("-np", help="Create pricer file", action="store_true")
     parser.add_argument("-a", help="Run primary analysis", action="store_true")
-    parser.add_argument("-t", help="Test mode (no saving)",
-                        action="store_true")
+    parser.add_argument("-t", help="Test mode (no saving)", action="store_true")
     parser.add_argument("-s1", help="Short policy 5stack", action="store_true")
     parser.add_argument("-s2", help="Short policy 1stack", action="store_true")
     parser.add_argument("-m1", help="Mid policy 5stack", action="store_true")
     parser.add_argument("-m2", help="Mid policy 1stack", action="store_true")
     parser.add_argument("-l1", help="Long policy 5stack", action="store_true")
-    parser.add_argument("-cs",
-                        help="Flag program run as a clean session",
-                        action="store_true")
-    parser.add_argument("-played", default='00d-00h-00m-00s',
-                        help="""Manually specify time played in
-                        '00d-00h-00m-00s' format to calculate gold/hour""")
-    parser.add_argument("-level_time", default='00d-00h-00m-00s',
-                        help="""Manually specify time spent leveling in
-                        '00d-00h-00m-00s' format to subtract from 
-                        gold/hour calculations""")    
+    parser.add_argument(
+        "-cs", help="Flag program run as a clean session", action="store_true"
+    )
+    parser.add_argument(
+        "-played",
+        default="00d-00h-00m-00s",
+        help="""Manually specify time played in
+                        '00d-00h-00m-00s' format to calculate gold/hour""",
+    )
+    parser.add_argument(
+        "-level_time",
+        default="00d-00h-00m-00s",
+        help="""Manually specify time spent leveling in
+                        '00d-00h-00m-00s' format to subtract from
+                        gold/hour calculations""",
+    )
     parser.add_argument("-v", help="Verbose mode (info)", action="store_true")
-    parser.add_argument("-vv", help="Verbose mode (debug)",
-                        action="store_true")
+    parser.add_argument("-vv", help="Verbose mode (debug)", action="store_true")
     args = parser.parse_args()
 
-    config.set_loggers(base_logger=logger, v=args.v, vv=args.vv)
+    config.set_loggers(base_logger=logger, v=args.v, vv=args.vv, test=args.t)
     logger.info("Program started, arguments parsed")
     if args.t:
-        logger.warning(f"TEST MODE enabled. No data saving!")
+        logger.warning("TEST MODE enabled. No data saving!")
     logger.debug(args)
 
     if args.np:
         utils.generate_new_pricer_file()
 
     if args.a:
-        sources.generate_time_played(test=args.t, 
-                                     run_dt=run_dt,
-                                     clean_session=args.cs, 
-                                     played=args.played,
-                                     level_time=args.level_time)
+        sources.create_playtime_record(
+            test=args.t,
+            run_dt=run_dt,
+            clean_session=args.cs,
+            played=args.played,
+            level_time=args.level_time,
+        )
         sources.generate_booty_data()
         sources.generate_auction_scandata(test=args.t)
         sources.generate_auction_activity(test=args.t)

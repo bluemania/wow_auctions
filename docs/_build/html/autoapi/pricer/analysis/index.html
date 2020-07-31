@@ -1,0 +1,320 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>pricer.analysis &#8212; pricer 0.1.1 documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css" />
+    <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="module-pricer.analysis">
+<span id="pricer-analysis"></span><h1><a class="reference internal" href="#module-pricer.analysis" title="pricer.analysis"><code class="xref py py-mod docutils literal notranslate"><span class="pre">pricer.analysis</span></code></a><a class="headerlink" href="#module-pricer.analysis" title="Permalink to this headline">¶</a></h1>
+<p><p>It analyses data sources to form policies and track progress.</p>
+<ul class="simple">
+<li><p>reports on earnings</p></li>
+<li><p>analyses on auction success for items</p></li>
+<li><p>predicts current market price for items</p></li>
+<li><p>analyses the minimum sell price at which we would sell potions</p></li>
+<li><p>produces buying and selling policies, and writes to WoW addon directory</p></li>
+</ul>
+</p>
+<div class="section" id="module-contents">
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="functions">
+<h3>Functions<a class="headerlink" href="#functions" title="Permalink to this headline">¶</a></h3>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#pricer.analysis.analyse_item_prices" title="pricer.analysis.analyse_item_prices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">analyse_item_prices</span></code></a>(full_pricing: bool = False, test: bool = False)</p></td>
+<td><p>It reads auction data and calculates expected item prices.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#pricer.analysis.analyse_sales_performance" title="pricer.analysis.analyse_sales_performance"><code class="xref py py-obj docutils literal notranslate"><span class="pre">analyse_sales_performance</span></code></a>(test: bool = False)</p></td>
+<td><p>It combines inventory and pricing data to report performance.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#pricer.analysis.analyse_auction_success" title="pricer.analysis.analyse_auction_success"><code class="xref py py-obj docutils literal notranslate"><span class="pre">analyse_auction_success</span></code></a>(MAX_AUCTIONS: int = 250, MIN_AUCTIONS: int = 10)</p></td>
+<td><p>It analyses auction activity data for recent item auction success rate.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#pricer.analysis.analyse_item_min_sell_price" title="pricer.analysis.analyse_item_min_sell_price"><code class="xref py py-obj docutils literal notranslate"><span class="pre">analyse_item_min_sell_price</span></code></a>(MIN_PROFIT_MARGIN: int = 1000, MAT_DEV: float = 0.5, test: bool = False)</p></td>
+<td><p>It calculates item minimum sell price given costs.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#pricer.analysis.analyse_sell_data" title="pricer.analysis.analyse_sell_data"><code class="xref py py-obj docutils literal notranslate"><span class="pre">analyse_sell_data</span></code></a>(test: bool = False)</p></td>
+<td><p>It creates a table with latest market information per item.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#pricer.analysis.apply_sell_policy" title="pricer.analysis.apply_sell_policy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">apply_sell_policy</span></code></a>(stack: int = 1, leads: int = 15, duration: str = 'm', update: bool = True, test: bool = False)</p></td>
+<td><p>Combines user input &amp; market data to write a sell policy to WoW addon folder.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#pricer.analysis.apply_buy_policy" title="pricer.analysis.apply_buy_policy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">apply_buy_policy</span></code></a>(MAT_DEV: int = 0, test: bool = False)</p></td>
+<td><p>Determines herbs to buy based on potions in inventory.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py data">
+<dt id="pricer.analysis.logger">
+<code class="sig-prename descclassname">pricer.analysis.</code><code class="sig-name descname">logger</code><a class="headerlink" href="#pricer.analysis.logger" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="pricer.analysis.analyse_item_prices">
+<code class="sig-prename descclassname">pricer.analysis.</code><code class="sig-name descname">analyse_item_prices</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">full_pricing</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">False</span></em>, <em class="sig-param"><span class="n">test</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">False</span></em><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#pricer.analysis.analyse_item_prices" title="Permalink to this definition">¶</a></dt>
+<dd><p>It reads auction data and calculates expected item prices.</p>
+<p>Loads all user auction activity (auction sales, buying).
+* NOTE this method is biased because we tend to buy low and sell high
+Loads historic minimum price for user specified items of interest.
+Joins both sources and sorts by date. Calculates the latest expected
+price using exponential weighted mean. Saves results to parquet.</p>
+<dl>
+<dt>Args:</dt><dd><dl class="simple">
+<dt>full_pricing: Use all item data rather than user specified</dt><dd><p>items of interest. Functionality will be depreciated
+during upcoming release refactor.</p>
+</dd>
+</dl>
+<p>test: when True prevents data saving (early return)</p>
+</dd>
+<dt>Returns:</dt><dd><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="pricer.analysis.analyse_sales_performance">
+<code class="sig-prename descclassname">pricer.analysis.</code><code class="sig-name descname">analyse_sales_performance</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">test</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">False</span></em><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#pricer.analysis.analyse_sales_performance" title="Permalink to this definition">¶</a></dt>
+<dd><p>It combines inventory and pricing data to report performance.</p>
+<p>Produces charts and tables to help measure performance.
+Loads current item prices along with all time inventory
+and money counts.
+It calculates value of inventory based
+on <em>current item prices</em>. This will be changed to price at the
+time of issue in future development, as we cannot perform data
+versioning.
+It groups characters into ‘mule’ and ‘other’ categories. This will
+be changed to a config driven approach in future development.
+Loads use specified time played, and calculates gold p/h. This
+information is saved to log files.
+It generates a chart of monies and inventory value over time,
+which is useful to track long term performance.
+It saves enriched parquet files with inventory and earnings info.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>test: when True prevents data saving (early return)</p>
+</dd>
+<dt>Returns:</dt><dd><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="pricer.analysis.analyse_auction_success">
+<code class="sig-prename descclassname">pricer.analysis.</code><code class="sig-name descname">analyse_auction_success</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">MAX_AUCTIONS</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">250</span></em>, <em class="sig-param"><span class="n">MIN_AUCTIONS</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">10</span></em><span class="sig-paren">)</span> &#x2192; pd.Series<a class="headerlink" href="#pricer.analysis.analyse_auction_success" title="Permalink to this definition">¶</a></dt>
+<dd><p>It analyses auction activity data for recent item auction success rate.</p>
+<p>This information is used elsewhere to calculate minimum price which
+we are willing to sell for.</p>
+<p>It filters auction activity to sold (successful) and failed (unsuccessful)
+auctions. It creates a time based rank for each item, so we can identify
+the most recent data per item.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>MAX_AUCTIONS: Filters data to most recent ‘MAX_AUCTIONS’ ranks.
+MIN_AUCTIONS: Will not return item data when less than MIN_AUCTIONS.</p>
+</dd>
+<dt>Returns:</dt><dd><dl class="simple">
+<dt>pd.Series: Pandas series of item: auction_success, where auction_success</dt><dd><p>is a float value between 0 and 1.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="pricer.analysis.analyse_item_min_sell_price">
+<code class="sig-prename descclassname">pricer.analysis.</code><code class="sig-name descname">analyse_item_min_sell_price</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">MIN_PROFIT_MARGIN</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">1000</span></em>, <em class="sig-param"><span class="n">MAT_DEV</span><span class="p">:</span> <span class="n">float</span> <span class="o">=</span> <span class="default_value">0.5</span></em>, <em class="sig-param"><span class="n">test</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">False</span></em><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#pricer.analysis.analyse_item_min_sell_price" title="Permalink to this definition">¶</a></dt>
+<dd><p>It calculates item minimum sell price given costs.</p>
+<p>It loads user specified items of interest. It loads booty bay data for
+pricing information. * Note this will likely be changed in future development.
+Filters to user specified items which are classed as ‘buy’ or ‘sell’.
+Determines minimum sell price given raw ingredient costs, deposit loss from
+auction fail rate, 5% auction house cut, and a minimum profit margin buffer.</p>
+<dl>
+<dt>Args:</dt><dd><dl class="simple">
+<dt>MIN_PROFIT_MARGIN: User specified ‘buffer’ to add to prices to help</dt><dd><p>ensure profit. Can be considered the ‘min acceptable profit’.</p>
+</dd>
+<dt>MAT_DEV: Adds or subtracts pricing standard deviation. Adding</dt><dd><p>standard deviation means we will only sell items at higher prices.</p>
+</dd>
+</dl>
+<p>test: when True prevents data saving (early return)</p>
+</dd>
+<dt>Returns:</dt><dd><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="pricer.analysis.analyse_sell_data">
+<code class="sig-prename descclassname">pricer.analysis.</code><code class="sig-name descname">analyse_sell_data</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">test</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">False</span></em><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#pricer.analysis.analyse_sell_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>It creates a table with latest market information per item.</p>
+<p>Loads minimum listing price/item and current auction minimum price/item.
+From these, determines if it is feasible to sell items at a profit.</p>
+<p>It loads current auction data to determine if we currently have auctions,
+and whether they are being undercut.</p>
+<p>Adds inventory data per item, to determine if we have items available for sale.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>test: when True prevents data saving (early return)</p>
+</dd>
+<dt>Returns:</dt><dd><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="pricer.analysis.apply_sell_policy">
+<code class="sig-prename descclassname">pricer.analysis.</code><code class="sig-name descname">apply_sell_policy</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">stack</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">1</span></em>, <em class="sig-param"><span class="n">leads</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">15</span></em>, <em class="sig-param"><span class="n">duration</span><span class="p">:</span> <span class="n">str</span> <span class="o">=</span> <span class="default_value">'m'</span></em>, <em class="sig-param"><span class="n">update</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">True</span></em>, <em class="sig-param"><span class="n">test</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">False</span></em><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#pricer.analysis.apply_sell_policy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Combines user input &amp; market data to write a sell policy to WoW addon folder.</p>
+<p>Given user specified parameters, create a selling policy across
+all items, based on the market and inventory information.
+The sell policy is converted into lua format and saved to the WoW
+Addon directory for Auctioneer.</p>
+<dl>
+<dt>Args:</dt><dd><p>stack: stack size to sell items
+leads: total number of undercut auctions we want to achieve
+duration: length of auction
+update: when True, will re-save the market data after applying the sell</p>
+<blockquote>
+<div><p>policy. This is useful to run a second sell policy without needing to
+re-run the full analysis.</p>
+</div></blockquote>
+<p>test: when True prevents data saving (early return)</p>
+</dd>
+<dt>Returns:</dt><dd><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="pricer.analysis.apply_buy_policy">
+<code class="sig-prename descclassname">pricer.analysis.</code><code class="sig-name descname">apply_buy_policy</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">MAT_DEV</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">0</span></em>, <em class="sig-param"><span class="n">test</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">False</span></em><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#pricer.analysis.apply_buy_policy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Determines herbs to buy based on potions in inventory.</p>
+<p>Loads user specified items of interest, and ideal holdings of the items.
+Loads information on number of potions in inventory.
+Loads auction success rate for potions, to downweight items that don’t sell.
+Calculates number of herbs required to fill the ideal holdings of potions,
+minus herbs already held in inventory.
+Looks through all auction listings of herbs available for sale (volume and price).
+Sets a buy price at which we buy the right number of herbs to fill demand.
+We set a minimum buy price such that we can always buy bargain herbs.
+The buy policy is converted into lua format and saved to the WoW
+Addon directory for Auctioneer (Snatch). Additionally, the buy policy
+is saved as a parquet file.</p>
+<dl>
+<dt>Args:</dt><dd><dl class="simple">
+<dt>MAT_DEV: Adds or subtracts pricing standard deviation. Adding</dt><dd><p>standard deviation means we will buy items at higher prices.</p>
+</dd>
+</dl>
+<p>test: when True prevents data saving (early return)</p>
+</dd>
+<dt>Returns:</dt><dd><p>None</p>
+</dd>
+<dt>Raises:</dt><dd><dl class="simple">
+<dt>KeyError: All user specified ‘Buy’ items must be present in the</dt><dd><p>Auctioneer ‘snatch’ listing.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+</div>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">pricer</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../index.html">API Reference</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2020, bluemania.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.1.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="../../../_sources/autoapi/pricer/analysis/index.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

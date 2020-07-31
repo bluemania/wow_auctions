@@ -1,0 +1,239 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>pricer.sources &#8212; pricer 0.1.1 documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css" />
+    <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <script src="../../../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="module-pricer.sources">
+<span id="pricer-sources"></span><h1><a class="reference internal" href="#module-pricer.sources" title="pricer.sources"><code class="xref py py-mod docutils literal notranslate"><span class="pre">pricer.sources</span></code></a><a class="headerlink" href="#module-pricer.sources" title="Permalink to this headline">¶</a></h1>
+<p><p>It is responsible for managing input data sources.</p>
+<p>It reads data from WoW interface addons and user specified sources.
+Performs basic validation and data cleaning before
+converting into normalized data tables in parquet format.
+When functions are run in test mode, no data is saved.</p>
+</p>
+<div class="section" id="module-contents">
+<h2>Module Contents<a class="headerlink" href="#module-contents" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="functions">
+<h3>Functions<a class="headerlink" href="#functions" title="Permalink to this headline">¶</a></h3>
+<table class="longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#pricer.sources.create_playtime_record" title="pricer.sources.create_playtime_record"><code class="xref py py-obj docutils literal notranslate"><span class="pre">create_playtime_record</span></code></a>(test: bool = False, run_dt: dt = None, clean_session: bool = False, played: str = '', level_time: str = '')</p></td>
+<td><p>Preserves record of how we are spending time on our auction character.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#pricer.sources.generate_inventory" title="pricer.sources.generate_inventory"><code class="xref py py-obj docutils literal notranslate"><span class="pre">generate_inventory</span></code></a>(test: bool = False, run_dt: dt = None)</p></td>
+<td><p>Read and clean Arkinventory addon data, and save to parquet.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#pricer.sources.generate_auction_scandata" title="pricer.sources.generate_auction_scandata"><code class="xref py py-obj docutils literal notranslate"><span class="pre">generate_auction_scandata</span></code></a>(test: bool = False)</p></td>
+<td><p>Read and clean Auctionneer addon data, and save to parquet.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#pricer.sources.generate_auction_activity" title="pricer.sources.generate_auction_activity"><code class="xref py py-obj docutils literal notranslate"><span class="pre">generate_auction_activity</span></code></a>(test: bool = False)</p></td>
+<td><p>Read and clean BeanCounter addon data, and save to parquet.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#pricer.sources.generate_booty_data" title="pricer.sources.generate_booty_data"><code class="xref py py-obj docutils literal notranslate"><span class="pre">generate_booty_data</span></code></a>()</p></td>
+<td><p>Read BootyBay data (through proxy addon), and save to parquet.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py data">
+<dt id="pricer.sources.chained_assignment">
+<code class="sig-prename descclassname">pricer.sources.</code><code class="sig-name descname">chained_assignment</code><a class="headerlink" href="#pricer.sources.chained_assignment" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py data">
+<dt id="pricer.sources.logger">
+<code class="sig-prename descclassname">pricer.sources.</code><code class="sig-name descname">logger</code><a class="headerlink" href="#pricer.sources.logger" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt id="pricer.sources.create_playtime_record">
+<code class="sig-prename descclassname">pricer.sources.</code><code class="sig-name descname">create_playtime_record</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">test</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">False</span></em>, <em class="sig-param"><span class="n">run_dt</span><span class="p">:</span> <span class="n">dt</span> <span class="o">=</span> <span class="default_value">None</span></em>, <em class="sig-param"><span class="n">clean_session</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">False</span></em>, <em class="sig-param"><span class="n">played</span><span class="p">:</span> <span class="n">str</span> <span class="o">=</span> <span class="default_value">''</span></em>, <em class="sig-param"><span class="n">level_time</span><span class="p">:</span> <span class="n">str</span> <span class="o">=</span> <span class="default_value">''</span></em><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#pricer.sources.create_playtime_record" title="Permalink to this definition">¶</a></dt>
+<dd><p>Preserves record of how we are spending time on our auction character.</p>
+<p>We record info such as time played (played) or spent leveling (level_time)
+This is useful for calcs involving real time vs game time,
+therefore gold earnt per hour.
+Time played may be automated in future, however we retain ‘clean_session’
+as a user specified flag to indicate inventory is stable (no missing items).</p>
+<p>When in test mode, loading and calcs are performed but no file saves
+Otherwise, saves current analysis as intermediate, loads full, saves backup,
+append interm, and save full</p>
+<dl>
+<dt>Args:</dt><dd><p>test: when True prevents data saving (early return)
+run_dt: The common session runtime
+clean_session: User specified flag indicating inventory is stable
+played: Ingame timelike string in ‘00d-00h-00m-00s’ format,</p>
+<blockquote>
+<div><p>this field is a ‘total time’ field and is expected to relate to
+the amount of time spent on auctioning alt doing auctions</p>
+</div></blockquote>
+<dl class="simple">
+<dt>level_time: Ingame timelike string in ‘00d-00h-00m-00s’ format</dt><dd><p>this field helps record instances where we’ve done other things
+on our auction character such as leveling, long AFK etc.</p>
+</dd>
+</dl>
+</dd>
+<dt>Returns:</dt><dd><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="pricer.sources.generate_inventory">
+<code class="sig-prename descclassname">pricer.sources.</code><code class="sig-name descname">generate_inventory</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">test</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">False</span></em>, <em class="sig-param"><span class="n">run_dt</span><span class="p">:</span> <span class="n">dt</span> <span class="o">=</span> <span class="default_value">None</span></em><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#pricer.sources.generate_inventory" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read and clean Arkinventory addon data, and save to parquet.</p>
+<p>For all characters on all user specified accounts, collates info on
+monies and inventory. Uses general settings to determine which slots
+are examined (e.g. mailbox, backpack, auction, bank).</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>test: when True prevents data saving (early return)
+run_dt: Session runtime for data lineage timestampping</p>
+</dd>
+<dt>Returns:</dt><dd><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="pricer.sources.generate_auction_scandata">
+<code class="sig-prename descclassname">pricer.sources.</code><code class="sig-name descname">generate_auction_scandata</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">test</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">False</span></em><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#pricer.sources.generate_auction_scandata" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read and clean Auctionneer addon data, and save to parquet.</p>
+<p>Utility function loads addon raw lua auction data from the user
+specified primary auctioning account. It cleans up and selects columns.
+Additionally filters results for the minimum price of user specified
+items of interest.</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>test: when True prevents data saving (early return)</p>
+</dd>
+<dt>Returns:</dt><dd><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="pricer.sources.generate_auction_activity">
+<code class="sig-prename descclassname">pricer.sources.</code><code class="sig-name descname">generate_auction_activity</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">test</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">False</span></em><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#pricer.sources.generate_auction_activity" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read and clean BeanCounter addon data, and save to parquet.</p>
+<p>For all characters on all user specified accounts, collates info on
+auction history in terms of failed/succesful sales, and purchases made.
+Works the data into a labelled and cleaned pandas before parquet saves</p>
+<dl class="simple">
+<dt>Args:</dt><dd><p>test: when True prevents data saving (early return)</p>
+</dd>
+<dt>Returns:</dt><dd><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="pricer.sources.generate_booty_data">
+<code class="sig-prename descclassname">pricer.sources.</code><code class="sig-name descname">generate_booty_data</code><span class="sig-paren">(</span><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#pricer.sources.generate_booty_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read BootyBay data (through proxy addon), and save to parquet.</p>
+<p>Temporary process to obtain Booty Bay data through a custom
+Addon which can interact with Booty Bay data while in-game.
+Function intended to be depreciated before release.</p>
+</dd></dl>
+
+</div>
+</div>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../index.html">pricer</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../index.html">API Reference</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2020, bluemania.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.1.2</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="../../../_sources/autoapi/pricer/sources/index.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

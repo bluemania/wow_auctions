@@ -1,30 +1,55 @@
-"""
-This script reads raw sources and converts into more standard panda parquets
-"""
-from pricer import config, utils
+"""It is responsible for managing input data sources.
 
-import pandas as pd
+It reads data from WoW interface addons and user specified sources.
+Performs basic validation and data cleaning before
+converting into normalized data tables in parquet format.
+When functions are run in test mode, no data is saved.
+"""
+import logging
 from collections import defaultdict
 from datetime import datetime as dt
-import logging
+
+import pandas as pd
+
+from pricer import utils
 
 pd.options.mode.chained_assignment = None  # default='warn'
 logger = logging.getLogger(__name__)
 
 
-def generate_time_played(test=False, run_dt=None, clean_session=False, played=None, level_time=None):
-    """
-    Creates a record of time played on character along with program run time
-    This is useful for calcs involving real time vs game time
-    and in relation to gold earnt (i.e. gold per hour)
-    Time played may be automated in future, however we specify 'clean_session'
-    to flag when all inventory accounted for, with mailboxes checked.
+def create_playtime_record(
+    test: bool = False,
+    run_dt: dt = None,
+    clean_session: bool = False,
+    played: str = "",
+    level_time: str = "",
+) -> None:
+    """Preserves record of how we are spending time on our auction character.
+
+    We record info such as time played (played) or spent leveling (level_time)
+    This is useful for calcs involving real time vs game time,
+    therefore gold earnt per hour.
+    Time played may be automated in future, however we retain 'clean_session'
+    as a user specified flag to indicate inventory is stable (no missing items).
 
     When in test mode, loading and calcs are performed but no file saves
-    Otherwise, saves current analysis as intermediate, loads full, saves backup, 
+    Otherwise, saves current analysis as intermediate, loads full, saves backup,
     append interm, and save full
+
+    Args:
+        test: when True prevents data saving (early return)
+        run_dt: The common session runtime
+        clean_session: User specified flag indicating inventory is stable
+        played: Ingame timelike string in '00d-00h-00m-00s' format,
+            this field is a 'total time' field and is expected to relate to
+            the amount of time spent on auctioning alt doing auctions
+        level_time: Ingame timelike string in '00d-00h-00m-00s' format
+            this field helps record instances where we've done other things
+            on our auction character such as leveling, long AFK etc.
+
+    Returns:
+        None
     """
-    
     played_seconds = utils.get_seconds_played(played)
     leveling_seconds = utils.get_seconds_played(level_time)
 
@@ -33,20 +58,21 @@ def generate_time_played(test=False, run_dt=None, clean_session=False, played=No
     else:
         level_adjust = 0
 
-    data = {'timestamp': run_dt,
-            'played_raw': played,
-            'played_seconds': utils.get_seconds_played(played),
-            'clean_session': clean_session,
-            'leveling_raw': level_time,
-            'leveling_seconds': level_adjust
-            }
+    data = {
+        "timestamp": run_dt,
+        "played_raw": played,
+        "played_seconds": utils.get_seconds_played(played),
+        "clean_session": clean_session,
+        "leveling_raw": level_time,
+        "leveling_seconds": level_adjust,
+    }
     df_played = pd.DataFrame(pd.Series(data)).T
 
     if test:
-        return None # avoid saves
+        return None  # avoid saves
 
-    df_played.to_parquet('data/intermediate/time_played.parquet', compression="gzip")
-    
+    df_played.to_parquet("data/intermediate/time_played.parquet", compression="gzip")
+
     played_repo = pd.read_parquet("data/full/time_played.parquet")
     played_repo.to_parquet("data/full_backup/time_played.parquet", compression="gzip")
     played_repo = played_repo.append(df_played)
@@ -55,19 +81,24 @@ def generate_time_played(test=False, run_dt=None, clean_session=False, played=No
     logger.info(f"Time played recorded, marked as clean_session: {clean_session}")
 
 
-def generate_inventory(test=False, run_dt=None):
-    """ Reads and reformats the Arkinventory data file into a pandas dataframe
-    Loads yaml files to specify item locations and specific items of interest
-    Saves down parquet file ready to go
+def generate_inventory(test: bool = False, run_dt: dt = None) -> None:
+    """Read and clean Arkinventory addon data, and save to parquet.
 
-    When in test mode, loading and calcs are performed but no file saves
-    Otherwise, saves current analysis as intermediate and loads full
-    If the data has updated since last run; save backup, append interm, save full
+    For all characters on all user specified accounts, collates info on
+    monies and inventory. Uses general settings to determine which slots
+    are examined (e.g. mailbox, backpack, auction, bank).
+
+    Args:
+        test: when True prevents data saving (early return)
+        run_dt: Session runtime for data lineage timestampping
+
+    Returns:
+        None
     """
     settings = utils.get_general_settings()
     characters = utils.read_lua("ArkInventory")["ARKINVDB"]["global"]["player"]["data"]
 
-    # Search through inventory data to create dictionary of all items and counts
+    # Search through inventory data to create dict of all items and counts
     # Also counts total monies
     monies = {}
     character_inventories = defaultdict(str)
@@ -79,7 +110,7 @@ def generate_inventory(test=False, run_dt=None):
 
         character_money = int(character.get("info").get("money", 0))
         monies[ckey] = character_money
-        logger.debug(f"Reading character info {character_name}, has money {character_money}")
+        logger.debug(f"Character {character_name}, has money: {character_money}")
 
         # Get Bank, Inventory, Character, Mailbox etc
         location_slots = character.get("location", [])
@@ -100,12 +131,12 @@ def generate_inventory(test=False, run_dt=None):
                     for item in bag.get("slot", []):
                         if item.get("h") and item.get("count"):
                             item_name = item.get("h").split("[")[1].split("]")[0]
-
                             items[item_name] += item.get("count")
 
             for item_name, item_count in items.items():
                 raw_data.append((character_name, loc_name, item_name, item_count))
 
+            # TODO Is this unused?
             character_inventories[character_name][
                 settings["location_info"][lkey]
             ] = items
@@ -128,7 +159,8 @@ def generate_inventory(test=False, run_dt=None):
     df_monies.to_parquet("data/intermediate/monies.parquet", compression="gzip")
 
     logger.info(
-        f"Inventory formatted. {len(df)} records, {int(df_monies['monies'].sum()/10000)} total money across chars"
+        f"Inventory formatted. {len(df)} records,"
+        + f" {int(df_monies['monies'].sum()/10000)} total money across chars"
     )
 
     inventory_repo = pd.read_parquet("data/full/inventory.parquet")
@@ -137,7 +169,9 @@ def generate_inventory(test=False, run_dt=None):
     updated = "*not*"
     if df["timestamp"].max() > inventory_repo["timestamp"].max():
         updated = ""
-        inventory_repo.to_parquet("data/full_backup/inventory.parquet", compression="gzip")
+        inventory_repo.to_parquet(
+            "data/full_backup/inventory.parquet", compression="gzip"
+        )
         inventory_repo = inventory_repo.append(df)
         inventory_repo.to_parquet("data/full/inventory.parquet", compression="gzip")
 
@@ -148,17 +182,29 @@ def generate_inventory(test=False, run_dt=None):
     unique_periods = len(inventory_repo["timestamp"].unique())
 
     logger.info(
-        f"Inventory full repository. {len(inventory_repo)} records with {unique_periods} snapshots. Repository has {updated} been updated this run"
+        f"Inventory full repository. {len(inventory_repo)} "
+        + f"records with {unique_periods} snapshots. "
+        + f"Repository has {updated} been updated this run"
     )
 
 
-def generate_auction_scandata(test=False):
-    """ Snapshot of all AH prices from latest scan
-        Reads the raw scandata from both accounts, cleans and pulls latest only
-        Saves latest scandata to intermediate and adds to a full database with backup
+def generate_auction_scandata(test: bool = False) -> None:
+    """Read and clean Auctionneer addon data, and save to parquet.
+
+    Utility function loads addon raw lua auction data from the user
+    specified primary auctioning account. It cleans up and selects columns.
+    Additionally filters results for the minimum price of user specified
+    items of interest.
+
+    Args:
+        test: when True prevents data saving (early return)
+
+    Returns:
+        None
     """
     auction_data = utils.get_and_format_auction_data()
 
+    # TODO this data cleaning should likely go in the utility
     auction_data = auction_data[auction_data["price_per"] != 0]
     auction_data["price_per"] = auction_data["price_per"].astype(int)
     auction_data.loc[:, "auction_type"] = "market"
@@ -199,12 +245,10 @@ def generate_auction_scandata(test=False):
         "data/full_backup/auction_scan_minprice.parquet", compression="gzip"
     )
 
-    updated = "*not*"
     if (
         auction_scan_minprice["timestamp"].max()
         > auction_scan_minprice_repo["timestamp"].max()
     ):
-        updated = ""
         auction_scan_minprice_repo = pd.concat(
             [auction_scan_minprice, auction_scan_minprice_repo], axis=0
         )
@@ -213,10 +257,18 @@ def generate_auction_scandata(test=False):
         )
 
 
-def generate_auction_activity(test=False):
-    """ Generates auction history parquet file with auctions of interest.
-        Reads and parses Beancounter auction history across all characters
-        Works the data into a labelled and cleaned pandas before parquet saves
+def generate_auction_activity(test: bool = False) -> None:
+    """Read and clean BeanCounter addon data, and save to parquet.
+
+    For all characters on all user specified accounts, collates info on
+    auction history in terms of failed/succesful sales, and purchases made.
+    Works the data into a labelled and cleaned pandas before parquet saves
+
+    Args:
+        test: when True prevents data saving (early return)
+
+    Returns:
+        None
     """
     relevant_auction_types = [
         "failedAuctions",
@@ -234,6 +286,7 @@ def generate_auction_activity(test=False):
         num_item[key.split(":")[0]] = item_name
 
     # Parses all characters relevant listings into flat list
+    # TODO do not specify Grobbulus here
     parsed = []
     for character, auction_data in data["BeanCounterDB"]["Grobbulus"].items():
         for auction_type, item_listings in auction_data.items():
@@ -253,6 +306,7 @@ def generate_auction_activity(test=False):
     df = pd.DataFrame(parsed)
     df = df.drop([4, 5, 6, 8, 11, 12], axis=1)
 
+    # TODO schema shouldn't be here ideally
     cols = ["auction_type", "item", "character", "count", "price", "agent", "timestamp"]
     df.rename(columns=dict(zip(df.columns, cols)), inplace=True)
 
@@ -269,8 +323,12 @@ def generate_auction_activity(test=False):
     df.to_parquet("data/full/auction_activity.parquet", compression="gzip")
 
 
-def generate_booty_data():
-    """ Get and save booty bay data
+def generate_booty_data() -> None:
+    """Read BootyBay data (through proxy addon), and save to parquet.
+
+    Temporary process to obtain Booty Bay data through a custom
+    Addon which can interact with Booty Bay data while in-game.
+    Function intended to be depreciated before release.
     """
     account = "396255466#1"
     pricerdata = utils.read_lua(

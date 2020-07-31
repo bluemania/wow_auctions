@@ -1,40 +1,47 @@
+"""It contains small functions to support data pipeline.
+
+* Loads and writes raw and cleaned files, changes data formats
 """
-This file contains shorter utilities to write/save raw files, and change data formats
-"""
+
+import logging
+import os
+from datetime import datetime as dt
+from typing import Any
+
+import pandas as pd
+import yaml
+from slpp import slpp as lua  # pip install git+https://github.com/SirAnthony/slpp
 
 from pricer import config
-
-import yaml
-import pandas as pd
-from slpp import slpp as lua  # pip install git+https://github.com/SirAnthony/slpp
-from datetime import datetime as dt
-import os
-import logging
 
 logger = logging.getLogger(__name__)
 
 
 def get_seconds_played(time_played: str) -> int:
-    """
-    Converts a string representation of time played to seconds
-    """
+    """Convert string representation of time played to seconds."""
     try:
-        days, hours, mins, seconds = time_played.split('-')
+        days, hours, mins, seconds = time_played.split("-")
     except ValueError as error:
         logger.error(error)
-        raise ValueError("Play time not formatted correctly; needs to be '00d-00h-00m-00s'")
+        raise ValueError(
+            "Play time not formatted correctly; needs to be '00d-00h-00m-00s'"
+        )
 
-    total_seconds = (int(days[:-1]) * 24 * 60 * 60 +
-                     int(hours[:-1]) * 60 * 60 + 
-                     int(mins[:-1]) * 60 + 
-                     int(seconds[:-1]))
-    
+    total_seconds = (
+        int(days[:-1]) * 24 * 60 * 60
+        + int(hours[:-1]) * 60 * 60
+        + int(mins[:-1]) * 60
+        + int(seconds[:-1])
+    )
+
     return total_seconds
 
 
-def generate_new_pricer_file():
-    """ Generates a blank pricer file of items of interest. This is used to fill in the latest pricing
-    information from booty bay gazette. This is done in game using a self build addon with the /pricer command    
+def generate_new_pricer_file() -> None:
+    """Generates a blank pricer file of items of interest.
+
+    This is used to fill in the latest pricing info from booty bay gazette.
+    This is done in game using a self build addon with the /pricer command
     """
     items = load_items()
 
@@ -54,8 +61,8 @@ def generate_new_pricer_file():
         f.write("\n".join(pricer_file))
 
 
-def source_merge(a, b, path=None):
-    "merges b into a"
+def source_merge(a: dict, b: dict, path: list = None) -> dict:
+    """Merges b into a."""
     if path is None:
         path = []
     for key in b:
@@ -65,17 +72,18 @@ def source_merge(a, b, path=None):
             elif a[key] == b[key]:
                 pass  # same leaf value
             else:
-                pass  # raise Exception('Conflict at %s' % '.'.join(path + [str(key)]))
+                pass #raise Exception("Conflict at %s" % ".".join(path + [str(key)]))
         else:
             a[key] = b[key]
     return a
 
 
 def read_lua(
-    datasource: str, merge_account_sources=True, accounts=["BLUEM", "396255466#1"]
-):
-    """ Attempts to read lua from the given locations
-    """
+    datasource: str,
+    merge_account_sources: bool = True,
+    accounts: list = ["BLUEM", "396255466#1"],
+) -> dict:
+    """Attempts to read lua and merge lua from WoW Addon account locations."""
     # TODO automatically detect accounts
     account_data = {key: None for key in accounts}
     for account_name in account_data.keys():
@@ -91,24 +99,20 @@ def read_lua(
         return account_data
 
 
-def load_items():
-    """ Loads and returns the user created YAML file of interesting items and their stack sizes
-    """
+def load_items() -> dict:
+    """Loads user specified items of interest."""
     with open("config/items.yaml", "r") as f:
         return yaml.load(f, Loader=yaml.FullLoader)
 
 
-def get_general_settings():
-    """Gets general program settings
-    """
+def get_general_settings() -> dict:
+    """Gets general program settings such as mappings."""
     with open("config/general_settings.yaml", "r") as f:
         return yaml.load(f, Loader=yaml.FullLoader)
 
 
-def get_and_format_auction_data():
-    """ Reads the raw scandata dict dump and converts to usable dataframe    
-    """
-    # TODO remove account info
+def get_and_format_auction_data() -> pd.DataFrame:
+    """Read raw scandata dict dump and converts to usable dataframe."""
     path_live = f"{config.us.get('warcraft_path').rstrip('/')}/WTF/Account/396255466#1/SavedVariables/Auc-ScanData.lua"
     logger.debug(f"Loading Addon auction data from {path_live}")
 
@@ -163,10 +167,8 @@ def get_and_format_auction_data():
     return df
 
 
-def get_item_codes():
-    """
-    Reads the beancounter database and produces codes per item dict
-    """
+def get_item_codes() -> dict:
+    """Read BeanCounter data to create code: item mapping."""
     data = read_lua("BeanCounter")
     item_code = {}
     for keypart, itempart in data["BeanCounterDBNames"].items():
@@ -176,10 +178,10 @@ def get_item_codes():
     return item_code
 
 
-def write_lua(data, account="396255466#1", name="Auc-Advanced"):
-    """
-    Write python dict as lua object
-    """
+def write_lua(
+    data: dict, account: str = "396255466#1", name: str = "Auc-Advanced"
+) -> None:
+    """Write python dict as lua object."""
     lua_print = "\n"
     for key in data.keys():
         lua_print += f"{key} = " + dump_lua(data[key]) + "\n"
@@ -190,10 +192,8 @@ def write_lua(data, account="396255466#1", name="Auc-Advanced"):
         f.write(lua_print)
 
 
-def dump_lua(data):
-    """
-    Borrowed code to write python dict as lua format(ish)
-    """
+def dump_lua(data: Any) -> str:
+    """Borrowed code to write python dict as lua format(ish)."""
     if type(data) is str:
         return f'"{data}"'
     if type(data) in (int, float):
@@ -201,22 +201,20 @@ def dump_lua(data):
     if type(data) is bool:
         return data and "true" or "false"
     if type(data) is list:
-        l = "{"
-        l += ", ".join([dump_lua(item) for item in data])
-        l += "}"
-        return l
+        list_work = "{"
+        list_work += ", ".join([dump_lua(item) for item in data])
+        list_work += "}"
+        return list_work
     if type(data) is dict:
-        t = "{"
-        t += ", ".join([f'["{k}"]={dump_lua(v)}' for k, v in data.items()])
-        t += "}"
-        return t
+        dict_work = "{"
+        dict_work += ", ".join([f'["{k}"]={dump_lua(v)}' for k, v in data.items()])
+        dict_work += "}"
+        return dict_work
     logger.warning(f"Lua parsing error; unknown type {type(data)}")
 
 
-def read_multiple_parquet(loc):
-    """ Given a directory path, scan for parquet files, 
-        Load and concatenate, returning the full dataframe
-    """
+def read_multiple_parquet(loc: str) -> pd.DataFrame:
+    """Scan directory path for parquet files, concatenate and return."""
     files = os.listdir(loc)
     logger.debug(f"Loading multiple ({len(files)}) parquet files from {loc}")
     df_list = []
@@ -224,4 +222,4 @@ def read_multiple_parquet(loc):
         df = pd.read_parquet(f"{loc}{file}")
         df_list.append(df)
     df_total = pd.concat(df_list)
-    return df
+    return df_total
