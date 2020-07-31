@@ -11,3 +11,5 @@ logs/*
 
 notebooks/*
 pricer.egg-info
+
+*.sublime*
