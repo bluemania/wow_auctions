@@ -36,7 +36,6 @@ def analyse_item_prices(full_pricing: bool = False, test: bool = False) -> None:
     Returns:
         None
     """
-    # TODO needs refactor with items of interest
     auction_activity = pd.read_parquet("data/full/auction_activity.parquet")
     auction_activity = auction_activity[
         ["item", "timestamp", "price_per", "auction_type"]
@@ -186,7 +185,6 @@ def analyse_sales_performance(test: bool = False) -> None:
     total_time_played = df_gold_hour["inc_hours"].sum().round(2)
     all_time_gold_hour = (df_gold_hour["inc_hold"].sum() / total_time_played).round(2)
 
-    # TODO Needs to be tested in case breaks on first run
     # Gold per hour may vary over runs due to market price calc of inventory
     recent_gold_hour = df_gold_hour.iloc[-1].loc["gold_per_hour"].round(2)
     recent_timestamp = df_gold_hour.iloc[-1].name

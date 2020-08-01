@@ -136,11 +136,6 @@ def generate_inventory(test: bool = False, run_dt: dt = None) -> None:
             for item_name, item_count in items.items():
                 raw_data.append((character_name, loc_name, item_name, item_count))
 
-            # TODO Is this unused?
-            character_inventories[character_name][
-                settings["location_info"][lkey]
-            ] = items
-
     # Convert information to dataframe
     cols = ["character", "location", "item", "count", "timestamp"]
     df = pd.DataFrame(raw_data)
@@ -204,7 +199,6 @@ def generate_auction_scandata(test: bool = False) -> None:
     """
     auction_data = utils.get_and_format_auction_data()
 
-    # TODO this data cleaning should likely go in the utility
     auction_data = auction_data[auction_data["price_per"] != 0]
     auction_data["price_per"] = auction_data["price_per"].astype(int)
     auction_data.loc[:, "auction_type"] = "market"
@@ -286,7 +280,6 @@ def generate_auction_activity(test: bool = False) -> None:
         num_item[key.split(":")[0]] = item_name
 
     # Parses all characters relevant listings into flat list
-    # TODO do not specify Grobbulus here
     parsed = []
     for character, auction_data in data["BeanCounterDB"]["Grobbulus"].items():
         for auction_type, item_listings in auction_data.items():
@@ -306,7 +299,6 @@ def generate_auction_activity(test: bool = False) -> None:
     df = pd.DataFrame(parsed)
     df = df.drop([4, 5, 6, 8, 11, 12], axis=1)
 
-    # TODO schema shouldn't be here ideally
     cols = ["auction_type", "item", "character", "count", "price", "agent", "timestamp"]
     df.rename(columns=dict(zip(df.columns, cols)), inplace=True)
 
@@ -339,7 +331,9 @@ def retrieve_pricer_data(test: bool = False) -> None:
     character_prices = []
     for account_name in accounts:
         for character in characters:
-            character_prices.append(utils.get_character_pricer_data(account_name, character))
+            character_prices.append(
+                utils.get_character_pricer_data(account_name, character)
+            )
 
     # Merge dictionaries
     total_pricer = {}
