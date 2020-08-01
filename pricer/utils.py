@@ -94,10 +94,10 @@ def source_merge(a: dict, b: dict, path: list = None) -> dict:
 def read_lua(
     datasource: str,
     merge_account_sources: bool = True,
-    accounts: list = ["BLUEM", "396255466#1"],
+    accounts: list = ["BLUEM", "396255466#1", "801032581#1"],
 ) -> dict:
     """Attempts to read lua and merge lua from WoW Addon account locations."""
-    account_data = {key: None for key in accounts}
+    account_data: dict = {key: None for key in accounts}
     for account_name in account_data.keys():
         path_live = f"{config.us.get('warcraft_path').rstrip('/')}/WTF/Account/{account_name}/SavedVariables/{datasource}.lua"
         logger.debug(f"Loading Addon lua from {path_live}")
@@ -105,9 +105,17 @@ def read_lua(
         with open(path_live, "r") as f:
             account_data[account_name] = lua.decode("{" + f.read() + "}")
 
+    logger.debug(f"read_lua on {datasource} for accounts: {accounts}")
     if merge_account_sources and len(accounts) > 1:
-        return source_merge(account_data["BLUEM"], account_data["396255466#1"])
+
+        merged_account_data: dict = {}
+        for account, data in account_data.items():
+            merged_account_data = source_merge(merged_account_data, data).copy()
+        
+        logger.debug(f"read_lua (merged mode) {len(merged_account_data)} keys")
+        return merged_account_data
     else:
+        logger.debug(f"read_lua (unmerged mode) {len(account_data)} keys")
         return account_data
 
 
