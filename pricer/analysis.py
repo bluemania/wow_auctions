@@ -278,11 +278,17 @@ def analyse_item_min_sell_price(
 
     Returns:
         None
+
+    Raises:
+        ValueError: Error might raised when booty bay addon data sourcing
+            has corrupted.
     """
     user_items = utils.load_items()
 
-    # item_prices = pd.read_parquet('intermediate/item_prices.parquet')
+    # Item prices calculated from own auction scan and sales experience
+    # item_prices = pd.read_parquet('data/intermediate/item_prices.parquet')
 
+    # External third party source.
     item_prices = pd.read_parquet("data/intermediate/booty_data.parquet")
     item_prices["market_price"] = item_prices["recent"] + (
         item_prices["stddev"] * MAT_DEV
@@ -305,8 +311,15 @@ def analyse_item_min_sell_price(
         material_cost = 0
         for ingredient, count in item_details.get("made_from", {}).items():
             material_cost += item_prices.loc[ingredient, "market_price"] * count
-        if material_cost != 0:
-            item_costs[item_name] = int(material_cost)
+            logger.debug(
+                f"item_name: {item_name}, ingre: {ingredient}, $ {material_cost}"
+            )
+        if material_cost > 0:
+            logger.debug(f"{item_name}, {material_cost}")
+            try:
+                item_costs[item_name] = int(material_cost)
+            except ValueError:
+                raise ValueError(f"Material cost is missing for {item_name}")
 
     item_min_sale = pd.DataFrame.from_dict(item_costs, orient="index")
     item_min_sale.index.name = "item"

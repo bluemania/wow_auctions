@@ -7,6 +7,7 @@ import logging
 import os
 from datetime import datetime as dt
 from typing import Any
+import shutil
 
 import pandas as pd
 import yaml
@@ -37,7 +38,7 @@ def get_seconds_played(time_played: str) -> int:
     return total_seconds
 
 
-def generate_new_pricer_file() -> None:
+def deploy_pricer_addon() -> None:
     """Generates a blank pricer file of items of interest.
 
     This is used to fill in the latest pricing info from booty bay gazette.
@@ -54,11 +55,23 @@ def generate_new_pricer_file() -> None:
     # Replace last ',' with '}'
     pricer_file[-1] = pricer_file[-1][:-1] + "}"
 
-    pricer_path = f"{config.us.get('warcraft_path').rstrip('/')}/Interface/AddOns/Pricer/items_of_interest.lua"
+    wow_addon_path = (
+        f"{config.us.get('warcraft_path').rstrip('/')}/Interface/AddOns/Pricer"
+    )
+    pricer_path = f"{wow_addon_path}/items_of_interest.lua"
+    shutil.copyfile("pricer_addon/Pricer/Pricer.lua", f"{wow_addon_path}/Pricer.lua")
+    shutil.copyfile("pricer_addon/Pricer/Pricer.toc", f"{wow_addon_path}/Pricer.toc")
     logger.debug(f"Saving pricer addon file to {pricer_path}")
 
     with open(pricer_path, "w") as f:
         f.write("\n".join(pricer_file))
+
+
+def get_character_pricer_data(account_name: str, character: str) -> dict:
+    """Get pricer data for a character on an account."""
+    path = f"{config.us.get('warcraft_path').rstrip('/')}/WTF/Account/{account_name}/Grobbulus/{character}/SavedVariables/Pricer.lua"
+    with open(path, "r") as f:
+        return lua.decode("{" + f.read() + "}")["PricerData"]
 
 
 def source_merge(a: dict, b: dict, path: list = None) -> dict:
@@ -72,7 +85,7 @@ def source_merge(a: dict, b: dict, path: list = None) -> dict:
             elif a[key] == b[key]:
                 pass  # same leaf value
             else:
-                pass #raise Exception("Conflict at %s" % ".".join(path + [str(key)]))
+                pass  # raise Exception("Conflict at %s" % ".".join(path + [str(key)]))
         else:
             a[key] = b[key]
     return a
@@ -84,7 +97,6 @@ def read_lua(
     accounts: list = ["BLUEM", "396255466#1"],
 ) -> dict:
     """Attempts to read lua and merge lua from WoW Addon account locations."""
-    # TODO automatically detect accounts
     account_data = {key: None for key in accounts}
     for account_name in account_data.keys():
         path_live = f"{config.us.get('warcraft_path').rstrip('/')}/WTF/Account/{account_name}/SavedVariables/{datasource}.lua"

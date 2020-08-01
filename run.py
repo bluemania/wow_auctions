@@ -22,7 +22,18 @@ if __name__ == "__main__":
     run_dt = dt.now().replace(microsecond=0)
 
     parser = argparse.ArgumentParser(description="WoW Auctions")
-    parser.add_argument("-np", help="Create pricer file", action="store_true")
+    parser.add_argument(
+        "-dp",
+        # "--deploy-pricer",
+        help="Deploy our Pricer WoW Addon with latest user specified items.",
+        action="store_true",
+    )
+    parser.add_argument(
+        "-rp",
+        # "--retrieve-pricer",
+        help="Retrieve data from our WoW Addon.",
+        action="store_true",
+    )
     parser.add_argument("-a", help="Run primary analysis", action="store_true")
     parser.add_argument("-t", help="Test mode (no saving)", action="store_true")
     parser.add_argument("-s1", help="Short policy 5stack", action="store_true")
@@ -56,8 +67,11 @@ if __name__ == "__main__":
         logger.warning("TEST MODE enabled. No data saving!")
     logger.debug(args)
 
-    if args.np:
-        utils.generate_new_pricer_file()
+    if args.dp:
+        utils.deploy_pricer_addon()
+
+    if args.rp:
+        sources.retrieve_pricer_data(test=args.t)
 
     if args.a:
         sources.create_playtime_record(
@@ -67,7 +81,6 @@ if __name__ == "__main__":
             played=args.played,
             level_time=args.level_time,
         )
-        sources.generate_booty_data()
         sources.generate_auction_scandata(test=args.t)
         sources.generate_auction_activity(test=args.t)
         sources.generate_inventory(test=args.t, run_dt=run_dt)
