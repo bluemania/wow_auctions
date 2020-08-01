@@ -323,24 +323,36 @@ def generate_auction_activity(test: bool = False) -> None:
     df.to_parquet("data/full/auction_activity.parquet", compression="gzip")
 
 
-def generate_booty_data() -> None:
+def retrieve_pricer_data(test: bool = False) -> None:
     """Read BootyBay data (through proxy addon), and save to parquet.
 
-    Temporary process to obtain Booty Bay data through a custom
-    Addon which can interact with Booty Bay data while in-game.
-    Function intended to be depreciated before release.
+    For all characters on all user specified accounts, collates info on
+    prices for items in inventory. Works the data into
+    labelled and cleaned pandas before parquet saves.
+
+    Args:
+        test: when True prevents data saving (early return)
     """
-    account = "396255466#1"
-    pricerdata = utils.read_lua(
-        "Pricer", merge_account_sources=False, accounts=[account]
-    )[account]["PricerData"]
-    pricerdata = pd.DataFrame(pricerdata).T
+    accounts = ["396255466#1"]
+    characters = ["Amazona", "Pricer"]
+
+    character_prices = []
+    for account_name in accounts:
+        for character in characters:
+            character_prices.append(utils.get_character_pricer_data(account_name, character))
+
+    # Merge dictionaries
+    total_pricer = {}
+    for character_price in character_prices:
+        utils.source_merge(total_pricer, character_price)
+
+    total_pricer = pd.DataFrame(total_pricer).T
 
     # Saves latest scan to intermediate (immediate)
-    pricerdata.to_parquet("data/intermediate/booty_data.parquet", compression="gzip")
-    pricerdata.to_parquet(
-        f"data/full/booty_data/{str(pricerdata['timestamp'].max())}.parquet",
+    total_pricer.to_parquet("data/intermediate/booty_data.parquet", compression="gzip")
+    total_pricer.to_parquet(
+        f"data/full/booty_data/{str(total_pricer['timestamp'].max())}.parquet",
         compression="gzip",
     )
 
-    logger.info(f"Generating booty data {pricerdata.shape[0]}")
+    logger.info(f"Generating booty data {total_pricer.shape[0]}")
