@@ -111,7 +111,7 @@ def read_lua(
         merged_account_data: dict = {}
         for account, data in account_data.items():
             merged_account_data = source_merge(merged_account_data, data).copy()
-        
+
         logger.debug(f"read_lua (merged mode) {len(merged_account_data)} keys")
         return merged_account_data
     else:
