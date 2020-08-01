@@ -1,7 +1,7 @@
 ## Interface: 11304
 ## Title: Pricer
 ## Notes: Pricer
-## SavedVariables: PricerData
+## SavedVariables: SavedVariablesPerCharacter
 ## Version: 1
 
 items_of_interest.lua

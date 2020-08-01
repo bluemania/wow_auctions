@@ -7,6 +7,7 @@ import logging
 import os
 from datetime import datetime as dt
 from typing import Any
+import shutil
 
 import pandas as pd
 import yaml
@@ -54,7 +55,10 @@ def generate_new_pricer_file() -> None:
     # Replace last ',' with '}'
     pricer_file[-1] = pricer_file[-1][:-1] + "}"
 
-    pricer_path = f"{config.us.get('warcraft_path').rstrip('/')}/Interface/AddOns/Pricer/items_of_interest.lua"
+    wow_addon_path = f"{config.us.get('warcraft_path').rstrip('/')}/Interface/AddOns/Pricer"
+    pricer_path = f"{wow_addon_path}/items_of_interest.lua"
+    shutil.copyfile('pricer_addon/Pricer/Pricer.lua', f'{wow_addon_path}/Pricer.lua')
+    shutil.copyfile('pricer_addon/Pricer/Pricer.toc', f'{wow_addon_path}/Pricer.toc')
     logger.debug(f"Saving pricer addon file to {pricer_path}")
 
     with open(pricer_path, "w") as f:
