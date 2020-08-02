@@ -13,12 +13,13 @@ import logging
 import warnings
 from datetime import datetime as dt
 
-from pricer import analysis, config, sources, utils
+from . import analysis, config, sources, utils
 
 warnings.simplefilter(action="ignore")
 logger = logging.getLogger(__name__)
 
-if __name__ == "__main__":
+
+def main():
     run_dt = dt.now().replace(microsecond=0)
 
     parser = argparse.ArgumentParser(description="WoW Auctions")
@@ -103,3 +104,7 @@ if __name__ == "__main__":
         analysis.apply_sell_policy(stack=5, leads=50, duration="l")
 
     logger.info(f"Program end, seconds {(dt.now() - run_dt).total_seconds()}")
+
+
+if __name__ == "__main__":
+    main()

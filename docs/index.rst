@@ -1,20 +1,41 @@
-.. pricer documentation master file, created by
-   sphinx-quickstart on Wed Jul 22 21:10:17 2020.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+Pricer WoW auctioning tool
+==============================
 
-Welcome to pricer's documentation!
-==================================
+(blank for now)
+
+Installation
+------------
+
+To install the pricer project,
+run this command in your terminal:
+
+.. code-block:: console
+
+   $ pip install pricer
+
+
+Usage
+-----
+
+Pricer uses a CLI interface,
+please see run.py for more information.
+
+.. code-block:: console
+
+   $ pricer [OPTIONS]
+
+.. option:: --version
+
+   Display the version and exit.
+
+.. option:: --help
+
+   Display a short usage message and exit.
+
 
 .. toctree::
-   :maxdepth: 2
-   :caption: Contents:
+   :hidden:
+   :maxdepth: 1
 
-
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+   license
+   reference
