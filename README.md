@@ -1,6 +1,8 @@
 # WoW Auction engine
-
+[![Tests](https://github.com/bluemania/wow_auctions/workflows/Tests/badge.svg)](https://github.com/bluemania/wow_auctions/actions?workflow=Tests)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![Codecov](https://codecov.io/gh/bluemania/wow_auctions/branch/master/graph/badge.svg)](https://codecov.io/gh/bluemania/wow_auctions)
+[![PyPI](https://img.shields.io/pypi/v/pricer.svg)](https://pypi.org/project/pricer/)
 
 This project helps automate some aspects of trading on the World of Warcraft (WoW) auction house.
 
@@ -18,6 +20,12 @@ This project uses [poetry](https://python-poetry.org/) to manage dependencies an
 poetry install
 ```
 
+You will also need the following WoW Classic Addons installed to interface with the program:
+
+* ArkInventory
+* Auctioneer
+* Beancounter (comes with Auctioneer)
+
 ### Running the script
 
 After the above setup, to run the script enter the following on command line.
@@ -28,6 +36,9 @@ poetry run python run.py -a
 ```
 
 There are many command line options; -a will run primary analysis (except for sell policies). Please refer to the scripts for further information.
+
+### License
+All assets and code are under the MIT LICENSE and in the public domain unless specified otherwise.
 
 #### TODO
 
