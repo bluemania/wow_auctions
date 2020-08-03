@@ -3,6 +3,7 @@
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![Codecov](https://codecov.io/gh/bluemania/wow_auctions/branch/master/graph/badge.svg)](https://codecov.io/gh/bluemania/wow_auctions)
 [![PyPI](https://img.shields.io/pypi/v/pricer.svg)](https://pypi.org/project/pricer/)
+[![Documentation Status](https://readthedocs.org/projects/pricer/badge/?version=latest)](https://pricer.readthedocs.io/en/latest/?badge=latest)
 
 This project helps automate some aspects of trading on the World of Warcraft (WoW) auction house.
 
