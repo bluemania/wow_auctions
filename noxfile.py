@@ -162,8 +162,8 @@ def xdoctest(session: Session) -> None:
 @nox.session(python="3.7")
 def docs(session: Session) -> None:
     """Build the documentation."""
-    # session.install(".")
-    session.run("poetry", "install", "--no-dev", external=True)
+    session.install(".")
+    # session.run("poetry", "install", "--no-dev", external=True)
     install_with_constraints(session, "sphinx", "sphinx-autodoc-typehints")
     session.run("rm", "-rf", "docs/_build")
     session.run("sphinx-build", "docs", "docs/_build", *session.posargs)

@@ -9,5 +9,9 @@ I am looking to implement best practices throughout development.
 When the codebase is considered stable, we will be moving towards more
 data science approaches to experimentation and analysis.
 """
+from importlib_metadata import PackageNotFoundError, version
 
-__version__ = "0.1.1"
+try:
+    __version__ = version(__name__)
+except PackageNotFoundError:  # pragma: no cover
+    __version__ = "unknown"
