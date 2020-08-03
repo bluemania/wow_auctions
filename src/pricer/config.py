@@ -29,23 +29,23 @@ def set_loggers(
         log_level = 30
 
     loggers = [base_logger] + [
-        logging.getLogger(name)
-        for name in logging.root.manager.loggerDict
+        logging.getLogger(name)  # type: ignore
+        for name in logging.root.manager.loggerDict  # type: ignore
         if "pricer." in name
     ]
     for logger in loggers:
-        logger.setLevel(log_level)
+        logger.setLevel(log_level)  # type: ignore
         formatter = logging.Formatter("%(asctime)s:%(name)s:%(message)s")
 
-        file_handler = logging.FileHandler(f"logs/{logger.name}.log")
+        file_handler = logging.FileHandler(f"logs/{logger.name}.log")  # type: ignore
         file_handler.setLevel(10)
         file_handler.setFormatter(formatter)
 
         stream_handler = logging.StreamHandler()
         stream_handler.setFormatter(formatter)
 
-        logger.addHandler(file_handler)
-        logger.addHandler(stream_handler)
+        logger.addHandler(file_handler)  # type: ignore
+        logger.addHandler(stream_handler)  # type: ignore
 
 
 # Load global user settings such as paths

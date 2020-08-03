@@ -2,16 +2,15 @@
 
 * Loads and writes raw and cleaned files, changes data formats
 """
-
+from datetime import datetime as dt
 import logging
 import os
-from datetime import datetime as dt
-from typing import Any
 import shutil
+from typing import Any
 
 import pandas as pd
-import yaml
 from slpp import slpp as lua  # pip install git+https://github.com/SirAnthony/slpp
+import yaml
 
 from pricer import config
 
@@ -69,7 +68,11 @@ def deploy_pricer_addon() -> None:
 
 def get_character_pricer_data(account_name: str, character: str) -> dict:
     """Get pricer data for a character on an account."""
-    path = f"{config.us.get('warcraft_path').rstrip('/')}/WTF/Account/{account_name}/Grobbulus/{character}/SavedVariables/Pricer.lua"
+    warcraft_path = config.us.get("warcraft_path").rstrip("/")
+    path = (
+        f"{warcraft_path}/WTF/Account/{account_name}/Grobbulus/"
+        + f"{character}/SavedVariables/Pricer.lua"
+    )
     with open(path, "r") as f:
         return lua.decode("{" + f.read() + "}")["PricerData"]
 
@@ -94,12 +97,17 @@ def source_merge(a: dict, b: dict, path: list = None) -> dict:
 def read_lua(
     datasource: str,
     merge_account_sources: bool = True,
-    accounts: list = ["BLUEM", "396255466#1", "801032581#1"],
+    accounts: tuple = ("BLUEM", "396255466#1", "801032581#1"),
 ) -> dict:
-    """Attempts to read lua and merge lua from WoW Addon account locations."""
+    """Read lua and merge lua from WoW Addon account locations."""
+    warcraft_path = config.us.get("warcraft_path").rstrip("/")
+
     account_data: dict = {key: None for key in accounts}
     for account_name in account_data.keys():
-        path_live = f"{config.us.get('warcraft_path').rstrip('/')}/WTF/Account/{account_name}/SavedVariables/{datasource}.lua"
+        path_live = (
+            f"{warcraft_path}/WTF/Account/{account_name}/"
+            + f"SavedVariables/{datasource}.lua"
+        )
         logger.debug(f"Loading Addon lua from {path_live}")
 
         with open(path_live, "r") as f:
@@ -109,7 +117,7 @@ def read_lua(
     if merge_account_sources and len(accounts) > 1:
 
         merged_account_data: dict = {}
-        for account, data in account_data.items():
+        for _, data in account_data.items():
             merged_account_data = source_merge(merged_account_data, data).copy()
 
         logger.debug(f"read_lua (merged mode) {len(merged_account_data)} keys")
@@ -122,18 +130,21 @@ def read_lua(
 def load_items() -> dict:
     """Loads user specified items of interest."""
     with open("config/items.yaml", "r") as f:
-        return yaml.load(f, Loader=yaml.FullLoader)
+        return yaml.safe_load(f)
 
 
 def get_general_settings() -> dict:
     """Gets general program settings such as mappings."""
     with open("config/general_settings.yaml", "r") as f:
-        return yaml.load(f, Loader=yaml.FullLoader)
+        return yaml.safe_load(f)
 
 
-def get_and_format_auction_data() -> pd.DataFrame:
+def get_and_format_auction_data(account: str = "396255466#1") -> pd.DataFrame:
     """Read raw scandata dict dump and converts to usable dataframe."""
-    path_live = f"{config.us.get('warcraft_path').rstrip('/')}/WTF/Account/396255466#1/SavedVariables/Auc-ScanData.lua"
+    warcraft_path = config.us.get("warcraft_path").rstrip("/")
+    path_live = (
+        f"{warcraft_path}/WTF/Account/{account}/" + "SavedVariables/Auc-ScanData.lua"
+    )
     logger.debug(f"Loading Addon auction data from {path_live}")
 
     ropes = []
@@ -159,15 +170,18 @@ def get_and_format_auction_data() -> pd.DataFrame:
 
     # Contains lots of columns, we ignore ones we likely dont care about
     # We apply transformations and relabel
+    auction_timing = {1: 30, 2: 60 * 2, 3: 60 * 12, 4: 60 * 24}
+
     df = pd.DataFrame([x.split("|")[-1].split(",") for x in listings])
-    df["time_remaining"] = df[6].replace({1: 30, 2: 60 * 2, 3: 60 * 12, 4: 60 * 24})
+    df["time_remaining"] = df[6].replace(auction_timing)
     df["item"] = df[8].str.replace('"', "").str[1:-1]
     df["count"] = df[10].replace("nil", 0).astype(int)
     df["price"] = df[16].astype(int)
     df["agent"] = df[19].str.replace('"', "").str[1:-1]
     df["timestamp"] = df[7].apply(lambda x: dt.fromtimestamp(int(x)))
 
-    # There is some timing difference in the timestamp, we dont really care we just need time of pull
+    # There is some timing difference in the timestamp
+    # we dont really care we just need time of pull
     df["timestamp"] = df["timestamp"].max()
 
     df = df[df["count"] > 0]
@@ -206,13 +220,14 @@ def write_lua(
     for key in data.keys():
         lua_print += f"{key} = " + dump_lua(data[key]) + "\n"
 
-    location = f"{config.us.get('warcraft_path').rstrip('/')}/WTF/Account/{account}/SavedVariables/{name}.lua"
+    warcraft_path = config.us.get("warcraft_path").rstrip("/")
+    location = f"{warcraft_path}/WTF/Account/{account}/SavedVariables/{name}.lua"
     logger.debug(f"Saving Addon lua to {location}")
     with open(location, "w") as f:
         f.write(lua_print)
 
 
-def dump_lua(data: Any) -> str:
+def dump_lua(data: Any) -> Any:
     """Borrowed code to write python dict as lua format(ish)."""
     if type(data) is str:
         return f'"{data}"'

@@ -9,9 +9,9 @@ Declares the session datetime variable (run_dt)
 Pre-release; functionality likely to change significantly.
 """
 import argparse
+from datetime import datetime as dt
 import logging
 import warnings
-from datetime import datetime as dt
 
 from . import analysis, config, sources, utils
 
@@ -19,7 +19,8 @@ warnings.simplefilter(action="ignore")
 logger = logging.getLogger(__name__)
 
 
-def main():
+def main() -> None:
+    """Main program runner."""
     run_dt = dt.now().replace(microsecond=0)
 
     parser = argparse.ArgumentParser(description="WoW Auctions")

@@ -5,9 +5,10 @@ Performs basic validation and data cleaning before
 converting into normalized data tables in parquet format.
 When functions are run in test mode, no data is saved.
 """
-import logging
 from collections import defaultdict
 from datetime import datetime as dt
+import logging
+from typing import Dict
 
 import pandas as pd
 
@@ -101,7 +102,7 @@ def generate_inventory(test: bool = False, run_dt: dt = None) -> None:
     # Search through inventory data to create dict of all items and counts
     # Also counts total monies
     monies = {}
-    character_inventories = defaultdict(str)
+    character_inventories: Dict[str] = defaultdict(str)
     raw_data = []
 
     for ckey, character in characters.items():
@@ -116,7 +117,7 @@ def generate_inventory(test: bool = False, run_dt: dt = None) -> None:
         location_slots = character.get("location", [])
 
         for lkey in location_slots:
-            items = defaultdict(int)
+            items: Dict[int] = defaultdict(int)
             if lkey not in settings["location_info"]:
                 continue
             else:
