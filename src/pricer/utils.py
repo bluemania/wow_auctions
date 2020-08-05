@@ -77,7 +77,7 @@ def get_character_pricer_data(account_name: str, character: str) -> dict:
         return lua.decode("{" + f.read() + "}")["PricerData"]
 
 
-def source_merge(a: dict, b: dict, path: list = None) -> dict:
+def source_merge(a: dict, b: dict, path: list = None) -> Dict[Any, Any]:
     """Merges b into a."""
     if path is None:
         path = []
@@ -98,7 +98,7 @@ def read_lua(
     datasource: str,
     merge_account_sources: bool = True,
     accounts: tuple = ("BLUEM", "396255466#1", "801032581#1"),
-) -> dict:
+) -> Dict[Any, Any]:
     """Read lua and merge lua from WoW Addon account locations."""
     warcraft_path = config.us.get("warcraft_path").rstrip("/")
 
@@ -127,13 +127,13 @@ def read_lua(
         return account_data
 
 
-def load_items() -> dict:
+def load_items() -> Dict[str, Any]:
     """Loads user specified items of interest."""
     with open("config/items.yaml", "r") as f:
         return yaml.safe_load(f)
 
 
-def get_general_settings() -> dict:
+def get_general_settings() -> Dict[str, Any]:
     """Gets general program settings such as mappings."""
     with open("config/general_settings.yaml", "r") as f:
         return yaml.safe_load(f)
@@ -201,7 +201,7 @@ def get_and_format_auction_data(account: str = "396255466#1") -> pd.DataFrame:
     return df
 
 
-def get_item_codes() -> dict:
+def get_item_codes() -> Dict[str, Any]:
     """Read BeanCounter data to create code: item mapping."""
     data = read_lua("BeanCounter")
     item_code = {}

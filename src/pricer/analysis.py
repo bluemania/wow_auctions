@@ -8,6 +8,7 @@
 """
 
 import logging
+from typing import Dict, Any
 
 import pandas as pd
 import seaborn as sns
@@ -55,6 +56,7 @@ def analyse_item_prices(full_pricing: bool = False, test: bool = False) -> None:
         "price_per"
     ]
 
+    item_prices: Dict[str, int] = {}
     if full_pricing:
         item_prices = {
             item: price_history.loc[item].ewm(alpha=0.2).mean().iloc[-1]
@@ -62,7 +64,6 @@ def analyse_item_prices(full_pricing: bool = False, test: bool = False) -> None:
         }
     else:
         # Only calculate for our item list; get user specified backup price if present
-        item_prices: Dict[str, int] = {}
         for item, details in items.items():
             price = details.get("backup_price")
             if not price:
@@ -544,11 +545,12 @@ def apply_sell_policy(
             "data/outputs/sell_policy.parquet", compression="gzip"
         )
 
-    duration: Dict[str: int] = {"s": 720, "m": 1440, "l": 2880}.get(duration)
+    duration_choices: Dict[str, int] = {"s": 720, "m": 1440, "l": 2880}
+    duration_choice = duration_choices.get(duration)
     item_codes = utils.get_item_codes()
 
     # Seed new appraiser
-    new_appraiser = {
+    new_appraiser: Dict[str, Any] = {
         "bid.markdown": 0,
         "columnsortcurDir": 1,
         "columnsortcurSort": 6,
@@ -567,12 +569,11 @@ def apply_sell_policy(
         new_appraiser[f"item.{code}.number"] = int(d["sell_count"])
         new_appraiser[f"item.{code}.stack"] = int(d["stack"])
         new_appraiser[f"item.{code}.bulk"] = True
-        new_appraiser[f"item.{code}.duration"] = duration
+        new_appraiser[f"item.{code}.duration"] = duration_choice
 
     # Read client lua, replace with
     data = utils.read_lua("Auc-Advanced", merge_account_sources=False)
-    data = data.get("396255466#1")
-    data["AucAdvancedConfig"]["profile.Default"]["util"]["appraiser"] = new_appraiser
+    data.get("396255466#1")["AucAdvancedConfig"]["profile.Default"]["util"]["appraiser"] = new_appraiser
 
     if test:
         return None  # avoid saves
@@ -606,7 +607,7 @@ def apply_buy_policy(MAT_DEV: int = 0, test: bool = False) -> None:
         KeyError: All user specified 'Buy' items must be present in the
             Auctioneer 'snatch' listing.
     """
-    items = utils.load_items()
+    items: Dict[str, Any] = utils.load_items()
     sell_policy = pd.read_parquet("data/outputs/sell_policy.parquet")
 
     # Determine how many potions I have, and how many need to be replaced
@@ -617,6 +618,7 @@ def apply_buy_policy(MAT_DEV: int = 0, test: bool = False) -> None:
     replenish = pd.DataFrame(replenish)
 
     for potion in replenish.index:
+        #Item "None" of "Optional[Any]" has no attribute "get"
         replenish.loc[potion, "max"] = items.get(potion).get("ideal_holding", 60)
 
     replenish["inventory_target"] = (replenish["max"] - replenish["inventory"]).apply(
