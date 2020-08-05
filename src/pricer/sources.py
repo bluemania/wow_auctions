@@ -8,7 +8,7 @@ When functions are run in test mode, no data is saved.
 from collections import defaultdict
 from datetime import datetime as dt
 import logging
-from typing import Dict
+from typing import Dict, Any
 
 import pandas as pd
 
@@ -101,13 +101,11 @@ def generate_inventory(test: bool = False, run_dt: dt = None) -> None:
 
     # Search through inventory data to create dict of all items and counts
     # Also counts total monies
-    monies = {}
-    character_inventories: Dict[str] = defaultdict(str)
-    raw_data = []
+    monies: Dict[str, int] = {}
+    raw_data: list = []
 
     for ckey, character in characters.items():
         character_name = ckey.split(" ")[0]
-        character_inventories[character_name] = {}
 
         character_money = int(character.get("info").get("money", 0))
         monies[ckey] = character_money
@@ -117,7 +115,7 @@ def generate_inventory(test: bool = False, run_dt: dt = None) -> None:
         location_slots = character.get("location", [])
 
         for lkey in location_slots:
-            items: Dict[int] = defaultdict(int)
+            items: Dict[str, int] = defaultdict(int)
             if lkey not in settings["location_info"]:
                 continue
             else:
@@ -337,17 +335,17 @@ def retrieve_pricer_data(test: bool = False) -> None:
             )
 
     # Merge dictionaries
-    total_pricer = {}
+    total_pricer: Dict[Any, Any] = {}
     for character_price in character_prices:
         utils.source_merge(total_pricer, character_price)
 
-    total_pricer = pd.DataFrame(total_pricer).T
+    total_pricer_df = pd.DataFrame(total_pricer).T
 
     # Saves latest scan to intermediate (immediate)
-    total_pricer.to_parquet("data/intermediate/booty_data.parquet", compression="gzip")
-    total_pricer.to_parquet(
-        f"data/full/booty_data/{str(total_pricer['timestamp'].max())}.parquet",
+    total_pricer_df.to_parquet("data/intermediate/booty_data.parquet", compression="gzip")
+    total_pricer_df.to_parquet(
+        f"data/full/booty_data/{str(total_pricer_df['timestamp'].max())}.parquet",
         compression="gzip",
     )
 
-    logger.info(f"Generating booty data {total_pricer.shape[0]}")
+    logger.info(f"Generating booty data {total_pricer_df.shape[0]}")

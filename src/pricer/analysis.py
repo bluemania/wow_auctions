@@ -62,23 +62,23 @@ def analyse_item_prices(full_pricing: bool = False, test: bool = False) -> None:
         }
     else:
         # Only calculate for our item list; get user specified backup price if present
-        item_prices = {}
+        item_prices: Dict[str, int] = {}
         for item, details in items.items():
             price = details.get("backup_price")
             if not price:
                 price = price_history.loc[item].ewm(alpha=0.2).mean().iloc[-1]
             item_prices[item] = price
 
-    item_prices = pd.DataFrame.from_dict(item_prices, orient="index")
-    item_prices.index.name = "item"
-    item_prices.columns = ["market_price"]
+    item_prices_df = pd.DataFrame.from_dict(item_prices, orient="index")
+    item_prices_df.index.name = "item"
+    item_prices_df.columns = ["market_price"]
 
     if test:
         return None  # avoid saves
 
-    item_prices.to_parquet("data/intermediate/item_prices.parquet", compression="gzip")
+    item_prices_df.to_parquet("data/intermediate/item_prices.parquet", compression="gzip")
 
-    logger.info(f"Item prices calculated. {len(item_prices)} records")
+    logger.info(f"Item prices calculated. {len(item_prices_df)} records")
 
 
 def analyse_sales_performance(test: bool = False) -> None:
@@ -544,7 +544,7 @@ def apply_sell_policy(
             "data/outputs/sell_policy.parquet", compression="gzip"
         )
 
-    duration = {"s": 720, "m": 1440, "l": 2880}.get(duration)
+    duration: Dict[str: int] = {"s": 720, "m": 1440, "l": 2880}.get(duration)
     item_codes = utils.get_item_codes()
 
     # Seed new appraiser
