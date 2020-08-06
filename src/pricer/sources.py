@@ -8,7 +8,7 @@ When functions are run in test mode, no data is saved.
 from collections import defaultdict
 from datetime import datetime as dt
 import logging
-from typing import Dict, Any
+from typing import Any, Dict
 
 import pandas as pd
 
@@ -342,7 +342,9 @@ def retrieve_pricer_data(test: bool = False) -> None:
     total_pricer_df = pd.DataFrame(total_pricer).T
 
     # Saves latest scan to intermediate (immediate)
-    total_pricer_df.to_parquet("data/intermediate/booty_data.parquet", compression="gzip")
+    total_pricer_df.to_parquet(
+        "data/intermediate/booty_data.parquet", compression="gzip"
+    )
     total_pricer_df.to_parquet(
         f"data/full/booty_data/{str(total_pricer_df['timestamp'].max())}.parquet",
         compression="gzip",
