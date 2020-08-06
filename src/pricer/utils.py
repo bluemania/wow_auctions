@@ -6,7 +6,7 @@ from datetime import datetime as dt
 import logging
 import os
 import shutil
-from typing import Any
+from typing import Any, Dict
 
 import pandas as pd
 from slpp import slpp as lua  # pip install git+https://github.com/SirAnthony/slpp

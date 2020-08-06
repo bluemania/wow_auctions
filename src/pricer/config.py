@@ -1,12 +1,13 @@
 """It collates and loads user specified configuration for data pipeline."""
 
 import logging
+from typing import Any
 
 import yaml
 
 
 def set_loggers(
-    base_logger: bool = None, v: bool = False, vv: bool = False, test: bool = False
+    base_logger: Any = None, v: bool = False, vv: bool = False, test: bool = False
 ) -> None:
     """Sets up logging across modules in project.
 

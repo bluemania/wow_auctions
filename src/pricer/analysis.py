@@ -8,7 +8,7 @@
 """
 
 import logging
-from typing import Dict, Any
+from typing import Any, Dict
 
 import pandas as pd
 import seaborn as sns
@@ -77,7 +77,9 @@ def analyse_item_prices(full_pricing: bool = False, test: bool = False) -> None:
     if test:
         return None  # avoid saves
 
-    item_prices_df.to_parquet("data/intermediate/item_prices.parquet", compression="gzip")
+    item_prices_df.to_parquet(
+        "data/intermediate/item_prices.parquet", compression="gzip"
+    )
 
     logger.info(f"Item prices calculated. {len(item_prices_df)} records")
 
@@ -573,7 +575,9 @@ def apply_sell_policy(
 
     # Read client lua, replace with
     data = utils.read_lua("Auc-Advanced", merge_account_sources=False)
-    data.get("396255466#1")["AucAdvancedConfig"]["profile.Default"]["util"]["appraiser"] = new_appraiser
+    data["396255466#1"]["AucAdvancedConfig"]["profile.Default"]["util"][
+        "appraiser"
+    ] = new_appraiser
 
     if test:
         return None  # avoid saves
@@ -618,8 +622,7 @@ def apply_buy_policy(MAT_DEV: int = 0, test: bool = False) -> None:
     replenish = pd.DataFrame(replenish)
 
     for potion in replenish.index:
-        #Item "None" of "Optional[Any]" has no attribute "get"
-        replenish.loc[potion, "max"] = items.get(potion).get("ideal_holding", 60)
+        replenish.loc[potion, "max"] = items[potion].get("ideal_holding", 60)
 
     replenish["inventory_target"] = (replenish["max"] - replenish["inventory"]).apply(
         lambda x: max(0, x)
@@ -634,7 +637,7 @@ def apply_buy_policy(MAT_DEV: int = 0, test: bool = False) -> None:
     # From potions required, get herbs required
     herbs_required = pd.Series()
     for potion, quantity in replenish["target"].iteritems():
-        for herb, count in items.get(potion).get("made_from").items():
+        for herb, count in items[potion].get("made_from").items():
             if herb in herbs_required:
                 herbs_required.loc[herb] += count * quantity
             else:
@@ -703,9 +706,7 @@ def apply_buy_policy(MAT_DEV: int = 0, test: bool = False) -> None:
     herbs["buy_price"] = herbs["buy_price"].astype(int)
 
     # Get snatch data, populate and save back
-    data = utils.read_lua("Auc-Advanced", merge_account_sources=False)
-    data = data.get("396255466#1")
-
+    data = utils.read_lua("Auc-Advanced", merge_account_sources=False)["396255466#1"]
     snatch = data["AucAdvancedData"]["UtilSearchUiData"]["Current"]["snatch.itemsList"]
 
     for herb, row in herbs.iterrows():
