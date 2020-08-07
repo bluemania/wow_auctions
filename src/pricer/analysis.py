@@ -611,7 +611,7 @@ def apply_buy_policy(MAT_DEV: int = 0, test: bool = False) -> None:
         KeyError: All user specified 'Buy' items must be present in the
             Auctioneer 'snatch' listing.
     """
-    items: Dict[str, Any] = utils.load_items()
+    items = utils.load_items()
     sell_policy = pd.read_parquet("data/outputs/sell_policy.parquet")
 
     # Determine how many potions I have, and how many need to be replaced
@@ -622,7 +622,7 @@ def apply_buy_policy(MAT_DEV: int = 0, test: bool = False) -> None:
     replenish = pd.DataFrame(replenish)
 
     for potion in replenish.index:
-        replenish.loc[potion, "max"] = items[potion].get("ideal_holding", 60)
+        replenish.loc[potion, "max"] = items.get(potion).get("ideal_holding", 60)
 
     replenish["inventory_target"] = (replenish["max"] - replenish["inventory"]).apply(
         lambda x: max(0, x)
@@ -637,7 +637,7 @@ def apply_buy_policy(MAT_DEV: int = 0, test: bool = False) -> None:
     # From potions required, get herbs required
     herbs_required = pd.Series()
     for potion, quantity in replenish["target"].iteritems():
-        for herb, count in items[potion].get("made_from").items():
+        for herb, count in items.get(potion).get("made_from").items():
             if herb in herbs_required:
                 herbs_required.loc[herb] += count * quantity
             else:
@@ -706,8 +706,9 @@ def apply_buy_policy(MAT_DEV: int = 0, test: bool = False) -> None:
     herbs["buy_price"] = herbs["buy_price"].astype(int)
 
     # Get snatch data, populate and save back
-    # Errors be here
-    data = utils.read_lua("Auc-Advanced", merge_account_sources=False)["396255466#1"]
+    data = utils.read_lua("Auc-Advanced", merge_account_sources=False)
+    data = data.get("396255466#1")
+
     snatch = data["AucAdvancedData"]["UtilSearchUiData"]["Current"]["snatch.itemsList"]
 
     for herb, row in herbs.iterrows():
