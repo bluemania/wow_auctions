@@ -706,6 +706,7 @@ def apply_buy_policy(MAT_DEV: int = 0, test: bool = False) -> None:
     herbs["buy_price"] = herbs["buy_price"].astype(int)
 
     # Get snatch data, populate and save back
+    # Errors be here
     data = utils.read_lua("Auc-Advanced", merge_account_sources=False)["396255466#1"]
     snatch = data["AucAdvancedData"]["UtilSearchUiData"]["Current"]["snatch.itemsList"]
 
