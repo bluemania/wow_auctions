@@ -547,11 +547,12 @@ def apply_sell_policy(
             "data/outputs/sell_policy.parquet", compression="gzip"
         )
 
-    duration = {"s": 720, "m": 1440, "l": 2880}.get(duration)
+    duration_choices: Dict[str, int] = {"s": 720, "m": 1440, "l": 2880}
+    duration_choice = duration_choices.get(duration)
     item_codes = utils.get_item_codes()
 
     # Seed new appraiser
-    new_appraiser = {
+    new_appraiser: Dict[str, Any] = {
         "bid.markdown": 0,
         "columnsortcurDir": 1,
         "columnsortcurSort": 6,
@@ -570,21 +571,21 @@ def apply_sell_policy(
         new_appraiser[f"item.{code}.number"] = int(d["sell_count"])
         new_appraiser[f"item.{code}.stack"] = int(d["stack"])
         new_appraiser[f"item.{code}.bulk"] = True
-        new_appraiser[f"item.{code}.duration"] = duration
+        new_appraiser[f"item.{code}.duration"] = duration_choice
 
     # Read client lua, replace with
     data = utils.read_lua("Auc-Advanced", merge_account_sources=False)
-    data = data.get("396255466#1")
-    data["AucAdvancedConfig"]["profile.Default"]["util"]["appraiser"] = new_appraiser
+    data_subset = data.get("396255466#1")
+    data_subset["AucAdvancedConfig"]["profile.Default"]["util"]["appraiser"] = new_appraiser
 
     if test:
         return None  # avoid saves
-    utils.write_lua(data)
+    utils.write_lua(data_subset)
 
 
 def apply_buy_policy(MAT_DEV: int = 0, test: bool = False) -> None:
     """Determines herbs to buy based on potions in inventory.
-    
+
     Loads user specified items of interest, and ideal holdings of the items.
     Loads information on number of potions in inventory.
     Loads auction success rate for potions, to downweight items that don't sell.
