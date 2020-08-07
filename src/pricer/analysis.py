@@ -488,7 +488,7 @@ def apply_sell_policy(
     test: bool = False,
 ) -> None:
     """Combines user input & market data to write a sell policy to WoW addon folder.
-
+    
     Given user specified parameters, create a selling policy across
     all items, based on the market and inventory information.
     The sell policy is converted into lua format and saved to the WoW
@@ -547,12 +547,11 @@ def apply_sell_policy(
             "data/outputs/sell_policy.parquet", compression="gzip"
         )
 
-    duration_choices: Dict[str, int] = {"s": 720, "m": 1440, "l": 2880}
-    duration_choice = duration_choices.get(duration)
+    duration = {"s": 720, "m": 1440, "l": 2880}.get(duration)
     item_codes = utils.get_item_codes()
 
     # Seed new appraiser
-    new_appraiser: Dict[str, Any] = {
+    new_appraiser = {
         "bid.markdown": 0,
         "columnsortcurDir": 1,
         "columnsortcurSort": 6,
@@ -571,13 +570,12 @@ def apply_sell_policy(
         new_appraiser[f"item.{code}.number"] = int(d["sell_count"])
         new_appraiser[f"item.{code}.stack"] = int(d["stack"])
         new_appraiser[f"item.{code}.bulk"] = True
-        new_appraiser[f"item.{code}.duration"] = duration_choice
+        new_appraiser[f"item.{code}.duration"] = duration
 
     # Read client lua, replace with
     data = utils.read_lua("Auc-Advanced", merge_account_sources=False)
-    data["396255466#1"]["AucAdvancedConfig"]["profile.Default"]["util"][
-        "appraiser"
-    ] = new_appraiser
+    data = data.get("396255466#1")
+    data["AucAdvancedConfig"]["profile.Default"]["util"]["appraiser"] = new_appraiser
 
     if test:
         return None  # avoid saves
@@ -586,7 +584,7 @@ def apply_sell_policy(
 
 def apply_buy_policy(MAT_DEV: int = 0, test: bool = False) -> None:
     """Determines herbs to buy based on potions in inventory.
-
+    
     Loads user specified items of interest, and ideal holdings of the items.
     Loads information on number of potions in inventory.
     Loads auction success rate for potions, to downweight items that don't sell.
@@ -611,7 +609,7 @@ def apply_buy_policy(MAT_DEV: int = 0, test: bool = False) -> None:
         KeyError: All user specified 'Buy' items must be present in the
             Auctioneer 'snatch' listing.
     """
-    items = utils.load_items()
+    items: Dict[str, Any] = utils.load_items()
     sell_policy = pd.read_parquet("data/outputs/sell_policy.parquet")
 
     # Determine how many potions I have, and how many need to be replaced
@@ -622,7 +620,7 @@ def apply_buy_policy(MAT_DEV: int = 0, test: bool = False) -> None:
     replenish = pd.DataFrame(replenish)
 
     for potion in replenish.index:
-        replenish.loc[potion, "max"] = items.get(potion).get("ideal_holding", 60)
+        replenish.loc[potion, "max"] = items[potion].get("ideal_holding", 60)
 
     replenish["inventory_target"] = (replenish["max"] - replenish["inventory"]).apply(
         lambda x: max(0, x)
@@ -637,7 +635,7 @@ def apply_buy_policy(MAT_DEV: int = 0, test: bool = False) -> None:
     # From potions required, get herbs required
     herbs_required = pd.Series()
     for potion, quantity in replenish["target"].iteritems():
-        for herb, count in items.get(potion).get("made_from").items():
+        for herb, count in items[potion].get("made_from").items():
             if herb in herbs_required:
                 herbs_required.loc[herb] += count * quantity
             else:
@@ -706,9 +704,8 @@ def apply_buy_policy(MAT_DEV: int = 0, test: bool = False) -> None:
     herbs["buy_price"] = herbs["buy_price"].astype(int)
 
     # Get snatch data, populate and save back
-    data = utils.read_lua("Auc-Advanced", merge_account_sources=False)
-    data = data.get("396255466#1")
-
+    # Errors be here
+    data = utils.read_lua("Auc-Advanced", merge_account_sources=False)["396255466#1"]
     snatch = data["AucAdvancedData"]["UtilSearchUiData"]["Current"]["snatch.itemsList"]
 
     for herb, row in herbs.iterrows():
