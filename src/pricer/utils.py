@@ -99,9 +99,7 @@ def read_lua(
     merge_account_sources: bool = True,
     accounts: tuple = ("BLUEM", "396255466#1", "801032581#1"),
 ) -> Any:
-    """Read lua and merge lua from WoW Addon account locations.
-
-    Prime target for a refactor!"""
+    """Read lua and merge lua from WoW Addon account locations."""
     warcraft_path = config.us.get("warcraft_path").rstrip("/")
 
     account_data: dict = {key: None for key in accounts}

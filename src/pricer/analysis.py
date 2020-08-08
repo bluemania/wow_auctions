@@ -488,7 +488,7 @@ def apply_sell_policy(
     test: bool = False,
 ) -> None:
     """Combines user input & market data to write a sell policy to WoW addon folder.
-    
+
     Given user specified parameters, create a selling policy across
     all items, based on the market and inventory information.
     The sell policy is converted into lua format and saved to the WoW
@@ -576,7 +576,9 @@ def apply_sell_policy(
     # Read client lua, replace with
     data = utils.read_lua("Auc-Advanced", merge_account_sources=False)
     data_subset = data.get("396255466#1")
-    data_subset["AucAdvancedConfig"]["profile.Default"]["util"]["appraiser"] = new_appraiser
+    data_subset["AucAdvancedConfig"]["profile.Default"]["util"][
+        "appraiser"
+    ] = new_appraiser
 
     if test:
         return None  # avoid saves
