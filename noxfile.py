@@ -24,7 +24,7 @@ from nox.sessions import Session
 
 
 locations = "src", "tests", "noxfile.py", "docs/conf.py"
-nox.options.sessions = "lint", "mypy", "tests" # "pytype",
+nox.options.sessions = "lint", "tests"  # , "mypy", "pytype",
 package = "pricer"
 
 
