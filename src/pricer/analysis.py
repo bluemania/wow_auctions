@@ -8,6 +8,7 @@
 """
 
 import logging
+from typing import Any, Dict
 
 import pandas as pd
 import seaborn as sns
@@ -55,6 +56,7 @@ def analyse_item_prices(full_pricing: bool = False, test: bool = False) -> None:
         "price_per"
     ]
 
+    item_prices: Dict[str, int] = {}
     if full_pricing:
         item_prices = {
             item: price_history.loc[item].ewm(alpha=0.2).mean().iloc[-1]
@@ -62,23 +64,24 @@ def analyse_item_prices(full_pricing: bool = False, test: bool = False) -> None:
         }
     else:
         # Only calculate for our item list; get user specified backup price if present
-        item_prices = {}
         for item, details in items.items():
             price = details.get("backup_price")
             if not price:
                 price = price_history.loc[item].ewm(alpha=0.2).mean().iloc[-1]
             item_prices[item] = price
 
-    item_prices = pd.DataFrame.from_dict(item_prices, orient="index")
-    item_prices.index.name = "item"
-    item_prices.columns = ["market_price"]
+    item_prices_df = pd.DataFrame.from_dict(item_prices, orient="index")
+    item_prices_df.index.name = "item"
+    item_prices_df.columns = ["market_price"]
 
     if test:
         return None  # avoid saves
 
-    item_prices.to_parquet("data/intermediate/item_prices.parquet", compression="gzip")
+    item_prices_df.to_parquet(
+        "data/intermediate/item_prices.parquet", compression="gzip"
+    )
 
-    logger.info(f"Item prices calculated. {len(item_prices)} records")
+    logger.info(f"Item prices calculated. {len(item_prices_df)} records")
 
 
 def analyse_sales_performance(test: bool = False) -> None:
@@ -544,11 +547,12 @@ def apply_sell_policy(
             "data/outputs/sell_policy.parquet", compression="gzip"
         )
 
-    duration = {"s": 720, "m": 1440, "l": 2880}.get(duration)
+    duration_choices: Dict[str, int] = {"s": 720, "m": 1440, "l": 2880}
+    duration_choice = duration_choices.get(duration)
     item_codes = utils.get_item_codes()
 
     # Seed new appraiser
-    new_appraiser = {
+    new_appraiser: Dict[str, Any] = {
         "bid.markdown": 0,
         "columnsortcurDir": 1,
         "columnsortcurSort": 6,
@@ -567,16 +571,18 @@ def apply_sell_policy(
         new_appraiser[f"item.{code}.number"] = int(d["sell_count"])
         new_appraiser[f"item.{code}.stack"] = int(d["stack"])
         new_appraiser[f"item.{code}.bulk"] = True
-        new_appraiser[f"item.{code}.duration"] = duration
+        new_appraiser[f"item.{code}.duration"] = duration_choice
 
     # Read client lua, replace with
     data = utils.read_lua("Auc-Advanced", merge_account_sources=False)
-    data = data.get("396255466#1")
-    data["AucAdvancedConfig"]["profile.Default"]["util"]["appraiser"] = new_appraiser
+    data_subset = data.get("396255466#1")
+    data_subset["AucAdvancedConfig"]["profile.Default"]["util"][
+        "appraiser"
+    ] = new_appraiser
 
     if test:
         return None  # avoid saves
-    utils.write_lua(data)
+    utils.write_lua(data_subset)
 
 
 def apply_buy_policy(MAT_DEV: int = 0, test: bool = False) -> None:
@@ -606,7 +612,7 @@ def apply_buy_policy(MAT_DEV: int = 0, test: bool = False) -> None:
         KeyError: All user specified 'Buy' items must be present in the
             Auctioneer 'snatch' listing.
     """
-    items = utils.load_items()
+    items: Dict[str, Any] = utils.load_items()
     sell_policy = pd.read_parquet("data/outputs/sell_policy.parquet")
 
     # Determine how many potions I have, and how many need to be replaced
@@ -617,7 +623,7 @@ def apply_buy_policy(MAT_DEV: int = 0, test: bool = False) -> None:
     replenish = pd.DataFrame(replenish)
 
     for potion in replenish.index:
-        replenish.loc[potion, "max"] = items.get(potion).get("ideal_holding", 60)
+        replenish.loc[potion, "max"] = items[potion].get("ideal_holding", 60)
 
     replenish["inventory_target"] = (replenish["max"] - replenish["inventory"]).apply(
         lambda x: max(0, x)
@@ -632,7 +638,7 @@ def apply_buy_policy(MAT_DEV: int = 0, test: bool = False) -> None:
     # From potions required, get herbs required
     herbs_required = pd.Series()
     for potion, quantity in replenish["target"].iteritems():
-        for herb, count in items.get(potion).get("made_from").items():
+        for herb, count in items[potion].get("made_from").items():
             if herb in herbs_required:
                 herbs_required.loc[herb] += count * quantity
             else:
@@ -701,9 +707,8 @@ def apply_buy_policy(MAT_DEV: int = 0, test: bool = False) -> None:
     herbs["buy_price"] = herbs["buy_price"].astype(int)
 
     # Get snatch data, populate and save back
-    data = utils.read_lua("Auc-Advanced", merge_account_sources=False)
-    data = data.get("396255466#1")
-
+    # Errors be here
+    data = utils.read_lua("Auc-Advanced", merge_account_sources=False)["396255466#1"]
     snatch = data["AucAdvancedData"]["UtilSearchUiData"]["Current"]["snatch.itemsList"]
 
     for herb, row in herbs.iterrows():
