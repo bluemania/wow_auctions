@@ -337,11 +337,7 @@ def analyse_item_min_sell_price(
     item_min_sale = item_min_sale.join(full_deposit).dropna()
 
     item_min_sale["min_list_price"] = (
-        (
-            item_min_sale["mat_cost"]
-            + (item_min_sale["deposit"])
-        )
-        + MIN_PROFIT_MARGIN
+        (item_min_sale["mat_cost"] + item_min_sale["deposit"]) + MIN_PROFIT_MARGIN
     ) * 1.05
 
     if test:
@@ -625,11 +621,10 @@ def apply_buy_policy(MAT_DEV: int = 0, test: bool = False) -> None:
     replenish["inventory_target"] = (replenish["max"] - replenish["inventory"]).apply(
         lambda x: max(0, x)
     )
-    #replenish = replenish.join(analyse_auction_success())
-
+    
     # Downweight requirements according to recent auction success
     replenish["target"] = (
-        replenish["inventory_target"] #* replenish["auction_success"]
+        replenish["inventory_target"]
     ).astype(int)
 
     # From potions required, get herbs required
@@ -716,7 +711,7 @@ def apply_buy_policy(MAT_DEV: int = 0, test: bool = False) -> None:
             logger.error(f"{herb} not in snatch")
 
     if not all_accounted:
-        raise KeyError(f"Herbs missing from snatch")
+        raise KeyError("Herbs missing from snatch")
 
         snatch[code]["price"] = int(row["buy_price"])
 

@@ -142,9 +142,7 @@ def get_general_settings() -> Dict[str, Any]:
 def get_and_format_auction_data(account: str = "396255466#1") -> pd.DataFrame:
     """Read raw scandata dict dump and converts to usable dataframe."""
     warcraft_path = config.us.get("warcraft_path").rstrip("/")
-    path_live = (
-        f"{warcraft_path}/WTF/Account/{account}/SavedVariables/Auc-ScanData.lua"
-    )
+    path_live = f"{warcraft_path}/WTF/Account/{account}/SavedVariables/Auc-ScanData.lua"
     logger.debug(f"Loading Addon auction data from {path_live}")
 
     ropes = []
@@ -203,8 +201,8 @@ def get_and_format_auction_data(account: str = "396255466#1") -> pd.DataFrame:
 
 def get_item_codes() -> Dict[str, int]:
     """Read BeanCounter data to create code: item mapping."""
-    item_codes = pd.read_csv('data/static/items.csv', index_col='name')
-    return item_codes['entry'].to_dict()
+    item_codes = pd.read_csv("data/static/items.csv", index_col="name")
+    return item_codes["entry"].to_dict()
 
 
 def write_lua(
