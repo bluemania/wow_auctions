@@ -621,7 +621,7 @@ def apply_buy_policy(MAT_DEV: int = 0, test: bool = False) -> None:
     replenish["inventory_target"] = (replenish["max"] - replenish["inventory"]).apply(
         lambda x: max(0, x)
     )
-    
+
     # Downweight requirements according to recent auction success
     replenish["target"] = (
         replenish["inventory_target"]
