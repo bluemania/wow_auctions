@@ -326,9 +326,6 @@ def analyse_item_min_sell_price(
     item_min_sale.index.name = "item"
     item_min_sale.columns = ["mat_cost"]
 
-    # Adds auction success % per item
-    item_min_sale = item_min_sale.join(analyse_auction_success())
-
     full_deposit = pd.Series(
         {
             item_name: item_details.get("full_deposit")
@@ -342,7 +339,7 @@ def analyse_item_min_sell_price(
     item_min_sale["min_list_price"] = (
         (
             item_min_sale["mat_cost"]
-            + (item_min_sale["deposit"] * (1 - item_min_sale["auction_success"]))
+            + (item_min_sale["deposit"])
         )
         + MIN_PROFIT_MARGIN
     ) * 1.05
@@ -628,11 +625,11 @@ def apply_buy_policy(MAT_DEV: int = 0, test: bool = False) -> None:
     replenish["inventory_target"] = (replenish["max"] - replenish["inventory"]).apply(
         lambda x: max(0, x)
     )
-    replenish = replenish.join(analyse_auction_success())
+    #replenish = replenish.join(analyse_auction_success())
 
     # Downweight requirements according to recent auction success
     replenish["target"] = (
-        replenish["inventory_target"] * replenish["auction_success"]
+        replenish["inventory_target"] #* replenish["auction_success"]
     ).astype(int)
 
     # From potions required, get herbs required
@@ -711,10 +708,15 @@ def apply_buy_policy(MAT_DEV: int = 0, test: bool = False) -> None:
     data = utils.read_lua("Auc-Advanced", merge_account_sources=False)["396255466#1"]
     snatch = data["AucAdvancedData"]["UtilSearchUiData"]["Current"]["snatch.itemsList"]
 
+    all_accounted = True
     for herb, row in herbs.iterrows():
         code = f"{row['code']}:0:0"
         if code not in snatch:
-            raise KeyError(f"{herb} not in snatch")
+            all_accounted = False
+            logger.error(f"{herb} not in snatch")
+
+    if not all_accounted:
+        raise KeyError(f"Herbs missing from snatch")
 
         snatch[code]["price"] = int(row["buy_price"])
 

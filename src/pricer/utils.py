@@ -143,7 +143,7 @@ def get_and_format_auction_data(account: str = "396255466#1") -> pd.DataFrame:
     """Read raw scandata dict dump and converts to usable dataframe."""
     warcraft_path = config.us.get("warcraft_path").rstrip("/")
     path_live = (
-        f"{warcraft_path}/WTF/Account/{account}/" + "SavedVariables/Auc-ScanData.lua"
+        f"{warcraft_path}/WTF/Account/{account}/SavedVariables/Auc-ScanData.lua"
     )
     logger.debug(f"Loading Addon auction data from {path_live}")
 
@@ -201,15 +201,10 @@ def get_and_format_auction_data(account: str = "396255466#1") -> pd.DataFrame:
     return df
 
 
-def get_item_codes() -> Dict[str, Any]:
+def get_item_codes() -> Dict[str, int]:
     """Read BeanCounter data to create code: item mapping."""
-    data = read_lua("BeanCounter")
-    item_code = {}
-    for keypart, itempart in data["BeanCounterDBNames"].items():
-        key = keypart.split(":")[0]
-        item = itempart.split(";")[1]
-        item_code[item] = key
-    return item_code
+    item_codes = pd.read_csv('data/full/items.csv', index_col='name')
+    return item_codes['entry'].to_dict()
 
 
 def write_lua(
