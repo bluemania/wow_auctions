@@ -203,7 +203,7 @@ def get_and_format_auction_data(account: str = "396255466#1") -> pd.DataFrame:
 
 def get_item_codes() -> Dict[str, int]:
     """Read BeanCounter data to create code: item mapping."""
-    item_codes = pd.read_csv('data/full/items.csv', index_col='name')
+    item_codes = pd.read_csv('data/static/items.csv', index_col='name')
     return item_codes['entry'].to_dict()
 
 
