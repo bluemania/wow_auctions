@@ -71,15 +71,6 @@ Elixir of the Mongoose:
     Mountain Silversage: 2
     Plaguebloom: 2   
   ideal_holding: 100
-Fire Protection Potion:
-  full_deposit: 96 
-  group: Sell
-  made_from:
-    Empty Vial: 1
-    Firefin Snapper: 2
-    Leaded Vial: 1
-    Small Flame Sac: 1  
-  ideal_holding: 100
 Free Action Potion:
   full_deposit: 36
   group: Sell
@@ -159,8 +150,6 @@ Stonescale Oil:
 
 Oily Blackmouth:
   group: Buy 
-Firefin Snapper:
-  group: Buy   
 Stonescale Eel:
   group: Buy
 
@@ -183,8 +172,6 @@ Gromsblood:
 Mountain Silversage:
   group: Buy
 Plaguebloom:
-  group: Buy
-Small Flame Sac:
   group: Buy
 Stranglekelp:
   group: Buy
