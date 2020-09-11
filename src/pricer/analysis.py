@@ -623,9 +623,7 @@ def apply_buy_policy(MAT_DEV: int = 0, test: bool = False) -> None:
     )
 
     # Downweight requirements according to recent auction success
-    replenish["target"] = (
-        replenish["inventory_target"]
-    ).astype(int)
+    replenish["target"] = (replenish["inventory_target"]).astype(int)
 
     # From potions required, get herbs required
     herbs_required = pd.Series()
