@@ -7,6 +7,7 @@
 * produces buying and selling policies, and writes to WoW addon directory
 """
 
+from collections import defaultdict
 import logging
 from typing import Any, Dict
 
@@ -542,7 +543,7 @@ def apply_sell_policy(
 
     duration_choices: Dict[str, int] = {"s": 720, "m": 1440, "l": 2880}
     duration_choice = duration_choices.get(duration)
-    item_codes = utils.get_item_codes()
+    item_codes = utils.get_item_ids()
 
     # Seed new appraiser
     new_appraiser: Dict[str, Any] = {
@@ -567,15 +568,15 @@ def apply_sell_policy(
         new_appraiser[f"item.{code}.duration"] = duration_choice
 
     # Read client lua, replace with
-    data = utils.read_lua("Auc-Advanced", merge_account_sources=False)
-    data_subset = data.get("396255466#1")
-    data_subset["AucAdvancedConfig"]["profile.Default"]["util"][
+    path = utils.make_lua_path(account_name="396255466#1", datasource="Auc-Advanced")
+    data = utils.temp_read_lua(path)
+    data["AucAdvancedConfig"]["profile.Default"]["util"][
         "appraiser"
     ] = new_appraiser
 
     if test:
         return None  # avoid saves
-    utils.write_lua(data_subset)
+    utils.write_lua(data)
 
 
 def apply_buy_policy(MAT_DEV: int = 0, test: bool = False) -> None:
@@ -638,7 +639,7 @@ def apply_buy_policy(MAT_DEV: int = 0, test: bool = False) -> None:
     herbs = pd.DataFrame(herbs_required)
 
     # Add item codes from beancounter, used for entering into snatch
-    item_codes = utils.get_item_codes()
+    item_codes = utils.get_item_ids()
     herbs = herbs.join(pd.Series(item_codes, name="code"))
 
     # Remove herbs already in inventory
@@ -698,18 +699,20 @@ def apply_buy_policy(MAT_DEV: int = 0, test: bool = False) -> None:
 
     # Get snatch data, populate and save back
     # Errors be here
-    data = utils.read_lua("Auc-Advanced", merge_account_sources=False)["396255466#1"]
+    path = utils.make_lua_path(account_name="396255466#1", datasource="Auc-Advanced")
+    data = utils.temp_read_lua(path)
     snatch = data["AucAdvancedData"]["UtilSearchUiData"]["Current"]["snatch.itemsList"]
+    snatch = defaultdict(dict, snatch)
 
     all_accounted = True
     for herb, row in herbs.iterrows():
         code = f"{row['code']}:0:0"
-        if code not in snatch:
-            all_accounted = False
-            logger.error(f"{herb} not in snatch")
+    #     if code not in snatch:
+    #         all_accounted = False
+    #         logger.error(f"{herb} not in snatch")
 
-    if not all_accounted:
-        raise KeyError("Herbs missing from snatch")
+    # if not all_accounted:
+    #     raise KeyError("Herbs missing from snatch")
 
         snatch[code]["price"] = int(row["buy_price"])
 
