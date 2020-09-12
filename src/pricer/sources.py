@@ -12,6 +12,7 @@ from typing import Any, Dict
 
 import pandas as pd
 
+from pricer import config
 from pricer import utils
 
 pd.options.mode.chained_assignment = None  # default='warn'
@@ -82,37 +83,17 @@ def create_playtime_record(
     logger.info(f"Time played recorded, marked as clean_session: {clean_session}")
 
 
-def generate_inventory(test: bool = False, run_dt: dt = None) -> None:
-    """Read and clean Arkinventory addon data, and save to parquet.
-
-    For all characters on all user specified accounts, collates info on
-    monies and inventory. Uses general settings to determine which slots
-    are examined (e.g. mailbox, backpack, auction, bank).
-
-    Args:
-        test: when True prevents data saving (early return)
-        run_dt: Session runtime for data lineage timestampping
-
-    Returns:
-        None
-    """
-    settings = utils.get_general_settings()
-    characters = utils.read_lua("ArkInventory")["ARKINVDB"]["global"]["player"]["data"]
-
+def clean_inventory(inventory_data, run_dt):
     # Search through inventory data to create dict of all items and counts
     # Also counts total monies
-    monies: Dict[str, int] = {}
+    settings = utils.get_general_settings()    
+
     raw_data: list = []
-
-    for ckey, character in characters.items():
-        character_name = ckey.split(" ")[0]
-
-        character_money = int(character.get("info").get("money", 0))
-        monies[ckey] = character_money
-        logger.debug(f"Character {character_name}, has money: {character_money}")
+    for character, character_data in inventory_data.items():
+        character_name = character.split(" ")[0]
 
         # Get Bank, Inventory, Character, Mailbox etc
-        location_slots = character.get("location", [])
+        location_slots = character_data.get("location", [])
 
         for lkey in location_slots:
             items: Dict[str, int] = defaultdict(int)
@@ -136,50 +117,186 @@ def generate_inventory(test: bool = False, run_dt: dt = None) -> None:
                 raw_data.append((character_name, loc_name, item_name, item_count))
 
     # Convert information to dataframe
-    cols = ["character", "location", "item", "count", "timestamp"]
+    cols = ["character", "location", "item", "count"]
     df = pd.DataFrame(raw_data)
-
-    df["timestamp"] = run_dt
     df.columns = cols
 
-    df_monies = pd.Series(monies)
-    df_monies.name = "monies"
-    df_monies = pd.DataFrame(df_monies)
-    df_monies["timestamp"] = run_dt
+    df["timestamp"] = run_dt
+    return df
+
+
+def generate_inventory(test: bool = False, run_dt: dt = None) -> None:
+    """Read and clean Arkinventory addon data, and save to parquet.
+
+    For all characters on all user specified accounts, collates info on
+    monies and inventory. Uses general settings to determine which slots
+    are examined (e.g. mailbox, backpack, auction, bank).
+
+    Args:
+        test: when True prevents data saving (early return)
+        run_dt: Session runtime for data lineage timestampping
+
+    Returns:
+        None
+    """
+    acc_inv: dict = {}
+    for account_name in config.us.get('accounts'):
+        path = utils.make_lua_path(account_name, "ArkInventory")
+        data = utils.read_lua(path)
+        acc_inv = utils.source_merge(acc_inv, data).copy()
+
+    inventory_data = acc_inv["ARKINVDB"]["global"]["player"]["data"]
+
+    df = clean_inventory(inventory_data, run_dt)
 
     if test:
         return None  # avoid saves
-    df.to_parquet("data/intermediate/inventory.parquet", compression="gzip")
-    df_monies.to_parquet("data/intermediate/monies.parquet", compression="gzip")
 
-    logger.info(
-        f"Inventory formatted. {len(df)} records,"
-        + f" {int(df_monies['monies'].sum()/10000)} total money across chars"
-    )
+    path = "data/intermediate/inventory.parquet"
+    logger.debug(f"Write inventory parquet to {path}")
+    df.to_parquet(path, compression="gzip")
 
-    inventory_repo = pd.read_parquet("data/full/inventory.parquet")
-    monies_repo = pd.read_parquet("data/full/monies.parquet")
+    path = "data/full/inventory.parquet"
+    logger.debug(f"Read inventory parquet from {path}")
+    inventory_repo = pd.read_parquet(path)
 
-    updated = "*not*"
     if df["timestamp"].max() > inventory_repo["timestamp"].max():
-        updated = ""
-        inventory_repo.to_parquet(
-            "data/full_backup/inventory.parquet", compression="gzip"
-        )
+        path = "data/full_backup/inventory.parquet"
+        logger.debug(f"Write inventory parquet to {path}")
+        inventory_repo.to_parquet(path, compression="gzip")
+
         inventory_repo = inventory_repo.append(df)
-        inventory_repo.to_parquet("data/full/inventory.parquet", compression="gzip")
 
-        monies_repo.to_parquet("data/full_backup/monies.parquet", compression="gzip")
-        monies_repo = monies_repo.append(df_monies)
-        monies_repo.to_parquet("data/full/monies.parquet", compression="gzip")
+        path = "data/full/inventory.parquet"
+        logger.debug(f"Write inventory parquet to {path}")
+        inventory_repo.to_parquet(path, compression="gzip")
 
-    unique_periods = len(inventory_repo["timestamp"].unique())
+    logger.info("Generated inventory")
 
-    logger.info(
-        f"Inventory full repository. {len(inventory_repo)} "
-        + f"records with {unique_periods} snapshots. "
-        + f"Repository has {updated} been updated this run"
-    )
+
+def clean_money(money_data, run_dt):
+    monies: Dict[str, int] = {}
+    for character, character_data in money_data.items():
+        character_money = int(character_data.get("info").get("money", 0))
+        monies[character] = character_money
+
+    df = pd.Series(monies)
+    df.name = "monies"
+    df = pd.DataFrame(df)
+    df["timestamp"] = run_dt
+    return df
+
+
+def generate_monies(test: bool = False, run_dt: dt = None) -> None:
+    """Read and clean Arkinventory addon data, and save to parquet.
+
+    For all characters on all user specified accounts, collates info on
+    monies and inventory. Uses general settings to determine which slots
+    are examined (e.g. mailbox, backpack, auction, bank).
+
+    Args:
+        test: when True prevents data saving (early return)
+        run_dt: Session runtime for data lineage timestampping
+
+    Returns:
+        None
+    """
+    acc_inv: dict = {}
+    for account_name in config.us.get('accounts'):
+        path = utils.make_lua_path(account_name, "ArkInventory")
+        data = utils.read_lua(path)
+        acc_inv = utils.source_merge(acc_inv, data).copy()
+
+    monies_data = acc_inv["ARKINVDB"]["global"]["player"]["data"]
+
+    df = clean_money(monies_data, run_dt)
+
+    if test:
+        return None  # avoid saves
+
+    path = "data/intermediate/monies.parquet"
+    logger.debug(f"Write monies parquet to {path}")
+    df.to_parquet(path, compression="gzip")
+
+    path = "data/full/monies.parquet"
+    logger.debug(f"Read monies parquet from {path}")
+    monies_repo = pd.read_parquet(path)
+
+    if df["timestamp"].max() > monies_repo["timestamp"].max():
+        path = "data/full_backup/monies.parquet"
+        logger.debug(f"Write monies parquet to {path}")
+        monies_repo.to_parquet(path, compression="gzip")
+
+        path = "data/full/monies.parquet"
+        logger.debug(f"Write monies parquet to {path}")
+        monies_repo = monies_repo.append(df)
+        monies_repo.to_parquet(path, compression="gzip")
+
+    logger.info("Generated monies")
+
+
+def clean_auctions(account: str = "396255466#1") -> pd.DataFrame:
+    """Read raw scandata dict dump and converts to usable dataframe."""
+    warcraft_path = config.us.get("warcraft_path").rstrip("/")
+    path = f"{warcraft_path}/WTF/Account/{account}/SavedVariables/Auc-ScanData.lua"
+    logger.debug(f"Reading lua from {path}")
+
+    ropes = []
+    with open(path, "r") as f:
+        on = False
+        rope_count = 0
+        for line in f.readlines():
+            if on and rope_count < 5:
+                ropes.append(line)
+                rope_count += 1
+            elif '["ropes"]' in line:
+                on = True
+
+    listings = []
+    for rope in ropes:
+        if len(rope) < 10:
+            continue
+        listings_part = rope.split("},{")
+        listings_part[0] = listings_part[0].split("{{")[1]
+        listings_part[-1] = listings_part[-1].split("},}")[0]
+
+        listings.extend(listings_part)
+
+    # Contains lots of columns, we ignore ones we likely dont care about
+    # We apply transformations and relabel
+    auction_timing = {1: 30, 2: 60 * 2, 3: 60 * 12, 4: 60 * 24}
+
+    df = pd.DataFrame([x.split("|")[-1].split(",") for x in listings])
+    df["time_remaining"] = df[6].replace(auction_timing)
+    df["item"] = df[8].str.replace('"', "").str[1:-1]
+    df["count"] = df[10].replace("nil", 0).astype(int)
+    df["price"] = df[16].astype(int)
+    df["agent"] = df[19].str.replace('"', "").str[1:-1]
+    df["timestamp"] = df[7].apply(lambda x: dt.fromtimestamp(int(x)))
+
+    # There is some timing difference in the timestamp
+    # we dont really care we just need time of pull
+    df["timestamp"] = df["timestamp"].max()
+
+    df = df[df["count"] > 0]
+    df["price_per"] = df["price"] / df["count"]
+
+    cols = [
+        "timestamp",
+        "item",
+        "count",
+        "price",
+        "agent",
+        "price_per",
+        "time_remaining",
+    ]
+    df = df[cols]
+
+    df = df[df["price_per"] != 0]
+    df["price_per"] = df["price_per"].astype(int)
+    df.loc[:, "auction_type"] = "market"
+
+    return df
 
 
 def generate_auction_scandata(test: bool = False) -> None:
@@ -196,58 +313,56 @@ def generate_auction_scandata(test: bool = False) -> None:
     Returns:
         None
     """
-    auction_data = utils.get_and_format_auction_data()
-
-    auction_data = auction_data[auction_data["price_per"] != 0]
-    auction_data["price_per"] = auction_data["price_per"].astype(int)
-    auction_data.loc[:, "auction_type"] = "market"
+    auction_data = clean_auctions()
 
     # Saves latest scan to intermediate (immediate)
-    auction_data.to_parquet(
-        "data/intermediate/auction_scandata.parquet", compression="gzip"
-    )
-    auction_data.to_parquet(
-        f"data/full/auction_scandata/{str(auction_data['timestamp'].max())}.parquet",
-        compression="gzip",
-    )
+    path = "data/intermediate/auction_scandata.parquet"
+    logger.debug(f"Write auctions parquet to {path}")
+    auction_data.to_parquet(path, compression="gzip")
 
-    logger.info(f"Auction scandata loaded and cleaned. {len(auction_data)} records")
+    timestamp = str(auction_data['timestamp'].max())
+    path = f"data/full/auction_scandata/{timestamp}.parquet"
+    logger.debug(f"Write auctions parquet to {path}")
+    auction_data.to_parquet(path, compression="gzip")
+
+
+def generate_current_price(test: bool = False) -> None:
+
+    path = "data/intermediate/auction_scandata.parquet"
+    logger.debug(f"Read auctions parquet to {path}")
+    price_df = pd.read_parquet(path)
 
     items = utils.load_items()
-    auction_scan_minprice = auction_data.copy()
 
-    auction_scan_minprice = auction_scan_minprice[
-        auction_scan_minprice["item"].isin(items)
-    ]
-    auction_scan_minprice = (
-        auction_scan_minprice.groupby(["item", "timestamp"])["price_per"]
+    price_df = price_df[price_df["item"].isin(items)]
+    price_df = (
+        price_df
+        .groupby(["item", "timestamp"])["price_per"]
         .min()
         .reset_index()
     )
 
-    auction_scan_minprice_repo = pd.read_parquet(
-        "data/full/auction_scan_minprice.parquet"
-    )
+    path = "data/full/auction_scan_minprice.parquet"
+    logger.debug(f"Reading price parquet from {path}")
+    price_repo = pd.read_parquet(path)
 
     if test:
         return None  # avoid saves
-    auction_scan_minprice.to_parquet(
-        "data/intermediate/auction_scan_minprice.parquet", compression="gzip"
-    )
-    auction_scan_minprice_repo.to_parquet(
-        "data/full_backup/auction_scan_minprice.parquet", compression="gzip"
-    )
 
-    if (
-        auction_scan_minprice["timestamp"].max()
-        > auction_scan_minprice_repo["timestamp"].max()
-    ):
-        auction_scan_minprice_repo = pd.concat(
-            [auction_scan_minprice, auction_scan_minprice_repo], axis=0
-        )
-        auction_scan_minprice_repo.to_parquet(
-            "data/full/auction_scan_minprice.parquet", compression="gzip"
-        )
+    path = "data/intermediate/auction_scan_minprice.parquet"
+    logger.debug(f"Writing price parquet to {path}")
+    price_df.to_parquet(path, compression="gzip")
+
+    path = "data/full_backup/auction_scan_minprice.parquet"
+    logger.debug(f"Writing price parquet to {path}")    
+    price_repo.to_parquet(path, compression="gzip")
+
+    if (price_df["timestamp"].max() > price_repo["timestamp"].max()):
+        price_repo = pd.concat([price_df, price_repo], axis=0)
+
+        path = "data/full/auction_scan_minprice.parquet"
+        logger.debug(f"Writing price parquet to {path}")
+        price_repo.to_parquet(path, compression="gzip")
 
 
 def generate_auction_activity(test: bool = False) -> None:
@@ -270,7 +385,12 @@ def generate_auction_activity(test: bool = False) -> None:
     ]
 
     settings = utils.get_general_settings()
-    data = utils.read_lua("BeanCounter")
+
+    data: dict = {}
+    for account_name in config.us.get('accounts'):
+        path = utils.make_lua_path(account_name, "BeanCounter")
+        bean = utils.read_lua(path)
+        data = utils.source_merge(data, bean).copy()
 
     # Generates BeanCounters id:item_name dict
     num_item = {}

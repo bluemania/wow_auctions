@@ -543,7 +543,7 @@ def apply_sell_policy(
 
     duration_choices: Dict[str, int] = {"s": 720, "m": 1440, "l": 2880}
     duration_choice = duration_choices.get(duration)
-    item_codes = utils.get_item_ids()
+    item_ids = utils.get_item_ids()
 
     # Seed new appraiser
     new_appraiser: Dict[str, Any] = {
@@ -556,7 +556,7 @@ def apply_sell_policy(
 
     # Iterate through items setting policy
     for item, d in df_sell_policy.iterrows():
-        code = item_codes[item]
+        code = item_ids[item]
 
         new_appraiser[f"item.{code}.fixed.bid"] = int(d["sell_price"] + d["infeasible"])
         new_appraiser[f"item.{code}.fixed.buy"] = int(d["sell_price"])
@@ -569,7 +569,7 @@ def apply_sell_policy(
 
     # Read client lua, replace with
     path = utils.make_lua_path(account_name="396255466#1", datasource="Auc-Advanced")
-    data = utils.temp_read_lua(path)
+    data = utils.read_lua(path)
     data["AucAdvancedConfig"]["profile.Default"]["util"][
         "appraiser"
     ] = new_appraiser
@@ -639,8 +639,8 @@ def apply_buy_policy(MAT_DEV: int = 0, test: bool = False) -> None:
     herbs = pd.DataFrame(herbs_required)
 
     # Add item codes from beancounter, used for entering into snatch
-    item_codes = utils.get_item_ids()
-    herbs = herbs.join(pd.Series(item_codes, name="code"))
+    item_ids = utils.get_item_ids()
+    herbs = herbs.join(pd.Series(item_ids, name="code"))
 
     # Remove herbs already in inventory
     inventory = pd.read_parquet("data/intermediate/inventory.parquet")
@@ -700,21 +700,20 @@ def apply_buy_policy(MAT_DEV: int = 0, test: bool = False) -> None:
     # Get snatch data, populate and save back
     # Errors be here
     path = utils.make_lua_path(account_name="396255466#1", datasource="Auc-Advanced")
-    data = utils.temp_read_lua(path)
-    snatch = data["AucAdvancedData"]["UtilSearchUiData"]["Current"]["snatch.itemsList"]
-    snatch = defaultdict(dict, snatch)
+    data = utils.read_lua(path)
+    snatch = data["AucAdvancedData"]["UtilSearchUiData"]["Current"]
+    snatch["snatch.itemsList"] = {}
+    snatch = snatch["snatch.itemsList"]
 
     all_accounted = True
     for herb, row in herbs.iterrows():
-        code = f"{row['code']}:0:0"
-    #     if code not in snatch:
-    #         all_accounted = False
-    #         logger.error(f"{herb} not in snatch")
+        item_id = item_ids[herb]
 
-    # if not all_accounted:
-    #     raise KeyError("Herbs missing from snatch")
-
-        snatch[code]["price"] = int(row["buy_price"])
+        snatch_item = {}
+        snatch_item["price"] = int(row["buy_price"])
+        snatch_item["link"] = f"|cffffffff|Hitem:{item_id}::::::::39:::::::|h[{herb}]|h|r"        
+        logger.debug(f"Snatching {herb} for {snatch_item['price']}")
+        snatch[f"{item_id}:0:0"] = snatch_item
 
     data["AucAdvancedData"]["UtilSearchUiData"]["Current"]["snatch.itemsList"] = snatch
 

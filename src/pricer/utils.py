@@ -63,37 +63,10 @@ def make_lua_path(account_name="", datasource=""):
     return path
 
 
-def temp_read_lua(path):
+def read_lua(path):
     logger.debug(f"Loading lua from {path}")
     with open(path, "r") as f:
         return lua.decode("{" + f.read() + "}")    
-
-
-def read_lua(
-    datasource: str,
-    merge_account_sources: bool = True,
-    accounts: tuple = ("BLUEM", "396255466#1", "801032581#1"),
-) -> Any:
-    """Read lua and merge lua from WoW Addon account locations."""
-    warcraft_path = config.us.get("warcraft_path").rstrip("/")
-
-    account_data: dict = {key: None for key in accounts}
-    for account_name in account_data.keys():
-        path = make_lua_path(account_name, datasource)
-        account_data[account_name] = temp_read_lua(path)
-
-    logger.debug(f"read_lua on {datasource} for accounts: {accounts}")
-    if merge_account_sources and len(accounts) > 1:
-
-        merged_account_data: dict = {}
-        for _, data in account_data.items():
-            merged_account_data = source_merge(merged_account_data, data).copy()
-
-        logger.debug(f"read_lua (merged mode) {len(merged_account_data)} keys")
-        return merged_account_data
-    else:
-        logger.debug(f"read_lua (unmerged mode) {len(account_data)} keys")
-        return account_data
 
 
 def load_items() -> Dict[str, Any]:
@@ -110,66 +83,6 @@ def get_general_settings() -> Dict[str, Any]:
     logger.debug(f"Reading yaml from {path}")
     with open(path, "r") as f:
         return yaml.safe_load(f)
-
-
-def get_and_format_auction_data(account: str = "396255466#1") -> pd.DataFrame:
-    """Read raw scandata dict dump and converts to usable dataframe."""
-    warcraft_path = config.us.get("warcraft_path").rstrip("/")
-    path = f"{warcraft_path}/WTF/Account/{account}/SavedVariables/Auc-ScanData.lua"
-    logger.debug(f"Reading lua from {path}")
-
-    ropes = []
-    with open(path, "r") as f:
-        on = False
-        rope_count = 0
-        for line in f.readlines():
-            if on and rope_count < 5:
-                ropes.append(line)
-                rope_count += 1
-            elif '["ropes"]' in line:
-                on = True
-
-    listings = []
-    for rope in ropes:
-        if len(rope) < 10:
-            continue
-        listings_part = rope.split("},{")
-        listings_part[0] = listings_part[0].split("{{")[1]
-        listings_part[-1] = listings_part[-1].split("},}")[0]
-
-        listings.extend(listings_part)
-
-    # Contains lots of columns, we ignore ones we likely dont care about
-    # We apply transformations and relabel
-    auction_timing = {1: 30, 2: 60 * 2, 3: 60 * 12, 4: 60 * 24}
-
-    df = pd.DataFrame([x.split("|")[-1].split(",") for x in listings])
-    df["time_remaining"] = df[6].replace(auction_timing)
-    df["item"] = df[8].str.replace('"', "").str[1:-1]
-    df["count"] = df[10].replace("nil", 0).astype(int)
-    df["price"] = df[16].astype(int)
-    df["agent"] = df[19].str.replace('"', "").str[1:-1]
-    df["timestamp"] = df[7].apply(lambda x: dt.fromtimestamp(int(x)))
-
-    # There is some timing difference in the timestamp
-    # we dont really care we just need time of pull
-    df["timestamp"] = df["timestamp"].max()
-
-    df = df[df["count"] > 0]
-    df["price_per"] = df["price"] / df["count"]
-
-    cols = [
-        "timestamp",
-        "item",
-        "count",
-        "price",
-        "agent",
-        "price_per",
-        "time_remaining",
-    ]
-    df = df[cols]
-
-    return df
 
 
 def get_item_ids() -> Dict[str, int]:
