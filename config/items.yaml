@@ -184,10 +184,10 @@ Wild Steelbloom:
 
 Crystal Vial:
   backup_price: 400
-  group: Other
+  group: Vendor
 Leaded Vial:
   backup_price: 32
-  group: Other
+  group: Vendor
 Empty Vial:
   backup_price: 3
-  group: Other
+  group: Vendor

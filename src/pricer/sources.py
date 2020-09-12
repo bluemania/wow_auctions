@@ -88,42 +88,46 @@ def clean_bb_data() -> None:
     with open(path, 'r') as f:
         item_data = json.load(f)
 
-    short_term = []
-    all_auctions = []
-    listings = []
+    bb_fortnight = []
+    bb_history = []
+    bb_listings = []
 
     for item, data in item_data.items():
 
-        short_term_data = pd.DataFrame(data['history'][0])
-        short_term_data['snapshot'] = pd.to_datetime(short_term_data['snapshot'], unit='s')
-        short_term_data['item'] = item
-        short_term.append(short_term_data)
+        bb_fortnight_data = pd.DataFrame(data['history'][0])
+        bb_fortnight_data['snapshot'] = pd.to_datetime(bb_fortnight_data['snapshot'], unit='s')
+        bb_fortnight_data['item'] = item
+        bb_fortnight.append(bb_fortnight_data)
 
-        all_auctions_data = pd.DataFrame(data['daily'])
-        all_auctions_data['item'] = item
-        all_auctions.append(all_auctions_data)
+        bb_history_data = pd.DataFrame(data['daily'])
+        bb_history_data['item'] = item
+        bb_history.append(bb_history_data)
 
-        listings_data = pd.DataFrame(data['auctions']['data'])
-        listings_data = listings_data[['quantity', 'buy', 'sellerrealm', 'sellername']]
-        listings_data['price_per'] = listings_data['buy'] / listings_data['quantity']
-        listings_data = listings_data.drop('sellerrealm', axis=1)
-        listings_data['item'] = item
-        listings.append(listings_data)
+        bb_listings_data = pd.DataFrame(data['auctions']['data'])
+        bb_listings_data = bb_listings_data[['quantity', 'buy', 'sellerrealm', 'sellername']]
+        bb_listings_data['price_per'] = bb_listings_data['buy'] / bb_listings_data['quantity']
+        bb_listings_data = bb_listings_data.drop('sellerrealm', axis=1)
+        bb_listings_data['item'] = item
+        bb_listings.append(bb_listings_data)
 
-    short_term = pd.concat(short_term)
-    path = "data/cleaned/short_term.parquet"
-    logger.debug(f"Write short_term parquet to {path}")
-    short_term.to_parquet(path, compression="gzip")
+    bb_fortnight = pd.concat(bb_fortnight)
 
-    all_auctions = pd.concat(all_auctions)
-    path = "data/cleaned/all_auctions.parquet"
-    logger.debug(f"Write all_auctions parquet to {path}")
-    all_auctions.to_parquet(path, compression="gzip")
+    bb_history = pd.concat(bb_history)
 
-    listings = pd.concat(listings)
-    path = "data/cleaned/listings.parquet"
-    logger.debug(f"Write listings parquet to {path}")
-    listings.to_parquet(path, compression="gzip")
+    bb_listings = pd.concat(bb_listings)
+    bb_listings = bb_listings[bb_listings['price_per']>0]
+
+    path = "data/cleaned/bb_fortnight.parquet"
+    logger.debug(f"Write bb_fortnight parquet to {path}")
+    bb_fortnight.to_parquet(path, compression="gzip")
+
+    path = "data/cleaned/bb_history.parquet"
+    logger.debug(f"Write bb_history parquet to {path}")
+    bb_history.to_parquet(path, compression="gzip")
+
+    path = "data/cleaned/bb_listings.parquet"
+    logger.debug(f"Write bb_listings parquet to {path}")
+    bb_listings.to_parquet(path, compression="gzip")
 
 
 def get_arkinventory_data() -> None:
@@ -185,30 +189,32 @@ def clean_arkinventory_data(run_dt) -> None:
 
     # Convert information to dataframe
     cols = ["character", "location", "item", "count"]
-    df = pd.DataFrame(raw_data)
-    df.columns = cols
-    df["timestamp"] = run_dt
+    df_inventory = pd.DataFrame(raw_data)
+    df_inventory.columns = cols
+    df_inventory["timestamp"] = run_dt
     
+    # TODO remove intermediate reference
     path = "data/intermediate/inventory.parquet"
     logger.debug(f"Write inventory parquet to {path}")
-    df.to_parquet(path, compression="gzip")
+    df_inventory.to_parquet(path, compression="gzip")
 
-    path = "data/cleaned/inventory.parquet"
-    logger.debug(f"Write inventory parquet to {path}")
-    df.to_parquet(path, compression="gzip")
+    path = "data/cleaned/ark_inventory.parquet"
+    logger.debug(f"Write ark_inventory parquet to {path}")
+    df_inventory.to_parquet(path, compression="gzip")
 
     df_monies = pd.Series(monies)
     df_monies.name = "monies"
     df_monies = pd.DataFrame(df_monies)
     df_monies["timestamp"] = run_dt
 
+    # TODO remove intermediate reference
     path = "data/intermediate/monies.parquet"
     logger.debug(f"Write monies parquet to {path}")
-    df.to_parquet(path, compression="gzip")
+    df_monies.to_parquet(path, compression="gzip")
 
-    path = "data/cleaned/monies.parquet"
-    logger.debug(f"Write monies parquet to {path}")
-    df.to_parquet(path, compression="gzip")
+    path = "data/cleaned/ark_monies.parquet"
+    logger.debug(f"Write ark_monies parquet to {path}")
+    df_monies.to_parquet(path, compression="gzip")
 
 
 def get_beancounter_data() -> None:
@@ -262,24 +268,25 @@ def clean_beancounter_data() -> None:
     # Setup as pandas dataframe, remove irrelevant columns
     df = pd.DataFrame(parsed)
 
-    purchases = clean_purchases(df)
-    path = "data/cleaned/purchases.parquet"
-    logger.debug(f"Write purchases parquet to {path}")
-    purchases.to_parquet(path, compression="gzip")
+    bean_purchases = clean_purchases(df)
+    path = "data/cleaned/bean_purchases.parquet"
+    logger.debug(f"Write bean_purchases parquet to {path}")
+    bean_purchases.to_parquet(path, compression="gzip")
 
-    posted = clean_posted(df)
-    path = "data/cleaned/posted.parquet"
-    logger.debug(f"Write posted parquet to {path}")
-    posted.to_parquet(path, compression="gzip")
+    bean_posted = clean_posted(df)
+    path = "data/cleaned/bean_posted.parquet"
+    logger.debug(f"Write bean_posted parquet to {path}")
+    bean_posted.to_parquet(path, compression="gzip")
 
     failed = clean_failed(df)
     success = clean_success(df)
 
-    results = success.append(failed)
-    results['success'] = results['auction_type'].replace({"completedAuctions": 1, "failedAuctions": 0})
-    path = "data/cleaned/results.parquet"
-    logger.debug(f"Write results parquet to {path}")
-    results.to_parquet(path, compression="gzip")
+    bean_results = success.append(failed)
+    bean_results['success'] = bean_results['auction_type'].replace({"completedAuctions": 1, "failedAuctions": 0})
+    
+    path = "data/cleaned/bean_results.parquet"
+    logger.debug(f"Write bean_results parquet to {path}")
+    bean_results.to_parquet(path, compression="gzip")
 
 
 def create_playtime_record(
@@ -346,134 +353,93 @@ def create_playtime_record(
     logger.info(f"Time played recorded, marked as clean_session: {clean_session}")
 
 
-def clean_auctions(account: str = "396255466#1") -> pd.DataFrame:
-    """Read raw scandata dict dump and converts to usable dataframe."""
-    warcraft_path = config.us.get("warcraft_path").rstrip("/")
-    path = f"{warcraft_path}/WTF/Account/{account}/SavedVariables/Auc-ScanData.lua"
-    logger.debug(f"Reading lua from {path}")
+# def clean_auctions(account: str = "396255466#1") -> pd.DataFrame:
+#     """Read raw scandata dict dump and converts to usable dataframe."""
+#     warcraft_path = config.us.get("warcraft_path").rstrip("/")
+#     path = f"{warcraft_path}/WTF/Account/{account}/SavedVariables/Auc-ScanData.lua"
+#     logger.debug(f"Reading lua from {path}")
 
-    ropes = []
-    with open(path, "r") as f:
-        on = False
-        rope_count = 0
-        for line in f.readlines():
-            if on and rope_count < 5:
-                ropes.append(line)
-                rope_count += 1
-            elif '["ropes"]' in line:
-                on = True
+#     ropes = []
+#     with open(path, "r") as f:
+#         on = False
+#         rope_count = 0
+#         for line in f.readlines():
+#             if on and rope_count < 5:
+#                 ropes.append(line)
+#                 rope_count += 1
+#             elif '["ropes"]' in line:
+#                 on = True
 
-    listings = []
-    for rope in ropes:
-        if len(rope) < 10:
-            continue
-        listings_part = rope.split("},{")
-        listings_part[0] = listings_part[0].split("{{")[1]
-        listings_part[-1] = listings_part[-1].split("},}")[0]
+#     listings = []
+#     for rope in ropes:
+#         if len(rope) < 10:
+#             continue
+#         listings_part = rope.split("},{")
+#         listings_part[0] = listings_part[0].split("{{")[1]
+#         listings_part[-1] = listings_part[-1].split("},}")[0]
 
-        listings.extend(listings_part)
+#         listings.extend(listings_part)
 
-    # Contains lots of columns, we ignore ones we likely dont care about
-    # We apply transformations and relabel
-    auction_timing = {1: 30, 2: 60 * 2, 3: 60 * 12, 4: 60 * 24}
+#     # Contains lots of columns, we ignore ones we likely dont care about
+#     # We apply transformations and relabel
+#     auction_timing = {1: 30, 2: 60 * 2, 3: 60 * 12, 4: 60 * 24}
 
-    df = pd.DataFrame([x.split("|")[-1].split(",") for x in listings])
-    df["time_remaining"] = df[6].replace(auction_timing)
-    df["item"] = df[8].str.replace('"', "").str[1:-1]
-    df["count"] = df[10].replace("nil", 0).astype(int)
-    df["price"] = df[16].astype(int)
-    df["agent"] = df[19].str.replace('"', "").str[1:-1]
-    df["timestamp"] = df[7].apply(lambda x: dt.fromtimestamp(int(x)))
+#     df = pd.DataFrame([x.split("|")[-1].split(",") for x in listings])
+#     df["time_remaining"] = df[6].replace(auction_timing)
+#     df["item"] = df[8].str.replace('"', "").str[1:-1]
+#     df["count"] = df[10].replace("nil", 0).astype(int)
+#     df["price"] = df[16].astype(int)
+#     df["agent"] = df[19].str.replace('"', "").str[1:-1]
+#     df["timestamp"] = df[7].apply(lambda x: dt.fromtimestamp(int(x)))
 
-    # There is some timing difference in the timestamp
-    # we dont really care we just need time of pull
-    df["timestamp"] = df["timestamp"].max()
+#     # There is some timing difference in the timestamp
+#     # we dont really care we just need time of pull
+#     df["timestamp"] = df["timestamp"].max()
 
-    df = df[df["count"] > 0]
-    df["price_per"] = df["price"] / df["count"]
+#     df = df[df["count"] > 0]
+#     df["price_per"] = df["price"] / df["count"]
 
-    cols = [
-        "timestamp",
-        "item",
-        "count",
-        "price",
-        "agent",
-        "price_per",
-        "time_remaining",
-    ]
-    df = df[cols]
+#     cols = [
+#         "timestamp",
+#         "item",
+#         "count",
+#         "price",
+#         "agent",
+#         "price_per",
+#         "time_remaining",
+#     ]
+#     df = df[cols]
 
-    df = df[df["price_per"] != 0]
-    df["price_per"] = df["price_per"].astype(int)
-    df.loc[:, "auction_type"] = "market"
+#     df = df[df["price_per"] != 0]
+#     df["price_per"] = df["price_per"].astype(int)
+#     df.loc[:, "auction_type"] = "market"
 
-    return df
-
-
-def generate_auction_scandata(test: bool = False) -> None:
-    """Read and clean Auctionneer addon data, and save to parquet.
-
-    Utility function loads addon raw lua auction data from the user
-    specified primary auctioning account. It cleans up and selects columns.
-    Additionally filters results for the minimum price of user specified
-    items of interest.
-
-    Args:
-        test: when True prevents data saving (early return)
-
-    Returns:
-        None
-    """
-    auction_data = clean_auctions()
-
-    # Saves latest scan to intermediate (immediate)
-    path = "data/intermediate/auction_scandata.parquet"
-    logger.debug(f"Write auctions parquet to {path}")
-    auction_data.to_parquet(path, compression="gzip")
-
-    timestamp = str(auction_data['timestamp'].max())
-    path = f"data/full/auction_scandata/{timestamp}.parquet"
-    logger.debug(f"Write auctions parquet to {path}")
-    auction_data.to_parquet(path, compression="gzip")
+#     return df
 
 
-def generate_current_price(test: bool = False) -> None:
+# def generate_auction_scandata(test: bool = False) -> None:
+#     """Read and clean Auctionneer addon data, and save to parquet.
 
-    path = "data/intermediate/auction_scandata.parquet"
-    logger.debug(f"Read auctions parquet to {path}")
-    price_df = pd.read_parquet(path)
+#     Utility function loads addon raw lua auction data from the user
+#     specified primary auctioning account. It cleans up and selects columns.
+#     Additionally filters results for the minimum price of user specified
+#     items of interest.
 
-    items = utils.load_items()
+#     Args:
+#         test: when True prevents data saving (early return)
 
-    price_df = price_df[price_df["item"].isin(items)]
-    price_df = (
-        price_df
-        .groupby(["item", "timestamp"])["price_per"]
-        .min()
-        .reset_index()
-    )
+#     Returns:
+#         None
+#     """
+#     auction_data = clean_auctions()
 
-    path = "data/full/auction_scan_minprice.parquet"
-    logger.debug(f"Reading price parquet from {path}")
-    price_repo = pd.read_parquet(path)
+#     # Saves latest scan to intermediate (immediate)
+#     path = "data/intermediate/auction_scandata.parquet"
+#     logger.debug(f"Write auctions parquet to {path}")
+#     auction_data.to_parquet(path, compression="gzip")
 
-    if test:
-        return None  # avoid saves
 
-    path = "data/intermediate/auction_scan_minprice.parquet"
-    logger.debug(f"Writing price parquet to {path}")
-    price_df.to_parquet(path, compression="gzip")
-
-    path = "data/full_backup/auction_scan_minprice.parquet"
-    logger.debug(f"Writing price parquet to {path}")    
-    price_repo.to_parquet(path, compression="gzip")
-
-    if (price_df["timestamp"].max() > price_repo["timestamp"].max()):
-        price_repo = pd.concat([price_df, price_repo], axis=0)
-
-        path = "data/full/auction_scan_minprice.parquet"
-        logger.debug(f"Writing price parquet to {path}")
-        price_repo.to_parquet(path, compression="gzip")
+ 
 
 
 def generate_auction_activity(test: bool = False) -> None:

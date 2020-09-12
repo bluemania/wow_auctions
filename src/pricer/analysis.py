@@ -20,7 +20,7 @@ sns.set(rc={"figure.figsize": (11.7, 8.27)})
 logger = logging.getLogger(__name__)
 
 
-def analyse_item_prices(full_pricing: bool = False, test: bool = False) -> None:
+def predict_item_prices() -> None:
     """It reads auction data and calculates expected item prices.
 
     Loads all user auction activity (auction sales, buying).
@@ -38,51 +38,58 @@ def analyse_item_prices(full_pricing: bool = False, test: bool = False) -> None:
     Returns:
         None
     """
-    auction_activity = pd.read_parquet("data/full/auction_activity.parquet")
-    auction_activity = auction_activity[
-        ["item", "timestamp", "price_per", "auction_type"]
-    ]
+    path = "data/cleaned/bb_fortnight.parquet"
+    logger.debug('Reading bb_fortnight parquet from {path}')
+    bb_fortnight = pd.read_parquet(path)
 
-    auction_scan_minprice = pd.read_parquet("data/full/auction_scan_minprice.parquet")
+    user_items = utils.load_items()
 
-    df_auction_prices = auction_scan_minprice.append(auction_activity)
+    # Work out if an item is auctionable, or get default price
+    item_prices = {}
+    for item_name, item_details in user_items.items():
+        vendor_price = item_details.get('backup_price')
+        
+        if vendor_price:
+            item_prices[item_name] = vendor_price
+        else:
+            df = bb_fortnight[bb_fortnight['item']==item_name]
+            item_prices[item_name] = int(df['silver'].ewm(alpha=0.2).mean().iloc[-1])
 
-    if full_pricing:
-        items = df_auction_prices["item"].unique()
-    else:
-        # Use user specified items of interest
-        items = utils.load_items()
+    bb_predicted_prices = pd.DataFrame(pd.Series(item_prices))
+    bb_predicted_prices.columns = ['price']
 
-    price_history = df_auction_prices.set_index(["item", "timestamp"]).sort_index()[
-        "price_per"
-    ]
+    std_df = bb_fortnight.groupby('item').std()['silver'].astype(int)
+    std_df.name = 'std'
 
-    item_prices: Dict[str, int] = {}
-    if full_pricing:
-        item_prices = {
-            item: price_history.loc[item].ewm(alpha=0.2).mean().iloc[-1]
-            for item in items
-        }
-    else:
-        # Only calculate for our item list; get user specified backup price if present
-        for item, details in items.items():
-            price = details.get("backup_price")
-            if not price:
-                price = price_history.loc[item].ewm(alpha=0.2).mean().iloc[-1]
-            item_prices[item] = price
+    qty_df = bb_fortnight[bb_fortnight['snapshot']==bb_fortnight['snapshot'].max()]
+    qty_df = qty_df.set_index('item')['quantity']
 
-    item_prices_df = pd.DataFrame.from_dict(item_prices, orient="index")
-    item_prices_df.index.name = "item"
-    item_prices_df.columns = ["market_price"]
+    bb_predicted_prices = bb_predicted_prices.join(std_df).join(qty_df).fillna(0).astype(int) 
 
-    if test:
-        return None  # avoid saves
+    path = "data/intermediate/bb_predicted_prices.parquet"
+    logger.debug(f"Write bb_predicted_prices parquet to {path}")
+    bb_predicted_prices.to_parquet(path, compression="gzip")
 
-    item_prices_df.to_parquet(
-        "data/intermediate/item_prices.parquet", compression="gzip"
-    )
 
-    logger.info(f"Item prices calculated. {len(item_prices_df)} records")
+def current_price_from_listings(test: bool = False) -> None:
+
+    path = "data/cleaned/bb_listings.parquet"
+    logger.debug(f"Write bb_listings parquet to {path}")
+    bb_listings = pd.read_parquet(path)
+    bb_listings.columns = ["count", "price", "agent", "price_per", "item"]
+
+    # Note this SHOULD be a simple groupby min, but getting 0's for some strange reason!
+    item_mins = {}
+    for item in bb_listings['item'].unique():
+        x = bb_listings[(bb_listings['item']==item)]
+        item_mins[item] = int(x['price_per'].min())
+        
+    price_df = pd.DataFrame(pd.Series(item_mins)).reset_index()
+    price_df.columns = ['item', 'price_per']
+
+    path = "data/intermediate/auction_scan_minprice.parquet"
+    logger.debug(f"Writing price parquet to {path}")
+    price_df.to_parquet(path, compression="gzip")   
 
 
 def analyse_sales_performance(test: bool = False) -> None:
@@ -109,7 +116,7 @@ def analyse_sales_performance(test: bool = False) -> None:
     Returns:
         None
     """
-    item_prices = pd.read_parquet("data/intermediate/item_prices.parquet")
+    item_prices = pd.read_parquet("data/intermediate/bb_predicted_prices.parquet")
     user_items = utils.load_items()
 
     inventory_full = pd.read_parquet("data/full/inventory.parquet")
@@ -119,7 +126,7 @@ def analyse_sales_performance(test: bool = False) -> None:
         inventory_trade, item_prices, how="left", left_on="item", right_index=True
     )
     inventory_trade["total_value"] = (
-        inventory_trade["count"] * inventory_trade["market_price"]
+        inventory_trade["count"] * inventory_trade["price"]
     )
     inventory_value = (
         inventory_trade.groupby(["timestamp", "character"])
@@ -221,44 +228,6 @@ def analyse_sales_performance(test: bool = False) -> None:
     earnings.to_parquet("data/outputs/earnings_days.parquet", compression="gzip")
 
 
-def analyse_auction_success(
-    MAX_AUCTIONS: int = 250, MIN_AUCTIONS: int = 10
-) -> pd.Series:
-    """It analyses auction activity data for recent item auction success rate.
-
-    This information is used elsewhere to calculate minimum price which
-    we are willing to sell for.
-
-    It filters auction activity to sold (successful) and failed (unsuccessful)
-    auctions. It creates a time based rank for each item, so we can identify
-    the most recent data per item.
-
-    Args:
-        MAX_AUCTIONS: Filters data to most recent 'MAX_AUCTIONS' ranks.
-        MIN_AUCTIONS: Will not return item data when less than MIN_AUCTIONS.
-
-    Returns:
-        pd.Series: Pandas series of item: auction_success, where auction_success
-            is a float value between 0 and 1.
-    """
-    df_success = pd.read_parquet("data/full/auction_activity.parquet")
-
-    # Look at the most recent X sold or failed auctions (not bought auctions)
-    df_success = df_success[df_success["auction_type"].isin(["sell_price", "failed"])]
-    df_success["rank"] = df_success.groupby(["item"])["timestamp"].rank(ascending=False)
-
-    # Limit to recent successful auctions
-    df_success = df_success[df_success["rank"] <= MAX_AUCTIONS]
-    df_success["auction_success"] = df_success["auction_type"].replace(
-        {"sell_price": 1, "failed": 0}
-    )
-    # Ensure theres at least some auctions for a resonable ratio
-    df_success = df_success[df_success["rank"] >= MIN_AUCTIONS]
-
-    # Calcualte success%
-    df_success = df_success.groupby("item")["auction_success"].mean()
-    return df_success
-
 
 def analyse_item_min_sell_price(
     MIN_PROFIT_MARGIN: int = 1000, MAT_DEV: float = 0.5, test: bool = False
@@ -287,18 +256,12 @@ def analyse_item_min_sell_price(
     """
     user_items = utils.load_items()
 
-    # Item prices calculated from own auction scan and sales experience
-    # item_prices = pd.read_parquet('data/intermediate/item_prices.parquet')
 
     # External third party source.
-    item_prices = pd.read_parquet("data/intermediate/booty_data.parquet")
-    item_prices["market_price"] = item_prices["recent"] + (
-        item_prices["stddev"] * MAT_DEV
+    item_prices = pd.read_parquet("data/intermediate/bb_predicted_prices.parquet")
+    item_prices["market_price"] = item_prices["price"] + (
+        item_prices["std"] * MAT_DEV
     )
-
-    item_prices.loc["Crystal Vial"] = 400
-    item_prices.loc["Leaded Vial"] = 32
-    item_prices.loc["Empty Vial"] = 3
 
     # Given the average recent buy price, calculate material costs per item
     user_items = {
@@ -366,6 +329,11 @@ def analyse_sell_data(test: bool = False) -> None:
         None
     """
     # Get our calculated reserve price
+    path = "data/cleaned/bb_listings.parquet"
+    logger.debug(f"Write bb_listings parquet to {path}")
+    bb_listings = pd.read_parquet(path)
+    bb_listings.columns = ["count", "price", "agent", "price_per", "item"]
+
     item_min_sale = pd.read_parquet("data/intermediate/min_list_price.parquet")
 
     # Get latest minprice per item
@@ -387,8 +355,10 @@ def analyse_sell_data(test: bool = False) -> None:
     df["min_list_price"] = df["min_list_price"].astype(int)
     df["profit_per_item"] = df["sell_price"] - df["min_list_price"]
 
+
     # Get latest auction data to get the entire sell listing
-    auction_data = pd.read_parquet("data/intermediate/auction_scandata.parquet")
+    #auction_data = pd.read_parquet("data/intermediate/auction_scandata.parquet")
+    auction_data = bb_listings
     auction_data = auction_data[auction_data["item"].isin(item_min_sale.index)]
     auction_data = auction_data[auction_data["price_per"] > 0]
 
@@ -435,9 +405,9 @@ def analyse_sell_data(test: bool = False) -> None:
         inventory_full["character"].isin(["Amazoni", "Amazona"])
     ]
     inventory_full = inventory_full[inventory_full["item"].isin(item_min_sale.index)]
-    inventory_full = inventory_full[
-        inventory_full["timestamp"].max() == inventory_full["timestamp"]
-    ]
+    # inventory_full = inventory_full[
+    #     inventory_full["timestamp"].max() == inventory_full["timestamp"]
+    # ]
 
     df["auctions"] = (
         inventory_full[inventory_full["location"] == "Auctions"].groupby("item").sum()
@@ -606,6 +576,11 @@ def apply_buy_policy(MAT_DEV: int = 0, test: bool = False) -> None:
         KeyError: All user specified 'Buy' items must be present in the
             Auctioneer 'snatch' listing.
     """
+    path = "data/cleaned/bb_listings.parquet"
+    logger.debug(f"Write bb_listings parquet to {path}")
+    bb_listings = pd.read_parquet(path)
+    bb_listings.columns = ["count", "price", "agent", "price_per", "item"]
+
     items: Dict[str, Any] = utils.load_items()
     sell_policy = pd.read_parquet("data/outputs/sell_policy.parquet")
 
@@ -654,15 +629,17 @@ def apply_buy_policy(MAT_DEV: int = 0, test: bool = False) -> None:
     herbs = herbs.sort_index()
 
     # Get market values
-    # item_prices = pd.read_parquet('intermediate/item_prices.parquet')
+    item_prices = pd.read_parquet('data/intermediate/bb_predicted_prices.parquet')
+    item_prices["market_price"] = item_prices["price"]
 
-    item_prices = pd.read_parquet("data/intermediate/booty_data.parquet")
-    item_prices["market_price"] = item_prices["recent"] - (
-        item_prices["stddev"] * MAT_DEV
-    )
+    # item_prices = pd.read_parquet("data/intermediate/booty_data.parquet")
+    # item_prices["market_price"] = item_prices["recent"] - (
+    #     item_prices["stddev"] * MAT_DEV
+    # )
 
     # Clean up auction data
-    auction_data = pd.read_parquet("data/intermediate/auction_scandata.parquet")
+    auction_data = bb_listings
+    #auction_data = pd.read_parquet("data/intermediate/auction_scandata.parquet")
     auction_data = auction_data[auction_data["item"].isin(items)]
     auction_data = auction_data[auction_data["price"] > 0]
     auction_data = auction_data.sort_values("price_per")

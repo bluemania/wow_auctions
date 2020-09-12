@@ -65,21 +65,21 @@ def main() -> None:
             played=args.played,
             level_time=args.level_time,
         )
-        sources.get_bb_data()
-        sources.clean_bb_data()
+        # sources.get_bb_data()
+        # sources.clean_bb_data()
         sources.get_arkinventory_data()
         sources.clean_arkinventory_data(run_dt)
         sources.get_beancounter_data()
         sources.clean_beancounter_data()
 
-        #sources.generate_inventory(test=args.t, run_dt=run_dt)
-        #sources.generate_monies(test=args.t, run_dt=run_dt)
-        sources.generate_auction_scandata(test=args.t)
-
-        sources.generate_current_price(test=args.t)
+        analysis.predict_item_prices()
+        analysis.current_price_from_listings()
+        
+        # Aiming to remove this and replace with bb_listings
+        # sources.generate_auction_scandata(test=args.t)
+        
         sources.generate_auction_activity(test=args.t)
 
-        analysis.analyse_item_prices()
         #analysis.analyse_sales_performance()
         analysis.analyse_item_min_sell_price(MAT_DEV=0)
         analysis.analyse_sell_data()
