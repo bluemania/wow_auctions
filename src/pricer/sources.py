@@ -126,6 +126,162 @@ def clean_bb_data() -> None:
     listings.to_parquet(path, compression="gzip")
 
 
+def get_arkinventory_data() -> None:
+    acc_inv: dict = {}
+    for account_name in config.us.get('accounts'):
+        path = utils.make_lua_path(account_name, "ArkInventory")
+        data = utils.read_lua(path)
+        acc_inv = utils.source_merge(acc_inv, data).copy()
+
+    inventory_data = acc_inv["ARKINVDB"]["global"]["player"]["data"]
+
+    path = "data/raw/arkinventory_data.json"
+    logger.debug(f"Write arkinventory json to {path}")
+    with open(path, 'w') as f:
+        json.dump(inventory_data, f)
+
+
+def clean_arkinventory_data(run_dt) -> None:
+    # Search through inventory data to create dict of all items and counts
+    # Also counts total monies
+    path = "data/raw/arkinventory_data.json"
+    logger.debug(f"Read arkinventory json from {path}")
+    with open(path, 'r') as f:
+        inventory_data = json.load(f)
+
+    settings = utils.get_general_settings()    
+
+    raw_data: list = []
+    monies: Dict[str, int] = {}    
+    for character, character_data in inventory_data.items():
+        character_name = character.split(" ")[0]
+
+        character_money = int(character_data.get("info").get("money", 0))
+        monies[character] = character_money
+
+        # Get Bank, Inventory, Character, Mailbox etc
+        location_slots = character_data.get("location", [])
+
+        for lkey in location_slots:
+            items: Dict[str, int] = defaultdict(int)
+            if str(lkey) not in settings["location_info"]:
+                continue
+            else:
+                loc_name = settings["location_info"][str(lkey)]
+
+            location_slot = location_slots[lkey]
+            if location_slot:
+                bag_slots = location_slot["bag"]
+
+                # Get the items from each of the bags, add to master list
+                for bag in bag_slots:
+                    for item in bag.get("slot", []):
+                        if item.get("h") and item.get("count"):
+                            item_name = item.get("h").split("[")[1].split("]")[0]
+                            items[item_name] += item.get("count")
+
+            for item_name, item_count in items.items():
+                raw_data.append((character_name, loc_name, item_name, item_count))
+
+    # Convert information to dataframe
+    cols = ["character", "location", "item", "count"]
+    df = pd.DataFrame(raw_data)
+    df.columns = cols
+    df["timestamp"] = run_dt
+    
+    path = "data/intermediate/inventory.parquet"
+    logger.debug(f"Write inventory parquet to {path}")
+    df.to_parquet(path, compression="gzip")
+
+    path = "data/cleaned/inventory.parquet"
+    logger.debug(f"Write inventory parquet to {path}")
+    df.to_parquet(path, compression="gzip")
+
+    df_monies = pd.Series(monies)
+    df_monies.name = "monies"
+    df_monies = pd.DataFrame(df_monies)
+    df_monies["timestamp"] = run_dt
+
+    path = "data/intermediate/monies.parquet"
+    logger.debug(f"Write monies parquet to {path}")
+    df.to_parquet(path, compression="gzip")
+
+    path = "data/cleaned/monies.parquet"
+    logger.debug(f"Write monies parquet to {path}")
+    df.to_parquet(path, compression="gzip")
+
+
+def get_beancounter_data() -> None:
+
+    data: dict = {}
+    for account_name in config.us.get('accounts'):
+        path = utils.make_lua_path(account_name, "BeanCounter")
+        bean = utils.read_lua(path)
+        data = utils.source_merge(data, bean).copy()
+
+    path = "data/raw/beancounter_data.json"
+    logger.debug(f"Write beancounter json to {path}")
+    with open(path, 'w') as f:
+        json.dump(data, f)
+
+
+def clean_beancounter_data() -> None:
+    """Read and clean BeanCounter addon data, and save to parquet.
+
+    For all characters on all user specified accounts, collates info on
+    auction history in terms of failed/succesful sales, and purchases made.
+    Works the data into a labelled and cleaned pandas before parquet saves
+
+    Args:
+        test: when True prevents data saving (early return)
+
+    Returns:
+        None
+    """
+    path = "data/raw/beancounter_data.json"
+    logger.debug(f"Read beancounter json from {path}")
+    with open(path, 'r') as f:
+        data = json.load(f)
+
+    item_names = {v:k for k, v in utils.get_item_ids().items()}
+
+    # Parses all listings into flat python list
+    parsed = []
+    for character, auction_data in data["BeanCounterDB"]["Grobbulus"].items():
+        for auction_type, item_listings in auction_data.items():
+            for item_id, listings in item_listings.items():
+                for _, listing in listings.items():
+                    for auction in listing:
+                        parsed.append(
+                            [auction_type]
+                            + [item_names[int(item_id)]]
+                            + [character]
+                            + auction.split(";")
+                        )
+
+    # Setup as pandas dataframe, remove irrelevant columns
+    df = pd.DataFrame(parsed)
+
+    purchases = clean_purchases(df)
+    path = "data/cleaned/purchases.parquet"
+    logger.debug(f"Write purchases parquet to {path}")
+    purchases.to_parquet(path, compression="gzip")
+
+    posted = clean_posted(df)
+    path = "data/cleaned/posted.parquet"
+    logger.debug(f"Write posted parquet to {path}")
+    posted.to_parquet(path, compression="gzip")
+
+    failed = clean_failed(df)
+    success = clean_success(df)
+
+    results = success.append(failed)
+    results['success'] = results['auction_type'].replace({"completedAuctions": 1, "failedAuctions": 0})
+    path = "data/cleaned/results.parquet"
+    logger.debug(f"Write results parquet to {path}")
+    results.to_parquet(path, compression="gzip")
+
+
 def create_playtime_record(
     test: bool = False,
     run_dt: dt = None,
@@ -188,164 +344,6 @@ def create_playtime_record(
     played_repo.to_parquet("data/full/time_played.parquet", compression="gzip")
 
     logger.info(f"Time played recorded, marked as clean_session: {clean_session}")
-
-
-def clean_inventory(inventory_data, run_dt):
-    # Search through inventory data to create dict of all items and counts
-    # Also counts total monies
-    settings = utils.get_general_settings()    
-
-    raw_data: list = []
-    for character, character_data in inventory_data.items():
-        character_name = character.split(" ")[0]
-
-        # Get Bank, Inventory, Character, Mailbox etc
-        location_slots = character_data.get("location", [])
-
-        for lkey in location_slots:
-            items: Dict[str, int] = defaultdict(int)
-            if lkey not in settings["location_info"]:
-                continue
-            else:
-                loc_name = settings["location_info"][lkey]
-
-            location_slot = location_slots[lkey]
-            if location_slot:
-                bag_slots = location_slot["bag"]
-
-                # Get the items from each of the bags, add to master list
-                for bag in bag_slots:
-                    for item in bag.get("slot", []):
-                        if item.get("h") and item.get("count"):
-                            item_name = item.get("h").split("[")[1].split("]")[0]
-                            items[item_name] += item.get("count")
-
-            for item_name, item_count in items.items():
-                raw_data.append((character_name, loc_name, item_name, item_count))
-
-    # Convert information to dataframe
-    cols = ["character", "location", "item", "count"]
-    df = pd.DataFrame(raw_data)
-    df.columns = cols
-
-    df["timestamp"] = run_dt
-    return df
-
-
-def generate_inventory(test: bool = False, run_dt: dt = None) -> None:
-    """Read and clean Arkinventory addon data, and save to parquet.
-
-    For all characters on all user specified accounts, collates info on
-    monies and inventory. Uses general settings to determine which slots
-    are examined (e.g. mailbox, backpack, auction, bank).
-
-    Args:
-        test: when True prevents data saving (early return)
-        run_dt: Session runtime for data lineage timestampping
-
-    Returns:
-        None
-    """
-    acc_inv: dict = {}
-    for account_name in config.us.get('accounts'):
-        path = utils.make_lua_path(account_name, "ArkInventory")
-        data = utils.read_lua(path)
-        acc_inv = utils.source_merge(acc_inv, data).copy()
-
-    inventory_data = acc_inv["ARKINVDB"]["global"]["player"]["data"]
-
-    path = "data/raw/arkinventory.json"
-    logger.debug(f"Write arkinventory json to {path}")
-    with open(path, 'w') as f:
-        json.dump(inventory_data, f)
-
-
-    df = clean_inventory(inventory_data, run_dt)
-
-    if test:
-        return None  # avoid saves
-
-    path = "data/intermediate/inventory.parquet"
-    logger.debug(f"Write inventory parquet to {path}")
-    df.to_parquet(path, compression="gzip")
-
-    path = "data/full/inventory.parquet"
-    logger.debug(f"Read inventory parquet from {path}")
-    inventory_repo = pd.read_parquet(path)
-
-    if df["timestamp"].max() > inventory_repo["timestamp"].max():
-        path = "data/full_backup/inventory.parquet"
-        logger.debug(f"Write inventory parquet to {path}")
-        inventory_repo.to_parquet(path, compression="gzip")
-
-        inventory_repo = inventory_repo.append(df)
-
-        path = "data/full/inventory.parquet"
-        logger.debug(f"Write inventory parquet to {path}")
-        inventory_repo.to_parquet(path, compression="gzip")
-
-    logger.info("Generated inventory")
-
-
-def clean_money(money_data, run_dt):
-    monies: Dict[str, int] = {}
-    for character, character_data in money_data.items():
-        character_money = int(character_data.get("info").get("money", 0))
-        monies[character] = character_money
-
-    df = pd.Series(monies)
-    df.name = "monies"
-    df = pd.DataFrame(df)
-    df["timestamp"] = run_dt
-    return df
-
-
-def generate_monies(test: bool = False, run_dt: dt = None) -> None:
-    """Read and clean Arkinventory addon data, and save to parquet.
-
-    For all characters on all user specified accounts, collates info on
-    monies and inventory. Uses general settings to determine which slots
-    are examined (e.g. mailbox, backpack, auction, bank).
-
-    Args:
-        test: when True prevents data saving (early return)
-        run_dt: Session runtime for data lineage timestampping
-
-    Returns:
-        None
-    """
-    acc_inv: dict = {}
-    for account_name in config.us.get('accounts'):
-        path = utils.make_lua_path(account_name, "ArkInventory")
-        data = utils.read_lua(path)
-        acc_inv = utils.source_merge(acc_inv, data).copy()
-
-    monies_data = acc_inv["ARKINVDB"]["global"]["player"]["data"]
-
-    df = clean_money(monies_data, run_dt)
-
-    if test:
-        return None  # avoid saves
-
-    path = "data/intermediate/monies.parquet"
-    logger.debug(f"Write monies parquet to {path}")
-    df.to_parquet(path, compression="gzip")
-
-    path = "data/full/monies.parquet"
-    logger.debug(f"Read monies parquet from {path}")
-    monies_repo = pd.read_parquet(path)
-
-    if df["timestamp"].max() > monies_repo["timestamp"].max():
-        path = "data/full_backup/monies.parquet"
-        logger.debug(f"Write monies parquet to {path}")
-        monies_repo.to_parquet(path, compression="gzip")
-
-        path = "data/full/monies.parquet"
-        logger.debug(f"Write monies parquet to {path}")
-        monies_repo = monies_repo.append(df)
-        monies_repo.to_parquet(path, compression="gzip")
-
-    logger.info("Generated monies")
 
 
 def clean_auctions(account: str = "396255466#1") -> pd.DataFrame:
@@ -497,13 +495,13 @@ def generate_auction_activity(test: bool = False) -> None:
         "completedBidsBuyouts",
     ]
 
-    settings = utils.get_general_settings()
-
     data: dict = {}
     for account_name in config.us.get('accounts'):
         path = utils.make_lua_path(account_name, "BeanCounter")
         bean = utils.read_lua(path)
         data = utils.source_merge(data, bean).copy()
+
+    settings = utils.get_general_settings()
 
     # Generates BeanCounters id:item_name dict
     num_item = {}
@@ -541,7 +539,90 @@ def generate_auction_activity(test: bool = False) -> None:
     df["price_per"] = round(df["price"] / df["count"], 4)
     df["timestamp"] = df["timestamp"].apply(lambda x: dt.fromtimestamp(int(x)))
 
-    if test:
-        return None  # avoid saves
-    logger.info(f"Auction actions full repository. {df.shape[0]} records")
-    df.to_parquet("data/full/auction_activity.parquet", compression="gzip")
+    path = "data/full/auction_activity.parquet"
+    logger.debug(f"Write auction activity parquet to {path}")
+    df.to_parquet(path, compression="gzip")
+
+
+def clean_purchases(df) -> pd.DataFrame:
+    purchases = df[df[0]=='completedBidsBuyouts']
+
+    columns = ["auction_type", "item", "buyer", "qty", "drop_4", "drop_5", "drop_6", 
+               "buyout", "bid", "seller", "timestamp", "drop_11", "drop_12"]
+    purchases.columns = columns
+    purchases = purchases.drop([col for col in columns if 'drop_' in col], axis=1)
+
+    purchases['qty'] = purchases['qty'].astype(int)
+    purchases['buyout'] = purchases['buyout'].astype(float)
+    purchases['bid'] = purchases['bid'].astype(int)
+
+    purchases['buyout_per'] = purchases['buyout'] / purchases['qty']
+    purchases['bid_per'] = purchases['bid'] / purchases['qty']
+
+    purchases['timestamp'] = pd.to_datetime(purchases['timestamp'], unit='s')
+    return purchases
+
+
+def clean_posted(df) -> pd.DataFrame:
+    posted = df[df[0]=='postedAuctions']
+
+    columns = ["auction_type", "item", "seller", "qty", "buyout", "bid", "duration", 
+               "deposit", "timestamp", "drop_9", "drop_10", "drop_11", "drop_12"]
+    posted.columns = columns
+    posted = posted.drop([col for col in columns if 'drop_' in col], axis=1)
+
+    posted['qty'] = posted['qty'].astype(int)
+    posted['buyout'] = posted['buyout'].astype(float)
+    posted['bid'] = posted['bid'].astype(int)
+    posted['duration'] = posted['duration'].astype(int)
+    posted['deposit'] = posted['deposit'].astype(int)
+
+    posted['buyout_per'] = posted['buyout'] / posted['qty']
+    posted['bid_per'] = posted['bid'] / posted['qty']
+
+    posted['timestamp'] = pd.to_datetime(posted['timestamp'], unit='s')
+    return posted
+
+
+def clean_failed(df) -> pd.DataFrame:
+    failed = df[df[0]=='failedAuctions']
+
+    columns = ["auction_type", "item", "seller", "qty", "drop_4", "deposit", "drop_6", 
+               "buyout", "bid", "drop_9", "timestamp", "drop_11", "drop_12"]
+    failed.columns = columns
+    failed = failed.drop([col for col in columns if 'drop_' in col], axis=1)
+
+    failed['qty'] = failed['qty'].astype(int)
+    failed['deposit'] = failed['deposit'].astype(int)
+    failed['buyout'] = failed['buyout'].astype(float)
+    failed['bid'] = failed['bid'].astype(int)
+
+    failed['buyout_per'] = failed['buyout'] / failed['qty']
+    failed['bid_per'] = failed['bid'] / failed['qty']
+
+    failed['timestamp'] = pd.to_datetime(failed['timestamp'], unit='s')
+    return failed
+
+
+def clean_success(df) -> pd.DataFrame:
+    success = df[df[0]=='completedAuctions']
+
+    columns = ["auction_type", "item", "seller", "qty", "received", "deposit", "ah_cut", 
+               "buyout", "bid", "buyer", "timestamp", "drop_11", "drop_12"]
+    success.columns = columns
+    success = success.drop([col for col in columns if 'drop_' in col], axis=1)
+
+    success['qty'] = success['qty'].astype(int)
+    success['received'] = success['received'].astype(int)
+    success['deposit'] = success['deposit'].astype(int)
+    success['ah_cut'] = success['ah_cut'].astype(int)
+    success['buyout'] = success['buyout'].astype(float)
+    success['bid'] = success['bid'].astype(int)
+
+    success['received_per'] = success['received'] / success['qty']
+    success['buyout_per'] = success['buyout'] / success['qty']
+    success['bid_per'] = success['bid'] / success['qty']
+
+    success['timestamp'] = pd.to_datetime(success['timestamp'], unit='s')
+    return success
+
