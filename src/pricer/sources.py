@@ -15,8 +15,115 @@ import pandas as pd
 from pricer import config
 from pricer import utils
 
+import json
+from bs4 import BeautifulSoup
+import getpass
+
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+
+
 pd.options.mode.chained_assignment = None  # default='warn'
 logger = logging.getLogger(__name__)
+
+
+def get_bb_data() -> None:
+    """Reads Booty Bay web API data using selenium and blizzard login."""
+    password = getpass.getpass('Password:')
+    try:
+        driver = webdriver.Chrome(config.us['bb_selenium']['CHROMEDRIVER_PATH'])
+        driver.implicitly_wait(config.us['bb_selenium']['PAGE_WAIT'])
+        driver.get(config.us['bb_selenium']['BB_BASEURL'])
+
+        WebDriverWait(driver, 20).until(EC.element_to_be_clickable((By.CLASS_NAME, "battle-net"))).click()
+
+        driver.find_element_by_id("accountName").send_keys('nickjenkins15051985@gmail.com')
+        driver.find_element_by_id("password").send_keys(password)
+
+        WebDriverWait(driver, 20).until(EC.element_to_be_clickable((By.ID, "submit"))).click()
+    except:
+        raise SystemError("Error connecting to bb")
+
+    input("Ready to continue after authentication...")
+
+    # Get item_ids for user specified items of interest
+    user_items = utils.load_items()
+    user_items.pop('Empty Vial')
+    user_items.pop('Leaded Vial')
+    user_items.pop('Crystal Vial')
+
+    item_ids = utils.get_item_ids()
+    items_ids = {k:v for k, v in item_ids.items() if k in user_items}
+
+    # Get bb data from API
+    item_data = defaultdict(dict)
+    for item, item_id in items_ids.items():
+        driver.get(config.us['bb_selenium']['BB_ITEMAPI'] + str(item_id))
+        soup = BeautifulSoup(driver.page_source)
+        text = soup.find("body").text
+        if "captcha" in text:
+            driver.get("https://www.bootybaygazette.com/#us/grobbulus-a/item/6049")
+            input("User action required")
+
+            # Redo
+            driver.get(config.us['bb_selenium']['BB_ITEMAPI'] + str(item_id))
+            soup = BeautifulSoup(driver.page_source)
+            text = soup.find("body").text
+        item_data[item] = json.loads(text)
+
+    driver.close()
+
+    path = "data/raw/bb_data.json"
+    logger.debug(f"Write bb_data json to {path}")
+    with open(path, 'w') as f:
+        json.dump(item_data, f)
+
+
+def clean_bb_data() -> None:
+
+    path = "data/raw/bb_data.json"
+    logger.debug(f"Read bb_data json from {path}")
+    with open(path, 'r') as f:
+        item_data = json.load(f)
+
+    short_term = []
+    all_auctions = []
+    listings = []
+
+    for item, data in item_data.items():
+
+        short_term_data = pd.DataFrame(data['history'][0])
+        short_term_data['snapshot'] = pd.to_datetime(short_term_data['snapshot'], unit='s')
+        short_term_data['item'] = item
+        short_term.append(short_term_data)
+
+        all_auctions_data = pd.DataFrame(data['daily'])
+        all_auctions_data['item'] = item
+        all_auctions.append(all_auctions_data)
+
+        listings_data = pd.DataFrame(data['auctions']['data'])
+        listings_data = listings_data[['quantity', 'buy', 'sellerrealm', 'sellername']]
+        listings_data['price_per'] = listings_data['buy'] / listings_data['quantity']
+        listings_data = listings_data.drop('sellerrealm', axis=1)
+        listings_data['item'] = item
+        listings.append(listings_data)
+
+    short_term = pd.concat(short_term)
+    path = "data/cleaned/short_term.parquet"
+    logger.debug(f"Write short_term parquet to {path}")
+    short_term.to_parquet(path, compression="gzip")
+
+    all_auctions = pd.concat(all_auctions)
+    path = "data/cleaned/all_auctions.parquet"
+    logger.debug(f"Write all_auctions parquet to {path}")
+    all_auctions.to_parquet(path, compression="gzip")
+
+    listings = pd.concat(listings)
+    path = "data/cleaned/listings.parquet"
+    logger.debug(f"Write listings parquet to {path}")
+    listings.to_parquet(path, compression="gzip")
 
 
 def create_playtime_record(
@@ -146,6 +253,12 @@ def generate_inventory(test: bool = False, run_dt: dt = None) -> None:
         acc_inv = utils.source_merge(acc_inv, data).copy()
 
     inventory_data = acc_inv["ARKINVDB"]["global"]["player"]["data"]
+
+    path = "data/raw/arkinventory.json"
+    logger.debug(f"Write arkinventory json to {path}")
+    with open(path, 'w') as f:
+        json.dump(inventory_data, f)
+
 
     df = clean_inventory(inventory_data, run_dt)
 

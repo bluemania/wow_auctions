@@ -9,3 +9,9 @@ accounts:
   - BLUEM
   - 396255466#1
   - 801032581#1
+
+bb_selenium:
+  CHROMEDRIVER_PATH: "/Users/nicholasjenkins/Documents/chromedriver"
+  BB_BASEURL: "https://www.bootybaygazette.com/#us/grobbulus-a"
+  BB_ITEMAPI: "https://www.bootybaygazette.com/api/item.php?house=69&item="
+  PAGE_WAIT: 1
