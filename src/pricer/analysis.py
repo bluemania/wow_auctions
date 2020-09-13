@@ -55,8 +55,8 @@ def predict_item_prices() -> None:
             df = bb_fortnight[bb_fortnight['item']==item_name]
             item_prices[item_name] = int(df['silver'].ewm(alpha=0.2).mean().iloc[-1])
 
-    bb_predicted_prices = pd.DataFrame(pd.Series(item_prices))
-    bb_predicted_prices.columns = ['price']
+    predicted_prices = pd.DataFrame(pd.Series(item_prices))
+    predicted_prices.columns = ['price']
 
     std_df = bb_fortnight.groupby('item').std()['silver'].astype(int)
     std_df.name = 'std'
@@ -64,11 +64,11 @@ def predict_item_prices() -> None:
     qty_df = bb_fortnight[bb_fortnight['snapshot']==bb_fortnight['snapshot'].max()]
     qty_df = qty_df.set_index('item')['quantity']
 
-    bb_predicted_prices = bb_predicted_prices.join(std_df).join(qty_df).fillna(0).astype(int) 
+    predicted_prices = predicted_prices.join(std_df).join(qty_df).fillna(0).astype(int) 
 
-    path = "data/intermediate/bb_predicted_prices.parquet"
-    logger.debug(f"Write bb_predicted_prices parquet to {path}")
-    bb_predicted_prices.to_parquet(path, compression="gzip")
+    path = "data/intermediate/predicted_prices.parquet"
+    logger.debug(f"Write predicted_prices parquet to {path}")
+    predicted_prices.to_parquet(path, compression="gzip")
 
 
 def current_price_from_listings(test: bool = False) -> None:
@@ -87,146 +87,9 @@ def current_price_from_listings(test: bool = False) -> None:
     price_df = pd.DataFrame(pd.Series(item_mins)).reset_index()
     price_df.columns = ['item', 'price_per']
 
-    path = "data/intermediate/auction_scan_minprice.parquet"
+    path = "data/intermediate/listings_minprice.parquet"
     logger.debug(f"Writing price parquet to {path}")
     price_df.to_parquet(path, compression="gzip")   
-
-
-def analyse_sales_performance(test: bool = False) -> None:
-    """It combines inventory and pricing data to report performance.
-
-    Produces charts and tables to help measure performance.
-    Loads current item prices along with all time inventory
-    and money counts.
-    It calculates value of inventory based
-    on *current item prices*. This will be changed to price at the
-    time of issue in future development, as we cannot perform data
-    versioning.
-    It groups characters into 'mule' and 'other' categories. This will
-    be changed to a config driven approach in future development.
-    Loads use specified time played, and calculates gold p/h. This
-    information is saved to log files.
-    It generates a chart of monies and inventory value over time,
-    which is useful to track long term performance.
-    It saves enriched parquet files with inventory and earnings info.
-
-    Args:
-        test: when True prevents data saving (early return)
-
-    Returns:
-        None
-    """
-    item_prices = pd.read_parquet("data/intermediate/bb_predicted_prices.parquet")
-    user_items = utils.load_items()
-
-    inventory_full = pd.read_parquet("data/full/inventory.parquet")
-    inventory_trade = inventory_full[inventory_full["item"].isin(user_items)]
-
-    inventory_trade = pd.merge(
-        inventory_trade, item_prices, how="left", left_on="item", right_index=True
-    )
-    inventory_trade["total_value"] = (
-        inventory_trade["count"] * inventory_trade["price"]
-    )
-    inventory_value = (
-        inventory_trade.groupby(["timestamp", "character"])
-        .sum()["total_value"]
-        .unstack()
-    )
-
-    monies_full = pd.read_parquet("data/full/monies.parquet")
-    monies_full = (
-        monies_full.reset_index().set_index(["timestamp", "index"])["monies"].unstack()
-    )
-
-    inv_mule = inventory_value["Amazona"] + inventory_value["Amazoni"]
-    inv_mule.name = "Mule Inventory"
-
-    inv_rest = inventory_value.sum(axis=1) - inv_mule
-    inv_rest.name = "Other Inventory"
-
-    monies_mule = (
-        monies_full["Amazona - Grobbulus"] + monies_full["Amazoni - Grobbulus"]
-    )
-    monies_mule.name = "Mule Monies"
-    monies_rest = monies_full.sum(axis=1) - monies_mule
-    monies_rest.name = "Other Monies"
-
-    holdings = pd.DataFrame([monies_mule, monies_rest, inv_mule, inv_rest]).T
-
-    holdings["Total Holdings"] = holdings.sum(axis=1)
-    holdings = (holdings / 10000).astype(int)
-
-    sns.set()
-    sns.set_style("whitegrid")
-    sns.despine()
-
-    plt = sns.lineplot(data=holdings[["Mule Monies", "Mule Inventory"]], color="b")
-    plt = sns.lineplot(data=holdings["Total Holdings"], color="black").set_title(
-        "Total Holdings"
-    )
-
-    # Combine the holdings information with game time played
-    # For gold per hour analysis
-    played_repo = pd.read_parquet("data/full/time_played.parquet")
-    df_gold_hour = holdings.join(played_repo.set_index("timestamp"))
-
-    # Only care about occassions where we've flagged a clean session in cli
-    df_gold_hour = df_gold_hour[df_gold_hour["clean_session"] == True]
-
-    # Account for time not spent auctioning
-    df_gold_hour["played_offset"] = df_gold_hour["leveling_seconds"].cumsum()
-
-    # Record hours played since we implemented played time
-    df_gold_hour["played_seconds"] = (
-        df_gold_hour["played_seconds"] - df_gold_hour["played_offset"]
-    )
-    df_gold_hour["played_hours"] = df_gold_hour["played_seconds"] / (60 * 60)
-
-    # Calculate incremental versus last period, setting first period to 0
-    df_gold_hour["inc_hold"] = (
-        df_gold_hour["Total Holdings"] - df_gold_hour["Total Holdings"].shift(1)
-    ).fillna(0)
-    df_gold_hour["inc_hours"] = (
-        df_gold_hour["played_hours"] - df_gold_hour["played_hours"].shift(1)
-    ).fillna(0)
-
-    df_gold_hour["gold_per_hour"] = df_gold_hour["inc_hold"] / df_gold_hour["inc_hours"]
-
-    total_time_played = df_gold_hour["inc_hours"].sum().round(2)
-    all_time_gold_hour = (df_gold_hour["inc_hold"].sum() / total_time_played).round(2)
-
-    # Gold per hour may vary over runs due to market price calc of inventory
-    recent_gold_hour = df_gold_hour.iloc[-1].loc["gold_per_hour"].round(2)
-    recent_timestamp = df_gold_hour.iloc[-1].name
-    logger.info(
-        f"Time played: {total_time_played}, Total gold/hour: {all_time_gold_hour}"
-    )
-    logger.info(
-        f"Most recent gold per hour: {recent_gold_hour}, last recorded: {str(recent_timestamp)}"
-    )
-
-    latest_inventory = inventory_trade[
-        inventory_trade["timestamp"] == inventory_trade["timestamp"].max()
-    ]
-    latest_inventory["total_value"] = (latest_inventory["total_value"] / 10000).round(2)
-    latest_inventory = latest_inventory.groupby("item").sum()[["count", "total_value"]]
-    latest_inventory = latest_inventory.sort_values("total_value", ascending=False)
-
-    earnings = pd.DataFrame([holdings.iloc[-10], holdings.iloc[-1]])
-    earnings.loc[str(earnings.index[1] - earnings.index[0])] = (
-        earnings.iloc[1] - earnings.iloc[0]
-    )
-    earnings.index = earnings.index.astype(str)
-
-    if test:
-        return None  # avoid saves
-    plt.figure.savefig("data/outputs/holdings.png")
-    latest_inventory.to_parquet(
-        "data/outputs/latest_inventory_value.parquet", compression="gzip"
-    )
-    earnings.to_parquet("data/outputs/earnings_days.parquet", compression="gzip")
-
 
 
 def analyse_item_min_sell_price(
@@ -258,7 +121,7 @@ def analyse_item_min_sell_price(
 
 
     # External third party source.
-    item_prices = pd.read_parquet("data/intermediate/bb_predicted_prices.parquet")
+    item_prices = pd.read_parquet("data/intermediate/predicted_prices.parquet")
     item_prices["market_price"] = item_prices["price"] + (
         item_prices["std"] * MAT_DEV
     )
@@ -339,7 +202,7 @@ def analyse_sell_data(test: bool = False) -> None:
     # Get latest minprice per item
     # Note this is subject to spiking when someone puts a very low price on a single auction
     auction_scan_minprice = pd.read_parquet(
-        "data/intermediate/auction_scan_minprice.parquet"
+        "data/intermediate/listings_minprice.parquet"
     )
     auction_scan_minprice = auction_scan_minprice.set_index("item")["price_per"]
     auction_scan_minprice.name = "market_price"
@@ -400,14 +263,19 @@ def analyse_sell_data(test: bool = False) -> None:
 
     # Get table showing how much inventory is where; auctions, bank/inv/mail, alt.
     # Can help determine how much more to sell depending what is in auction house now
-    inventory_full = pd.read_parquet("data/full/inventory.parquet")
-    inventory_full = inventory_full[
-        inventory_full["character"].isin(["Amazoni", "Amazona"])
-    ]
-    inventory_full = inventory_full[inventory_full["item"].isin(item_min_sale.index)]
+    # inventory_full = pd.read_parquet("data/full/inventory.parquet")
+    # inventory_full = inventory_full[
+    #     inventory_full["character"].isin(["Amazoni", "Amazona"])
+    # ]
+    # inventory_full = inventory_full[inventory_full["item"].isin(item_min_sale.index)]
     # inventory_full = inventory_full[
     #     inventory_full["timestamp"].max() == inventory_full["timestamp"]
     # ]
+
+    path = "data/cleaned/ark_inventory.parquet"
+    logger.debug(f'Reading ark_inventory parquet from {path}')
+    ark = pd.read_parquet(path)
+    inventory_full = ark[ark["character"].isin(["Amazoni", "Amazona"])]
 
     df["auctions"] = (
         inventory_full[inventory_full["location"] == "Auctions"].groupby("item").sum()
@@ -444,261 +312,138 @@ def analyse_sell_data(test: bool = False) -> None:
     df.to_parquet("data/outputs/sell_policy.parquet", compression="gzip")
 
 
-def apply_sell_policy(
-    stack: int = 1,
-    leads: int = 15,
-    duration: str = "m",
-    update: bool = True,
-    test: bool = False,
-) -> None:
-    """Combines user input & market data to write a sell policy to WoW addon folder.
+# def analyse_sales_performance(test: bool = False) -> None:
+#     """It combines inventory and pricing data to report performance.
 
-    Given user specified parameters, create a selling policy across
-    all items, based on the market and inventory information.
-    The sell policy is converted into lua format and saved to the WoW
-    Addon directory for Auctioneer.
+#     Produces charts and tables to help measure performance.
+#     Loads current item prices along with all time inventory
+#     and money counts.
+#     It calculates value of inventory based
+#     on *current item prices*. This will be changed to price at the
+#     time of issue in future development, as we cannot perform data
+#     versioning.
+#     It groups characters into 'mule' and 'other' categories. This will
+#     be changed to a config driven approach in future development.
+#     Loads use specified time played, and calculates gold p/h. This
+#     information is saved to log files.
+#     It generates a chart of monies and inventory value over time,
+#     which is useful to track long term performance.
+#     It saves enriched parquet files with inventory and earnings info.
 
-    Args:
-        stack: stack size to sell items
-        leads: total number of undercut auctions we want to achieve
-        duration: length of auction
-        update: when True, will re-save the market data after applying the sell
-            policy. This is useful to run a second sell policy without needing to
-            re-run the full analysis.
-        test: when True prevents data saving (early return)
+#     Args:
+#         test: when True prevents data saving (early return)
 
-    Returns:
-        None
-    """
-    df_sell_policy = pd.read_parquet("data/outputs/sell_policy.parquet")
+#     Returns:
+#         None
+#     """
+#     item_prices = pd.read_parquet("data/intermediate/predicted_prices.parquet")
+#     user_items = utils.load_items()
 
-    for item, row in df_sell_policy.iterrows():
+#     inventory_full = pd.read_parquet("data/full/inventory.parquet")
+#     inventory_trade = inventory_full[inventory_full["item"].isin(user_items)]
 
-        current_leads = row.loc["auction_leads"]
-        aucs = row.loc["auctions"]
-        inv = row.loc["immediate_inv"]
+#     inventory_trade = pd.merge(
+#         inventory_trade, item_prices, how="left", left_on="item", right_index=True
+#     )
+#     inventory_trade["total_value"] = (
+#         inventory_trade["count"] * inventory_trade["price"]
+#     )
+#     inventory_value = (
+#         inventory_trade.groupby(["timestamp", "character"])
+#         .sum()["total_value"]
+#         .unstack()
+#     )
 
-        # Could optionally leave one item remaining
-        # stacks = max(int(inv / stack) - int(leave_one), 0)
+#     monies_full = pd.read_parquet("data/full/monies.parquet")
+#     monies_full = (
+#         monies_full.reset_index().set_index(["timestamp", "index"])["monies"].unstack()
+#     )
 
-        stacks = max(int(inv / stack), 0)
-        available_to_sell = stacks * stack
+#     inv_mule = inventory_value["Amazona"] + inventory_value["Amazoni"]
+#     inv_mule.name = "Mule Inventory"
 
-        sell_count = 0
-        while current_leads < leads and available_to_sell > 0:
-            current_leads += stack
-            aucs += stack
-            available_to_sell -= stack
-            sell_count += 1
+#     inv_rest = inventory_value.sum(axis=1) - inv_mule
+#     inv_rest.name = "Other Inventory"
 
-        df_sell_policy.loc[item, "stack"] = stack
+#     monies_mule = (
+#         monies_full["Amazona - Grobbulus"] + monies_full["Amazoni - Grobbulus"]
+#     )
+#     monies_mule.name = "Mule Monies"
+#     monies_rest = monies_full.sum(axis=1) - monies_mule
+#     monies_rest.name = "Other Monies"
 
-        if sell_count > 0 and df_sell_policy.loc[item, "infeasible"] == 0:
-            df_sell_policy.loc[item, "sell_count"] = sell_count
-            df_sell_policy.loc[item, "auction_leads"] = current_leads
-            df_sell_policy.loc[item, "immediate_inv"] -= sell_count * stack
-            df_sell_policy.loc[item, "auctions"] = aucs
-        else:
-            df_sell_policy.loc[item, "sell_count"] = inv + 1
+#     holdings = pd.DataFrame([monies_mule, monies_rest, inv_mule, inv_rest]).T
 
-    df_sell_policy["sell_count"] = df_sell_policy["sell_count"].astype(int)
-    df_sell_policy["stack"] = df_sell_policy["stack"].astype(int)
-    df_sell_policy["auction_leads"] = df_sell_policy["auction_leads"].astype(int)
-    df_sell_policy["auctions"] = df_sell_policy["auctions"].astype(int)
+#     holdings["Total Holdings"] = holdings.sum(axis=1)
+#     holdings = (holdings / 10000).astype(int)
 
-    if update and not test:
-        df_sell_policy.to_parquet(
-            "data/outputs/sell_policy.parquet", compression="gzip"
-        )
+#     sns.set()
+#     sns.set_style("whitegrid")
+#     sns.despine()
 
-    duration_choices: Dict[str, int] = {"s": 720, "m": 1440, "l": 2880}
-    duration_choice = duration_choices.get(duration)
-    item_ids = utils.get_item_ids()
+#     plt = sns.lineplot(data=holdings[["Mule Monies", "Mule Inventory"]], color="b")
+#     plt = sns.lineplot(data=holdings["Total Holdings"], color="black").set_title(
+#         "Total Holdings"
+#     )
 
-    # Seed new appraiser
-    new_appraiser: Dict[str, Any] = {
-        "bid.markdown": 0,
-        "columnsortcurDir": 1,
-        "columnsortcurSort": 6,
-        "duration": 720,
-        "bid.deposit": True,
-    }
+#     # Combine the holdings information with game time played
+#     # For gold per hour analysis
+#     played_repo = pd.read_parquet("data/full/time_played.parquet")
+#     df_gold_hour = holdings.join(played_repo.set_index("timestamp"))
 
-    # Iterate through items setting policy
-    for item, d in df_sell_policy.iterrows():
-        code = item_ids[item]
+#     # Only care about occassions where we've flagged a clean session in cli
+#     df_gold_hour = df_gold_hour[df_gold_hour["clean_session"] == True]
 
-        new_appraiser[f"item.{code}.fixed.bid"] = int(d["sell_price"] + d["infeasible"])
-        new_appraiser[f"item.{code}.fixed.buy"] = int(d["sell_price"])
-        new_appraiser[f"item.{code}.match"] = False
-        new_appraiser[f"item.{code}.model"] = "fixed"
-        new_appraiser[f"item.{code}.number"] = int(d["sell_count"])
-        new_appraiser[f"item.{code}.stack"] = int(d["stack"])
-        new_appraiser[f"item.{code}.bulk"] = True
-        new_appraiser[f"item.{code}.duration"] = duration_choice
+#     # Account for time not spent auctioning
+#     df_gold_hour["played_offset"] = df_gold_hour["leveling_seconds"].cumsum()
 
-    # Read client lua, replace with
-    path = utils.make_lua_path(account_name="396255466#1", datasource="Auc-Advanced")
-    data = utils.read_lua(path)
-    data["AucAdvancedConfig"]["profile.Default"]["util"][
-        "appraiser"
-    ] = new_appraiser
+#     # Record hours played since we implemented played time
+#     df_gold_hour["played_seconds"] = (
+#         df_gold_hour["played_seconds"] - df_gold_hour["played_offset"]
+#     )
+#     df_gold_hour["played_hours"] = df_gold_hour["played_seconds"] / (60 * 60)
 
-    if test:
-        return None  # avoid saves
-    utils.write_lua(data)
+#     # Calculate incremental versus last period, setting first period to 0
+#     df_gold_hour["inc_hold"] = (
+#         df_gold_hour["Total Holdings"] - df_gold_hour["Total Holdings"].shift(1)
+#     ).fillna(0)
+#     df_gold_hour["inc_hours"] = (
+#         df_gold_hour["played_hours"] - df_gold_hour["played_hours"].shift(1)
+#     ).fillna(0)
 
+#     df_gold_hour["gold_per_hour"] = df_gold_hour["inc_hold"] / df_gold_hour["inc_hours"]
 
-def apply_buy_policy(MAT_DEV: int = 0, test: bool = False) -> None:
-    """Determines herbs to buy based on potions in inventory.
+#     total_time_played = df_gold_hour["inc_hours"].sum().round(2)
+#     all_time_gold_hour = (df_gold_hour["inc_hold"].sum() / total_time_played).round(2)
 
-    Loads user specified items of interest, and ideal holdings of the items.
-    Loads information on number of potions in inventory.
-    Loads auction success rate for potions, to downweight items that don't sell.
-    Calculates number of herbs required to fill the ideal holdings of potions,
-    minus herbs already held in inventory.
-    Looks through all auction listings of herbs available for sale (volume and price).
-    Sets a buy price at which we buy the right number of herbs to fill demand.
-    We set a minimum buy price such that we can always buy bargain herbs.
-    The buy policy is converted into lua format and saved to the WoW
-    Addon directory for Auctioneer (Snatch). Additionally, the buy policy
-    is saved as a parquet file.
+#     # Gold per hour may vary over runs due to market price calc of inventory
+#     recent_gold_hour = df_gold_hour.iloc[-1].loc["gold_per_hour"].round(2)
+#     recent_timestamp = df_gold_hour.iloc[-1].name
+#     logger.info(
+#         f"Time played: {total_time_played}, Total gold/hour: {all_time_gold_hour}"
+#     )
+#     logger.info(
+#         f"Most recent gold per hour: {recent_gold_hour}, last recorded: {str(recent_timestamp)}"
+#     )
 
-    Args:
-        MAT_DEV: Adds or subtracts pricing standard deviation. Adding
-            standard deviation means we will buy items at higher prices.
-        test: when True prevents data saving (early return)
+#     latest_inventory = inventory_trade[
+#         inventory_trade["timestamp"] == inventory_trade["timestamp"].max()
+#     ]
+#     latest_inventory["total_value"] = (latest_inventory["total_value"] / 10000).round(2)
+#     latest_inventory = latest_inventory.groupby("item").sum()[["count", "total_value"]]
+#     latest_inventory = latest_inventory.sort_values("total_value", ascending=False)
 
-    Returns:
-        None
+#     earnings = pd.DataFrame([holdings.iloc[-10], holdings.iloc[-1]])
+#     earnings.loc[str(earnings.index[1] - earnings.index[0])] = (
+#         earnings.iloc[1] - earnings.iloc[0]
+#     )
+#     earnings.index = earnings.index.astype(str)
 
-    Raises:
-        KeyError: All user specified 'Buy' items must be present in the
-            Auctioneer 'snatch' listing.
-    """
-    path = "data/cleaned/bb_listings.parquet"
-    logger.debug(f"Write bb_listings parquet to {path}")
-    bb_listings = pd.read_parquet(path)
-    bb_listings.columns = ["count", "price", "agent", "price_per", "item"]
+#     if test:
+#         return None  # avoid saves
+#     plt.figure.savefig("data/outputs/holdings.png")
+#     latest_inventory.to_parquet(
+#         "data/outputs/latest_inventory_value.parquet", compression="gzip"
+#     )
+#     earnings.to_parquet("data/outputs/earnings_days.parquet", compression="gzip")
 
-    items: Dict[str, Any] = utils.load_items()
-    sell_policy = pd.read_parquet("data/outputs/sell_policy.parquet")
-
-    # Determine how many potions I have, and how many need to be replaced
-    replenish = (
-        sell_policy["auctions"] + sell_policy["inventory"] + sell_policy["storage"]
-    )
-    replenish.name = "inventory"
-    replenish = pd.DataFrame(replenish)
-
-    for potion in replenish.index:
-        replenish.loc[potion, "max"] = items[potion].get("ideal_holding", 60)
-
-    replenish["inventory_target"] = (replenish["max"] - replenish["inventory"]).apply(
-        lambda x: max(0, x)
-    )
-
-    # Downweight requirements according to recent auction success
-    replenish["target"] = (replenish["inventory_target"]).astype(int)
-
-    # From potions required, get herbs required
-    herbs_required = pd.Series()
-    for potion, quantity in replenish["target"].iteritems():
-        for herb, count in items[potion].get("made_from").items():
-            if herb in herbs_required:
-                herbs_required.loc[herb] += count * quantity
-            else:
-                herbs_required.loc[herb] = count * quantity
-
-                herbs_required.name = "herbs_needed"
-    herbs = pd.DataFrame(herbs_required)
-
-    # Add item codes from beancounter, used for entering into snatch
-    item_ids = utils.get_item_ids()
-    herbs = herbs.join(pd.Series(item_ids, name="code"))
-
-    # Remove herbs already in inventory
-    inventory = pd.read_parquet("data/intermediate/inventory.parquet")
-    herbs = herbs.join(inventory.groupby("item").sum()["count"]).fillna(0).astype(int)
-    herbs["herbs_purchasing"] = (herbs["herbs_needed"] - herbs["count"]).apply(
-        lambda x: max(0, x)
-    )
-
-    # Cleanup
-    herbs = herbs.drop(["Crystal Vial", "Empty Vial", "Leaded Vial"])
-    herbs = herbs.sort_index()
-
-    # Get market values
-    item_prices = pd.read_parquet('data/intermediate/bb_predicted_prices.parquet')
-    item_prices["market_price"] = item_prices["price"]
-
-    # item_prices = pd.read_parquet("data/intermediate/booty_data.parquet")
-    # item_prices["market_price"] = item_prices["recent"] - (
-    #     item_prices["stddev"] * MAT_DEV
-    # )
-
-    # Clean up auction data
-    auction_data = bb_listings
-    #auction_data = pd.read_parquet("data/intermediate/auction_scandata.parquet")
-    auction_data = auction_data[auction_data["item"].isin(items)]
-    auction_data = auction_data[auction_data["price"] > 0]
-    auction_data = auction_data.sort_values("price_per")
-    auction_data["price_per"] = auction_data["price_per"].astype(int)
-
-    for herb, _ in herbs["herbs_purchasing"].iteritems():
-        # Always buy at way below market
-        buy_price = item_prices.loc[herb, "market_price"] * 0.3
-
-        # Filter to herbs below market price
-        listings = auction_data[auction_data["item"] == herb]
-        listings = listings[
-            listings["price_per"] < (item_prices.loc[herb, "market_price"])
-        ]
-        listings["cumsum"] = listings["count"].cumsum()
-
-        # Filter to lowest priced herbs for the quantity needed
-        herbs_needed = herbs.loc[herb, "herbs_purchasing"]
-        listings = listings[listings["cumsum"] < herbs_needed]
-
-        # If there are herbs available after filtering...
-        if listings.shape[0] > 0:
-            # Reject the highest priced item, in case there are 100s of
-            # listings at that price (conservative)
-            not_last_priced = listings[
-                listings["price_per"] != listings["price_per"].iloc[-1]
-            ]
-            if not_last_priced.shape[0] > 0:
-                buy_price = not_last_priced["price_per"].iloc[-1]
-
-        herbs.loc[herb, "buy_price"] = buy_price
-
-    herbs["buy_price"] = herbs["buy_price"].astype(int)
-
-    # Get snatch data, populate and save back
-    # Errors be here
-    path = utils.make_lua_path(account_name="396255466#1", datasource="Auc-Advanced")
-    data = utils.read_lua(path)
-    snatch = data["AucAdvancedData"]["UtilSearchUiData"]["Current"]
-    snatch["snatch.itemsList"] = {}
-    snatch = snatch["snatch.itemsList"]
-
-    all_accounted = True
-    for herb, row in herbs.iterrows():
-        item_id = item_ids[herb]
-
-        snatch_item = {}
-        snatch_item["price"] = int(row["buy_price"])
-        snatch_item["link"] = f"|cffffffff|Hitem:{item_id}::::::::39:::::::|h[{herb}]|h|r"        
-        logger.debug(f"Snatching {herb} for {snatch_item['price']}")
-        snatch[f"{item_id}:0:0"] = snatch_item
-
-    data["AucAdvancedData"]["UtilSearchUiData"]["Current"]["snatch.itemsList"] = snatch
-
-    logger.debug(herbs.columns)
-    logger.debug(herbs.head())
-    herbs = herbs[["herbs_purchasing", "buy_price"]]
-
-    if test:
-        return None  # avoid saves
-    utils.write_lua(data)
-    herbs.to_parquet("data/outputs/buy_policy.parquet", compression="gzip")

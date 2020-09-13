@@ -13,7 +13,7 @@ from datetime import datetime as dt
 import logging
 import warnings
 
-from . import analysis, config, sources, utils
+from . import analysis, config, campaign, sources, utils
 
 warnings.simplefilter(action="ignore")
 logger = logging.getLogger(__name__)
@@ -58,13 +58,6 @@ def main() -> None:
     logger.debug(args)
 
     if args.a:
-        sources.create_playtime_record(
-            test=args.t,
-            run_dt=run_dt,
-            clean_session=args.cs,
-            played=args.played,
-            level_time=args.level_time,
-        )
         # sources.get_bb_data()
         # sources.clean_bb_data()
         sources.get_arkinventory_data()
@@ -74,28 +67,22 @@ def main() -> None:
 
         analysis.predict_item_prices()
         analysis.current_price_from_listings()
-        
-        # Aiming to remove this and replace with bb_listings
-        # sources.generate_auction_scandata(test=args.t)
-        
-        sources.generate_auction_activity(test=args.t)
-
-        #analysis.analyse_sales_performance()
         analysis.analyse_item_min_sell_price(MAT_DEV=0)
         analysis.analyse_sell_data()
-        analysis.apply_buy_policy(MAT_DEV=0)
+
+        campaign.apply_buy_policy(MAT_DEV=0)
 
     # Sell policies
     if args.s1:
-        analysis.apply_sell_policy(stack=5, leads=5, duration="s")
+        campaign.apply_sell_policy(stack=5, leads=5, duration="s")
     if args.s2:
-        analysis.apply_sell_policy(stack=1, leads=10, duration="s")
+        campaign.apply_sell_policy(stack=1, leads=10, duration="s")
     if args.m1:
-        analysis.apply_sell_policy(stack=5, leads=20, duration="m")
+        campaign.apply_sell_policy(stack=5, leads=20, duration="m")
     if args.m2:
-        analysis.apply_sell_policy(stack=1, leads=25, duration="m")
+        campaign.apply_sell_policy(stack=1, leads=25, duration="m")
     if args.l1:
-        analysis.apply_sell_policy(stack=5, leads=50, duration="l")
+        campaign.apply_sell_policy(stack=5, leads=50, duration="l")
 
     logger.info(f"Program end, seconds {(dt.now() - run_dt).total_seconds()}")
 

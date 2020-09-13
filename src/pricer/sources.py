@@ -192,11 +192,6 @@ def clean_arkinventory_data(run_dt) -> None:
     df_inventory = pd.DataFrame(raw_data)
     df_inventory.columns = cols
     df_inventory["timestamp"] = run_dt
-    
-    # TODO remove intermediate reference
-    path = "data/intermediate/inventory.parquet"
-    logger.debug(f"Write inventory parquet to {path}")
-    df_inventory.to_parquet(path, compression="gzip")
 
     path = "data/cleaned/ark_inventory.parquet"
     logger.debug(f"Write ark_inventory parquet to {path}")
@@ -206,11 +201,6 @@ def clean_arkinventory_data(run_dt) -> None:
     df_monies.name = "monies"
     df_monies = pd.DataFrame(df_monies)
     df_monies["timestamp"] = run_dt
-
-    # TODO remove intermediate reference
-    path = "data/intermediate/monies.parquet"
-    logger.debug(f"Write monies parquet to {path}")
-    df_monies.to_parquet(path, compression="gzip")
 
     path = "data/cleaned/ark_monies.parquet"
     logger.debug(f"Write ark_monies parquet to {path}")
@@ -268,18 +258,18 @@ def clean_beancounter_data() -> None:
     # Setup as pandas dataframe, remove irrelevant columns
     df = pd.DataFrame(parsed)
 
-    bean_purchases = clean_purchases(df)
+    bean_purchases = clean_beancounter_purchases(df)
     path = "data/cleaned/bean_purchases.parquet"
     logger.debug(f"Write bean_purchases parquet to {path}")
     bean_purchases.to_parquet(path, compression="gzip")
 
-    bean_posted = clean_posted(df)
+    bean_posted = clean_beancounter_posted(df)
     path = "data/cleaned/bean_posted.parquet"
     logger.debug(f"Write bean_posted parquet to {path}")
     bean_posted.to_parquet(path, compression="gzip")
 
-    failed = clean_failed(df)
-    success = clean_success(df)
+    failed = clean_beancounter_failed(df)
+    success = clean_beancounter_success(df)
 
     bean_results = success.append(failed)
     bean_results['success'] = bean_results['auction_type'].replace({"completedAuctions": 1, "failedAuctions": 0})
@@ -289,228 +279,7 @@ def clean_beancounter_data() -> None:
     bean_results.to_parquet(path, compression="gzip")
 
 
-def create_playtime_record(
-    test: bool = False,
-    run_dt: dt = None,
-    clean_session: bool = False,
-    played: str = "",
-    level_time: str = "",
-) -> None:
-    """Preserves record of how we are spending time on our auction character.
-
-    We record info such as time played (played) or spent leveling (level_time)
-    This is useful for calcs involving real time vs game time,
-    therefore gold earnt per hour.
-    Time played may be automated in future, however we retain 'clean_session'
-    as a user specified flag to indicate inventory is stable (no missing items).
-
-    When in test mode, loading and calcs are performed but no file saves
-    Otherwise, saves current analysis as intermediate, loads full, saves backup,
-    append interm, and save full
-
-    Args:
-        test: when True prevents data saving (early return)
-        run_dt: The common session runtime
-        clean_session: User specified flag indicating inventory is stable
-        played: Ingame timelike string in '00d-00h-00m-00s' format,
-            this field is a 'total time' field and is expected to relate to
-            the amount of time spent on auctioning alt doing auctions
-        level_time: Ingame timelike string in '00d-00h-00m-00s' format
-            this field helps record instances where we've done other things
-            on our auction character such as leveling, long AFK etc.
-
-    Returns:
-        None
-    """
-    played_seconds = utils.get_seconds_played(played)
-    leveling_seconds = utils.get_seconds_played(level_time)
-
-    if leveling_seconds > 0:
-        level_adjust = played_seconds - leveling_seconds
-    else:
-        level_adjust = 0
-
-    data = {
-        "timestamp": run_dt,
-        "played_raw": played,
-        "played_seconds": utils.get_seconds_played(played),
-        "clean_session": clean_session,
-        "leveling_raw": level_time,
-        "leveling_seconds": level_adjust,
-    }
-    df_played = pd.DataFrame(pd.Series(data)).T
-
-    if test:
-        return None  # avoid saves
-
-    df_played.to_parquet("data/intermediate/time_played.parquet", compression="gzip")
-
-    played_repo = pd.read_parquet("data/full/time_played.parquet")
-    played_repo.to_parquet("data/full_backup/time_played.parquet", compression="gzip")
-    played_repo = played_repo.append(df_played)
-    played_repo.to_parquet("data/full/time_played.parquet", compression="gzip")
-
-    logger.info(f"Time played recorded, marked as clean_session: {clean_session}")
-
-
-# def clean_auctions(account: str = "396255466#1") -> pd.DataFrame:
-#     """Read raw scandata dict dump and converts to usable dataframe."""
-#     warcraft_path = config.us.get("warcraft_path").rstrip("/")
-#     path = f"{warcraft_path}/WTF/Account/{account}/SavedVariables/Auc-ScanData.lua"
-#     logger.debug(f"Reading lua from {path}")
-
-#     ropes = []
-#     with open(path, "r") as f:
-#         on = False
-#         rope_count = 0
-#         for line in f.readlines():
-#             if on and rope_count < 5:
-#                 ropes.append(line)
-#                 rope_count += 1
-#             elif '["ropes"]' in line:
-#                 on = True
-
-#     listings = []
-#     for rope in ropes:
-#         if len(rope) < 10:
-#             continue
-#         listings_part = rope.split("},{")
-#         listings_part[0] = listings_part[0].split("{{")[1]
-#         listings_part[-1] = listings_part[-1].split("},}")[0]
-
-#         listings.extend(listings_part)
-
-#     # Contains lots of columns, we ignore ones we likely dont care about
-#     # We apply transformations and relabel
-#     auction_timing = {1: 30, 2: 60 * 2, 3: 60 * 12, 4: 60 * 24}
-
-#     df = pd.DataFrame([x.split("|")[-1].split(",") for x in listings])
-#     df["time_remaining"] = df[6].replace(auction_timing)
-#     df["item"] = df[8].str.replace('"', "").str[1:-1]
-#     df["count"] = df[10].replace("nil", 0).astype(int)
-#     df["price"] = df[16].astype(int)
-#     df["agent"] = df[19].str.replace('"', "").str[1:-1]
-#     df["timestamp"] = df[7].apply(lambda x: dt.fromtimestamp(int(x)))
-
-#     # There is some timing difference in the timestamp
-#     # we dont really care we just need time of pull
-#     df["timestamp"] = df["timestamp"].max()
-
-#     df = df[df["count"] > 0]
-#     df["price_per"] = df["price"] / df["count"]
-
-#     cols = [
-#         "timestamp",
-#         "item",
-#         "count",
-#         "price",
-#         "agent",
-#         "price_per",
-#         "time_remaining",
-#     ]
-#     df = df[cols]
-
-#     df = df[df["price_per"] != 0]
-#     df["price_per"] = df["price_per"].astype(int)
-#     df.loc[:, "auction_type"] = "market"
-
-#     return df
-
-
-# def generate_auction_scandata(test: bool = False) -> None:
-#     """Read and clean Auctionneer addon data, and save to parquet.
-
-#     Utility function loads addon raw lua auction data from the user
-#     specified primary auctioning account. It cleans up and selects columns.
-#     Additionally filters results for the minimum price of user specified
-#     items of interest.
-
-#     Args:
-#         test: when True prevents data saving (early return)
-
-#     Returns:
-#         None
-#     """
-#     auction_data = clean_auctions()
-
-#     # Saves latest scan to intermediate (immediate)
-#     path = "data/intermediate/auction_scandata.parquet"
-#     logger.debug(f"Write auctions parquet to {path}")
-#     auction_data.to_parquet(path, compression="gzip")
-
-
- 
-
-
-def generate_auction_activity(test: bool = False) -> None:
-    """Read and clean BeanCounter addon data, and save to parquet.
-
-    For all characters on all user specified accounts, collates info on
-    auction history in terms of failed/succesful sales, and purchases made.
-    Works the data into a labelled and cleaned pandas before parquet saves
-
-    Args:
-        test: when True prevents data saving (early return)
-
-    Returns:
-        None
-    """
-    relevant_auction_types = [
-        "failedAuctions",
-        "completedAuctions",
-        "completedBidsBuyouts",
-    ]
-
-    data: dict = {}
-    for account_name in config.us.get('accounts'):
-        path = utils.make_lua_path(account_name, "BeanCounter")
-        bean = utils.read_lua(path)
-        data = utils.source_merge(data, bean).copy()
-
-    settings = utils.get_general_settings()
-
-    # Generates BeanCounters id:item_name dict
-    num_item = {}
-    for key, item_raw in data["BeanCounterDBNames"].items():
-        item_name = item_raw.split(";")[1]
-        num_item[key.split(":")[0]] = item_name
-
-    # Parses all characters relevant listings into flat list
-    parsed = []
-    for character, auction_data in data["BeanCounterDB"]["Grobbulus"].items():
-        for auction_type, item_listings in auction_data.items():
-            if auction_type in relevant_auction_types:
-                auction_name = settings["auction_type_labels"][auction_type]
-                for item_id, listings in item_listings.items():
-                    for _, listing in listings.items():
-                        for auction in listing:
-                            parsed.append(
-                                [auction_name]
-                                + [num_item[item_id]]
-                                + [character]
-                                + auction.split(";")
-                            )
-
-    # Setup as pandas dataframe, remove irrelevant columns
-    df = pd.DataFrame(parsed)
-    df = df.drop([4, 5, 6, 8, 11, 12], axis=1)
-
-    cols = ["auction_type", "item", "character", "count", "price", "agent", "timestamp"]
-    df.rename(columns=dict(zip(df.columns, cols)), inplace=True)
-
-    df = df[df["price"] != ""]
-    df["price"] = df["price"].astype(int)
-    df["count"] = df["count"].astype(int)
-
-    df["price_per"] = round(df["price"] / df["count"], 4)
-    df["timestamp"] = df["timestamp"].apply(lambda x: dt.fromtimestamp(int(x)))
-
-    path = "data/full/auction_activity.parquet"
-    logger.debug(f"Write auction activity parquet to {path}")
-    df.to_parquet(path, compression="gzip")
-
-
-def clean_purchases(df) -> pd.DataFrame:
+def clean_beancounter_purchases(df) -> pd.DataFrame:
     purchases = df[df[0]=='completedBidsBuyouts']
 
     columns = ["auction_type", "item", "buyer", "qty", "drop_4", "drop_5", "drop_6", 
@@ -529,7 +298,7 @@ def clean_purchases(df) -> pd.DataFrame:
     return purchases
 
 
-def clean_posted(df) -> pd.DataFrame:
+def clean_beancounter_posted(df) -> pd.DataFrame:
     posted = df[df[0]=='postedAuctions']
 
     columns = ["auction_type", "item", "seller", "qty", "buyout", "bid", "duration", 
@@ -550,7 +319,7 @@ def clean_posted(df) -> pd.DataFrame:
     return posted
 
 
-def clean_failed(df) -> pd.DataFrame:
+def clean_beancounter_failed(df) -> pd.DataFrame:
     failed = df[df[0]=='failedAuctions']
 
     columns = ["auction_type", "item", "seller", "qty", "drop_4", "deposit", "drop_6", 
@@ -570,7 +339,7 @@ def clean_failed(df) -> pd.DataFrame:
     return failed
 
 
-def clean_success(df) -> pd.DataFrame:
+def clean_beancounter_success(df) -> pd.DataFrame:
     success = df[df[0]=='completedAuctions']
 
     columns = ["auction_type", "item", "seller", "qty", "received", "deposit", "ah_cut", 
@@ -591,4 +360,68 @@ def clean_success(df) -> pd.DataFrame:
 
     success['timestamp'] = pd.to_datetime(success['timestamp'], unit='s')
     return success
+
+
+# def create_playtime_record(
+#     test: bool = False,
+#     run_dt: dt = None,
+#     clean_session: bool = False,
+#     played: str = "",
+#     level_time: str = "",
+# ) -> None:
+#     """Preserves record of how we are spending time on our auction character.
+
+#     We record info such as time played (played) or spent leveling (level_time)
+#     This is useful for calcs involving real time vs game time,
+#     therefore gold earnt per hour.
+#     Time played may be automated in future, however we retain 'clean_session'
+#     as a user specified flag to indicate inventory is stable (no missing items).
+
+#     When in test mode, loading and calcs are performed but no file saves
+#     Otherwise, saves current analysis as intermediate, loads full, saves backup,
+#     append interm, and save full
+
+#     Args:
+#         test: when True prevents data saving (early return)
+#         run_dt: The common session runtime
+#         clean_session: User specified flag indicating inventory is stable
+#         played: Ingame timelike string in '00d-00h-00m-00s' format,
+#             this field is a 'total time' field and is expected to relate to
+#             the amount of time spent on auctioning alt doing auctions
+#         level_time: Ingame timelike string in '00d-00h-00m-00s' format
+#             this field helps record instances where we've done other things
+#             on our auction character such as leveling, long AFK etc.
+
+#     Returns:
+#         None
+#     """
+#     played_seconds = utils.get_seconds_played(played)
+#     leveling_seconds = utils.get_seconds_played(level_time)
+
+#     if leveling_seconds > 0:
+#         level_adjust = played_seconds - leveling_seconds
+#     else:
+#         level_adjust = 0
+
+#     data = {
+#         "timestamp": run_dt,
+#         "played_raw": played,
+#         "played_seconds": utils.get_seconds_played(played),
+#         "clean_session": clean_session,
+#         "leveling_raw": level_time,
+#         "leveling_seconds": level_adjust,
+#     }
+#     df_played = pd.DataFrame(pd.Series(data)).T
+
+#     if test:
+#         return None  # avoid saves
+
+#     df_played.to_parquet("data/intermediate/time_played.parquet", compression="gzip")
+
+#     played_repo = pd.read_parquet("data/full/time_played.parquet")
+#     played_repo.to_parquet("data/full_backup/time_played.parquet", compression="gzip")
+#     played_repo = played_repo.append(df_played)
+#     played_repo.to_parquet("data/full/time_played.parquet", compression="gzip")
+
+#     logger.info(f"Time played recorded, marked as clean_session: {clean_session}")
 
