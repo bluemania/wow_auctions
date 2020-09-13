@@ -70,19 +70,25 @@ def main() -> None:
         analysis.analyse_item_min_sell_price(MAT_DEV=0)
         analysis.analyse_sell_data()
 
-        campaign.apply_buy_policy(MAT_DEV=0)
+        campaign.analyse_buy_policy(MAT_DEV=0)
+        campaign.write_buy_policy()
 
     # Sell policies
     if args.s1:
-        campaign.apply_sell_policy(stack=5, leads=5, duration="s")
+        campaign.analyse_sell_policy(stack=5, leads=5, duration="s")
+        campaign.write_sell_policy()
     if args.s2:
-        campaign.apply_sell_policy(stack=1, leads=10, duration="s")
+        campaign.analyse_sell_policy(stack=1, leads=10, duration="s")
+        campaign.write_sell_policy()
     if args.m1:
-        campaign.apply_sell_policy(stack=5, leads=20, duration="m")
+        campaign.analyse_sell_policy(stack=5, leads=20, duration="m")
+        campaign.write_sell_policy()
     if args.m2:
-        campaign.apply_sell_policy(stack=1, leads=25, duration="m")
+        campaign.analyse_sell_policy(stack=1, leads=25, duration="m")
+        campaign.write_sell_policy()
     if args.l1:
-        campaign.apply_sell_policy(stack=5, leads=50, duration="l")
+        campaign.analyse_sell_policy(stack=5, leads=50, duration="l")
+        campaign.write_sell_policy()        
 
     logger.info(f"Program end, seconds {(dt.now() - run_dt).total_seconds()}")
 

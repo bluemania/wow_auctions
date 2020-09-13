@@ -6,7 +6,7 @@ from pricer import utils
 logger = logging.getLogger(__name__)
 
 
-def apply_buy_policy(MAT_DEV: int = 0, test: bool = False) -> None:
+def analyse_buy_policy(MAT_DEV: int = 0) -> None:
     """Determines herbs to buy based on potions in inventory.
 
     Loads user specified items of interest, and ideal holdings of the items.
@@ -137,43 +137,43 @@ def apply_buy_policy(MAT_DEV: int = 0, test: bool = False) -> None:
 
     herbs["buy_price"] = herbs["buy_price"].astype(int)
 
-    # Get snatch data, populate and save back
-    # Errors be here
+    herbs = herbs[["buy_price"]]
+    herbs.to_parquet("data/outputs/buy_policy.parquet", compression="gzip")
+
+
+def encode_buy_campaign(buy_policy):
+    item_ids = utils.get_item_ids()
+    
+    new_snatch = {}
+    for herb, row in buy_policy.iterrows():
+        item_id = item_ids[herb]
+        snatch_item = {}
+        snatch_item["price"] = int(row["buy_price"])
+        snatch_item["link"] = f"|cffffffff|Hitem:{item_id}::::::::39:::::::|h[{herb}]|h|r"        
+        logger.debug(f"Snatching {herb} for {snatch_item['price']}")
+        new_snatch[f"{item_id}:0:0"] = snatch_item
+
+    return new_snatch
+
+
+def write_buy_policy() -> None:
+    path = 'data/outputs/buy_policy.parquet'
+    logger.debug(f'Read buy_policy parquet to {path}')
+    buy_policy = pd.read_parquet(path)
+
+    new_snatch = encode_buy_campaign(buy_policy)
+
+    # Read client lua, replace with
     path = utils.make_lua_path(account_name="396255466#1", datasource="Auc-Advanced")
     data = utils.read_lua(path)
     snatch = data["AucAdvancedData"]["UtilSearchUiData"]["Current"]
     snatch["snatch.itemsList"] = {}
     snatch = snatch["snatch.itemsList"]
-
-    all_accounted = True
-    for herb, row in herbs.iterrows():
-        item_id = item_ids[herb]
-
-        snatch_item = {}
-        snatch_item["price"] = int(row["buy_price"])
-        snatch_item["link"] = f"|cffffffff|Hitem:{item_id}::::::::39:::::::|h[{herb}]|h|r"        
-        logger.debug(f"Snatching {herb} for {snatch_item['price']}")
-        snatch[f"{item_id}:0:0"] = snatch_item
-
-    data["AucAdvancedData"]["UtilSearchUiData"]["Current"]["snatch.itemsList"] = snatch
-
-    logger.debug(herbs.columns)
-    logger.debug(herbs.head())
-    herbs = herbs[["herbs_purchasing", "buy_price"]]
-
-    if test:
-        return None  # avoid saves
+    data["AucAdvancedData"]["UtilSearchUiData"]["Current"]["snatch.itemsList"] = new_snatch
     utils.write_lua(data)
-    herbs.to_parquet("data/outputs/buy_policy.parquet", compression="gzip")
 
 
-def apply_sell_policy(
-    stack: int = 1,
-    leads: int = 15,
-    duration: str = "m",
-    update: bool = True,
-    test: bool = False,
-) -> None:
+def analyse_sell_policy(stack: int = 1, leads: int = 15, duration: str = 'm') -> None:
     """Combines user input & market data to write a sell policy to WoW addon folder.
 
     Given user specified parameters, create a selling policy across
@@ -194,6 +194,8 @@ def apply_sell_policy(
         None
     """
     df_sell_policy = pd.read_parquet("data/outputs/sell_policy.parquet")
+
+    duration_choices: Dict[str, int] = {"s": 720, "m": 1440, "l": 2880}
 
     for item, row in df_sell_policy.iterrows():
 
@@ -227,15 +229,21 @@ def apply_sell_policy(
     df_sell_policy["sell_count"] = df_sell_policy["sell_count"].astype(int)
     df_sell_policy["stack"] = df_sell_policy["stack"].astype(int)
     df_sell_policy["auction_leads"] = df_sell_policy["auction_leads"].astype(int)
-    df_sell_policy["auctions"] = df_sell_policy["auctions"].astype(int)
+    df_sell_policy['duration'] = duration_choices[duration]
 
-    if update and not test:
-        df_sell_policy.to_parquet(
-            "data/outputs/sell_policy.parquet", compression="gzip"
-        )
+    cols = ["sell_price", "infeasible", "sell_count", "stack", "duration"]
+    df_sell_policy = df_sell_policy[cols]
 
-    duration_choices: Dict[str, int] = {"s": 720, "m": 1440, "l": 2880}
-    duration_choice = duration_choices.get(duration)
+    path = 'data/outputs/sell_policy.parquet'
+    logger.debug(f'Write sell_policy parquet to {path}')
+    df_sell_policy.to_parquet(path, compression="gzip")
+
+
+def encode_sell_campaign(df_sell_policy):
+    
+    for col in ["sell_price", "infeasible", "sell_count", "stack"]:
+        assert col in df_sell_policy
+
     item_ids = utils.get_item_ids()
 
     # Seed new appraiser
@@ -258,15 +266,20 @@ def apply_sell_policy(
         new_appraiser[f"item.{code}.number"] = int(d["sell_count"])
         new_appraiser[f"item.{code}.stack"] = int(d["stack"])
         new_appraiser[f"item.{code}.bulk"] = True
-        new_appraiser[f"item.{code}.duration"] = duration_choice
+        new_appraiser[f"item.{code}.duration"] = int(d['duration'])
+
+    return new_appraiser
+
+
+def write_sell_policy() -> None:
+    path = 'data/outputs/sell_policy.parquet'
+    logger.debug(f'Read sell_policy parquet to {path}')
+    df_sell_policy = pd.read_parquet(path)
+
+    new_appraiser = encode_sell_campaign(df_sell_policy)
 
     # Read client lua, replace with
     path = utils.make_lua_path(account_name="396255466#1", datasource="Auc-Advanced")
     data = utils.read_lua(path)
-    data["AucAdvancedConfig"]["profile.Default"]["util"][
-        "appraiser"
-    ] = new_appraiser
-
-    if test:
-        return None  # avoid saves
+    data["AucAdvancedConfig"]["profile.Default"]["util"]["appraiser"] = new_appraiser
     utils.write_lua(data)
