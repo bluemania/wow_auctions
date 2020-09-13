@@ -7,7 +7,6 @@
 Arcane Crystal:
   ideal_holding: 6
   max_holding: 18
-  full_deposit: 1200
   group: Buy
 Arcanite Bar:
   ideal_holding: 6
@@ -22,7 +21,6 @@ Black Lotus:
 # 1255 potions, 251 stacks
 # Roughly 304 stacks of materials
 Flask of the Titans:
-  full_deposit: 500 #check
   group: Sell
   made_from:
     Gromsblood: 30
@@ -31,7 +29,6 @@ Flask of the Titans:
     Crystal Vial: 1 
   ideal_holding: 5
 Elixir of Fortitude:
-  full_deposit: 60 
   group: Sell
   made_from:
     Goldthorn: 1
@@ -39,7 +36,6 @@ Elixir of Fortitude:
     Wild Steelbloom: 1 
   ideal_holding: 100
 Elixir of Giants:
-  full_deposit: 420 
   group: Sell
   made_from:
     Crystal Vial: 1
@@ -47,7 +43,6 @@ Elixir of Giants:
     Sungrass: 1 
   ideal_holding: 125
 Elixir of Greater Agility:
-  full_deposit: 360 
   group: Sell
   made_from:
     Crystal Vial: 1
@@ -55,7 +50,6 @@ Elixir of Greater Agility:
     Sungrass: 1
   ideal_holding: 100
 Elixir of Superior Defense:
-  full_deposit: 300
   group: Sell
   made_from:
     Crystal Vial: 1
@@ -64,7 +58,6 @@ Elixir of Superior Defense:
     Sungrass: 1 
   ideal_holding: 100
 Elixir of the Mongoose:
-  full_deposit: 744
   group: Sell
   made_from:
     Crystal Vial: 1
@@ -72,7 +65,6 @@ Elixir of the Mongoose:
     Plaguebloom: 2   
   ideal_holding: 100
 Free Action Potion:
-  full_deposit: 36
   group: Sell
   made_from:
     Empty Vial: 2
@@ -81,7 +73,6 @@ Free Action Potion:
     Stranglekelp: 1 
   ideal_holding: 125
 Greater Arcane Protection Potion:
-  full_deposit: 444
   group: Sell
   made_from:
     Crystal Vial: 1
@@ -89,7 +80,6 @@ Greater Arcane Protection Potion:
     Dreamfoil: 1 
   ideal_holding: 50
 Greater Stoneshield Potion:
-  full_deposit: 444
   group: Sell
   made_from:
     Crystal Vial: 1
@@ -98,7 +88,6 @@ Greater Stoneshield Potion:
     Thorium Ore: 1 
   ideal_holding: 50
 Invisibility Potion:
-  full_deposit: 300
   group: Sell
   made_from:
     Crystal Vial: 1
@@ -106,7 +95,6 @@ Invisibility Potion:
     Sungrass: 1 
   ideal_holding: 100
 Limited Invulnerability Potion:
-  full_deposit: 12
   group: Sell
   made_from:
     Blindweed: 2
@@ -114,14 +102,12 @@ Limited Invulnerability Potion:
     Ghost Mushroom: 1 
   ideal_holding: 100
 Mighty Rage Potion:
-  full_deposit: 300
   group: Sell
   made_from:
     Crystal Vial: 1
     Gromsblood: 3  
   ideal_holding: 100
 Swiftness Potion:
-  full_deposit: 12
   group: Sell
   made_from:
     Briarthorn: 1
@@ -130,19 +116,11 @@ Swiftness Potion:
   ideal_holding: 100
 
 Blackmouth Oil:
-  full_deposit: 100
   group: Other
   made_from:
     Empty Vial: 1
     Oily Blackmouth: 2
-Fire Oil:
-  full_deposit: null
-  group: Other
-  made_from:
-    Empty Vial: 1
-    Firefin Snapper: 2
 Stonescale Oil:
-  full_deposit: null
   group: Other
   made_from:
     Leaded Vial: 1

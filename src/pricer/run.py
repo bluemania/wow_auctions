@@ -67,7 +67,7 @@ def main() -> None:
 
         analysis.predict_item_prices()
         analysis.current_price_from_listings()
-        analysis.analyse_item_min_sell_price(MAT_DEV=0)
+        analysis.analyse_material_cost()
         analysis.analyse_sell_data()
 
         campaign.analyse_buy_policy(MAT_DEV=0)

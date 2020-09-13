@@ -92,9 +92,7 @@ def current_price_from_listings(test: bool = False) -> None:
     price_df.to_parquet(path, compression="gzip")   
 
 
-def analyse_item_min_sell_price(
-    MIN_PROFIT_MARGIN: int = 1000, MAT_DEV: float = 0.5, test: bool = False
-) -> None:
+def analyse_material_cost() -> None:
     """It calculates item minimum sell price given costs.
 
     It loads user specified items of interest. It loads booty bay data for
@@ -117,28 +115,15 @@ def analyse_item_min_sell_price(
         ValueError: Error might raised when booty bay addon data sourcing
             has corrupted.
     """
-    user_items = utils.load_items()
-
-
-    # External third party source.
     item_prices = pd.read_parquet("data/intermediate/predicted_prices.parquet")
-    item_prices["market_price"] = item_prices["price"] + (
-        item_prices["std"] * MAT_DEV
-    )
-
-    # Given the average recent buy price, calculate material costs per item
-    user_items = {
-        item_name: item_details
-        for item_name, item_details in user_items.items()
-        if item_details.get("group") in ["Buy", "Sell"]
-    }
+    user_items = utils.load_items()
 
     # Determine raw material cost for manufactured items
     item_costs = {}
     for item_name, item_details in user_items.items():
         material_cost = 0
         for ingredient, count in item_details.get("made_from", {}).items():
-            material_cost += item_prices.loc[ingredient, "market_price"] * count
+            material_cost += item_prices.loc[ingredient, "price"] * count
             logger.debug(
                 f"item_name: {item_name}, ingre: {ingredient}, $ {material_cost}"
             )
@@ -148,30 +133,14 @@ def analyse_item_min_sell_price(
                 item_costs[item_name] = int(material_cost)
             except ValueError:
                 raise ValueError(f"Material cost is missing for {item_name}")
-
+                
     item_min_sale = pd.DataFrame.from_dict(item_costs, orient="index")
     item_min_sale.index.name = "item"
-    item_min_sale.columns = ["mat_cost"]
+    item_min_sale.columns = ["min_list_price"]            
 
-    full_deposit = pd.Series(
-        {
-            item_name: item_details.get("full_deposit")
-            for item_name, item_details in user_items.items()
-        },
-        name="deposit",
-    )
-
-    item_min_sale = item_min_sale.join(full_deposit).dropna()
-
-    item_min_sale["min_list_price"] = (
-        (item_min_sale["mat_cost"] + item_min_sale["deposit"]) + MIN_PROFIT_MARGIN
-    ) * 1.05
-
-    if test:
-        return None  # avoid saves
-    item_min_sale[["min_list_price"]].to_parquet(
-        "data/intermediate/min_list_price.parquet", compression="gzip"
-    )
+    path = "data/intermediate/min_list_price.parquet"
+    logger.debug(f'Write min_list_price parquet to {path}')
+    item_min_sale.to_parquet(path, compression="gzip")
 
 
 def analyse_sell_data(test: bool = False) -> None:

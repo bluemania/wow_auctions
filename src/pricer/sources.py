@@ -263,10 +263,10 @@ def clean_beancounter_data() -> None:
     logger.debug(f"Write bean_purchases parquet to {path}")
     bean_purchases.to_parquet(path, compression="gzip")
 
-    bean_posted = clean_beancounter_posted(df)
-    path = "data/cleaned/bean_posted.parquet"
-    logger.debug(f"Write bean_posted parquet to {path}")
-    bean_posted.to_parquet(path, compression="gzip")
+    # bean_posted = clean_beancounter_posted(df)
+    # path = "data/cleaned/bean_posted.parquet"
+    # logger.debug(f"Write bean_posted parquet to {path}")
+    # bean_posted.to_parquet(path, compression="gzip")
 
     failed = clean_beancounter_failed(df)
     success = clean_beancounter_success(df)
