@@ -160,23 +160,26 @@ def create_item_table(test: bool = False) -> None:
     Returns:
         None
     """
-    # Get our calculated reserve price
     path = "data/cleaned/bb_listings.parquet"
-    logger.debug(f"Write bb_listings parquet to {path}")
+    logger.debug(f"Reading bb_listings parquet from {path}")
     bb_listings = pd.read_parquet(path)
-    bb_listings.columns = ["count", "price", "agent", "price_per", "item"]
 
-    item_min_sale = pd.read_parquet("data/intermediate/material_costs.parquet")
+    path = "data/intermediate/material_costs.parquet"
+    logger.debug(f"Reading material_costs parquet from {path}")
+    material_costs = pd.read_parquet(path)
 
-    # Get latest minprice per item
-    # Note this is subject to spiking when someone puts a very low price on a single auction
-    auction_scan_minprice = pd.read_parquet(
-        "data/intermediate/listings_minprice.parquet"
-    )
-    auction_scan_minprice = auction_scan_minprice.set_index("item")["price_per"]
-    auction_scan_minprice.name = "market_price"
+    path = "data/intermediate/listings_minprice.parquet"
+    logger.debug(f"Reading listings_minprice parquet from {path}")
+    listings_minprice = pd.read_parquet(path)
+    
+    path = "data/cleaned/ark_inventory.parquet"
+    logger.debug(f'Reading ark_inventory parquet from {path}')
+    ark = pd.read_parquet(path)
 
-    df = item_min_sale.join(auction_scan_minprice)
+    listings_minprice = listings_minprice.set_index("item")["price_per"]
+    listings_minprice.name = "market_price"
+
+    df = material_costs.join(listings_minprice)
 
     # If item isnt appearing in market atm (NaN), fill with doubled min list price
     df["market_price"] = df["market_price"].fillna(df["material_costs"] * 2)
@@ -188,29 +191,26 @@ def create_item_table(test: bool = False) -> None:
     df["profit_per_item"] = df["sell_price"] - df["material_costs"]
 
     # Get latest auction data to get the entire sell listing
-    #auction_data = pd.read_parquet("data/intermediate/auction_scandata.parquet")
-    auction_data = bb_listings
-    auction_data = auction_data[auction_data["item"].isin(item_min_sale.index)]
-    auction_data = auction_data[auction_data["price_per"] > 0]
+    # bb_listings = pd.read_parquet("data/intermediate/auction_scandata.parquet")
+    bb_listings = bb_listings[bb_listings["item"].isin(material_costs.index)]
+    bb_listings = bb_listings[bb_listings["price_per"] > 0]
 
     # Find the minimum price per item, join back
-    auction_data = pd.merge(
-        auction_data, df["market_price"], how="left", left_on="item", right_index=True
-    )
+    bb_listings = pd.merge(bb_listings, df["market_price"], how="left", left_on="item", right_index=True)
 
     # Find my minimum price per item, join back (if exists)
     my_auction_mins = (
-        auction_data[auction_data["agent"] == "Amazona"].groupby("item").min()
+        bb_listings[bb_listings["agent"] == "Amazona"].groupby("item").min()
     )
     my_auction_mins = my_auction_mins["price_per"]
     my_auction_mins.name = "my_min"
-    auction_data = pd.merge(
-        auction_data, my_auction_mins, how="left", left_on="item", right_index=True
+    bb_listings = pd.merge(
+        bb_listings, my_auction_mins, how="left", left_on="item", right_index=True
     )
-    auction_data = auction_data.dropna()  # Ignores items I'm not selling
+    bb_listings = bb_listings.dropna()  # Ignores items I'm not selling
 
     # Find items below my min price (i.e. competition); get count of items undercutting
-    undercut_count = auction_data[auction_data["price_per"] < auction_data["my_min"]]
+    undercut_count = bb_listings[bb_listings["price_per"] < bb_listings["my_min"]]
     undercut_count = undercut_count.groupby("item").sum()["count"]
     undercut_count.name = "undercut_count"
 
@@ -219,30 +219,16 @@ def create_item_table(test: bool = False) -> None:
 
     # If my min price is the same as the current min price and the
     # same as the listing price, i'm winning
-    my_min_is_market = auction_data["my_min"] == auction_data["market_price"]
-    my_min_is_list = auction_data["my_min"] == auction_data["price_per"]
+    my_min_is_market = bb_listings["my_min"] == bb_listings["market_price"]
+    my_min_is_list = bb_listings["my_min"] == bb_listings["price_per"]
     auction_leads = (
-        auction_data[my_min_is_market & my_min_is_list].groupby("item").sum()["count"]
+        bb_listings[my_min_is_market & my_min_is_list].groupby("item").sum()["count"]
     )
     auction_leads.name = "auction_leads"
 
     df = df.join(auction_leads)
     df["auction_leads"] = df["auction_leads"].fillna(0).astype(int)
 
-    # Get table showing how much inventory is where; auctions, bank/inv/mail, alt.
-    # Can help determine how much more to sell depending what is in auction house now
-    # inventory_full = pd.read_parquet("data/full/inventory.parquet")
-    # inventory_full = inventory_full[
-    #     inventory_full["character"].isin(["Amazoni", "Amazona"])
-    # ]
-    # inventory_full = inventory_full[inventory_full["item"].isin(item_min_sale.index)]
-    # inventory_full = inventory_full[
-    #     inventory_full["timestamp"].max() == inventory_full["timestamp"]
-    # ]
-
-    path = "data/cleaned/ark_inventory.parquet"
-    logger.debug(f'Reading ark_inventory parquet from {path}')
-    ark = pd.read_parquet(path)
     inventory_full = ark[ark["character"].isin(["Amazoni", "Amazona"])]
 
     df["auctions"] = (

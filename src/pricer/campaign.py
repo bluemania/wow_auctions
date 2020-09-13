@@ -28,13 +28,13 @@ def analyse_buy_policy() -> None:
         KeyError: All user specified 'Buy' items must be present in the
             Auctioneer 'snatch' listing.
     """
+    items: Dict[str, Any] = utils.load_items()
+    item_table = pd.read_parquet("data/intermediate/item_table.parquet")
+
     path = "data/cleaned/bb_listings.parquet"
     logger.debug(f"Write bb_listings parquet to {path}")
     bb_listings = pd.read_parquet(path)
-    bb_listings.columns = ["count", "price", "agent", "price_per", "item"]
 
-    items: Dict[str, Any] = utils.load_items()
-    item_table = pd.read_parquet("data/intermediate/item_table.parquet")
 
     # Determine how many potions I have, and how many need to be replaced
     replenish = (
@@ -91,19 +91,17 @@ def analyse_buy_policy() -> None:
     item_prices["market_price"] = item_prices["price"]
 
     # Clean up auction data
-    auction_data = bb_listings
-    #auction_data = pd.read_parquet("data/intermediate/auction_scandata.parquet")
-    auction_data = auction_data[auction_data["item"].isin(items)]
-    auction_data = auction_data[auction_data["price"] > 0]
-    auction_data = auction_data.sort_values("price_per")
-    auction_data["price_per"] = auction_data["price_per"].astype(int)
+    bb_listings = bb_listings[bb_listings["item"].isin(items)]
+    bb_listings = bb_listings[bb_listings["price"] > 0]
+    bb_listings = bb_listings.sort_values("price_per")
+    bb_listings["price_per"] = bb_listings["price_per"].astype(int)
 
     for herb, _ in herbs["herbs_purchasing"].iteritems():
         # Always buy at way below market
         buy_price = item_prices.loc[herb, "market_price"] * 0.3
 
         # Filter to herbs below market price
-        listings = auction_data[auction_data["item"] == herb]
+        listings = bb_listings[bb_listings["item"] == herb]
         listings = listings[
             listings["price_per"] < (item_prices.loc[herb, "market_price"])
         ]
