@@ -278,6 +278,15 @@ def clean_beancounter_data() -> None:
     logger.debug(f"Write bean_results parquet to {path}")
     bean_results.to_parquet(path, compression="gzip")
 
+    bean_deposit = bean_results.copy()
+    bean_deposit['deposit_each'] = (bean_deposit['deposit'] / bean_deposit['qty']).astype(int)
+    bean_deposit = bean_deposit.groupby('item')['deposit_each'].max()
+    bean_deposit = pd.DataFrame(bean_deposit)
+
+    path = "data/cleaned/bean_deposit.parquet"
+    logger.debug(f"Write bean_deposit parquet to {path}")
+    bean_deposit.to_parquet(path, compression="gzip")
+
 
 def clean_beancounter_purchases(df) -> pd.DataFrame:
     purchases = df[df[0]=='completedBidsBuyouts']
