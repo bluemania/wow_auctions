@@ -70,7 +70,7 @@ def main() -> None:
         analysis.analyse_material_cost()
         analysis.analyse_sell_data()
 
-        campaign.analyse_buy_policy(MAT_DEV=0)
+        campaign.analyse_buy_policy()
         campaign.write_buy_policy()
 
     # Sell policies

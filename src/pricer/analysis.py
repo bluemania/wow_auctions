@@ -136,10 +136,10 @@ def analyse_material_cost() -> None:
                 
     item_min_sale = pd.DataFrame.from_dict(item_costs, orient="index")
     item_min_sale.index.name = "item"
-    item_min_sale.columns = ["min_list_price"]            
+    item_min_sale.columns = ["material_costs"]            
 
-    path = "data/intermediate/min_list_price.parquet"
-    logger.debug(f'Write min_list_price parquet to {path}')
+    path = "data/intermediate/material_costs.parquet"
+    logger.debug(f'Write material_costs parquet to {path}')
     item_min_sale.to_parquet(path, compression="gzip")
 
 
@@ -166,7 +166,7 @@ def analyse_sell_data(test: bool = False) -> None:
     bb_listings = pd.read_parquet(path)
     bb_listings.columns = ["count", "price", "agent", "price_per", "item"]
 
-    item_min_sale = pd.read_parquet("data/intermediate/min_list_price.parquet")
+    item_min_sale = pd.read_parquet("data/intermediate/material_costs.parquet")
 
     # Get latest minprice per item
     # Note this is subject to spiking when someone puts a very low price on a single auction
@@ -179,14 +179,13 @@ def analyse_sell_data(test: bool = False) -> None:
     df = item_min_sale.join(auction_scan_minprice)
 
     # If item isnt appearing in market atm (NaN), fill with doubled min list price
-    df["market_price"] = df["market_price"].fillna(df["min_list_price"] * 2)
+    df["market_price"] = df["market_price"].fillna(df["material_costs"] * 2)
 
     # Create sell price from market price, create check if lower than reserve
     df["sell_price"] = (df["market_price"] * 0.9933).astype(int)  # Undercut %
-    df["infeasible"] = (df["min_list_price"] >= df["sell_price"]).astype(int)
-    df["min_list_price"] = df["min_list_price"].astype(int)
-    df["profit_per_item"] = df["sell_price"] - df["min_list_price"]
-
+    df["infeasible"] = (df["material_costs"] >= df["sell_price"]).astype(int)
+    df["material_costs"] = df["material_costs"].astype(int)
+    df["profit_per_item"] = df["sell_price"] - df["material_costs"]
 
     # Get latest auction data to get the entire sell listing
     #auction_data = pd.read_parquet("data/intermediate/auction_scandata.parquet")
@@ -279,140 +278,4 @@ def analyse_sell_data(test: bool = False) -> None:
     if test:
         return None  # avoid saves
     df.to_parquet("data/outputs/sell_policy.parquet", compression="gzip")
-
-
-# def analyse_sales_performance(test: bool = False) -> None:
-#     """It combines inventory and pricing data to report performance.
-
-#     Produces charts and tables to help measure performance.
-#     Loads current item prices along with all time inventory
-#     and money counts.
-#     It calculates value of inventory based
-#     on *current item prices*. This will be changed to price at the
-#     time of issue in future development, as we cannot perform data
-#     versioning.
-#     It groups characters into 'mule' and 'other' categories. This will
-#     be changed to a config driven approach in future development.
-#     Loads use specified time played, and calculates gold p/h. This
-#     information is saved to log files.
-#     It generates a chart of monies and inventory value over time,
-#     which is useful to track long term performance.
-#     It saves enriched parquet files with inventory and earnings info.
-
-#     Args:
-#         test: when True prevents data saving (early return)
-
-#     Returns:
-#         None
-#     """
-#     item_prices = pd.read_parquet("data/intermediate/predicted_prices.parquet")
-#     user_items = utils.load_items()
-
-#     inventory_full = pd.read_parquet("data/full/inventory.parquet")
-#     inventory_trade = inventory_full[inventory_full["item"].isin(user_items)]
-
-#     inventory_trade = pd.merge(
-#         inventory_trade, item_prices, how="left", left_on="item", right_index=True
-#     )
-#     inventory_trade["total_value"] = (
-#         inventory_trade["count"] * inventory_trade["price"]
-#     )
-#     inventory_value = (
-#         inventory_trade.groupby(["timestamp", "character"])
-#         .sum()["total_value"]
-#         .unstack()
-#     )
-
-#     monies_full = pd.read_parquet("data/full/monies.parquet")
-#     monies_full = (
-#         monies_full.reset_index().set_index(["timestamp", "index"])["monies"].unstack()
-#     )
-
-#     inv_mule = inventory_value["Amazona"] + inventory_value["Amazoni"]
-#     inv_mule.name = "Mule Inventory"
-
-#     inv_rest = inventory_value.sum(axis=1) - inv_mule
-#     inv_rest.name = "Other Inventory"
-
-#     monies_mule = (
-#         monies_full["Amazona - Grobbulus"] + monies_full["Amazoni - Grobbulus"]
-#     )
-#     monies_mule.name = "Mule Monies"
-#     monies_rest = monies_full.sum(axis=1) - monies_mule
-#     monies_rest.name = "Other Monies"
-
-#     holdings = pd.DataFrame([monies_mule, monies_rest, inv_mule, inv_rest]).T
-
-#     holdings["Total Holdings"] = holdings.sum(axis=1)
-#     holdings = (holdings / 10000).astype(int)
-
-#     sns.set()
-#     sns.set_style("whitegrid")
-#     sns.despine()
-
-#     plt = sns.lineplot(data=holdings[["Mule Monies", "Mule Inventory"]], color="b")
-#     plt = sns.lineplot(data=holdings["Total Holdings"], color="black").set_title(
-#         "Total Holdings"
-#     )
-
-#     # Combine the holdings information with game time played
-#     # For gold per hour analysis
-#     played_repo = pd.read_parquet("data/full/time_played.parquet")
-#     df_gold_hour = holdings.join(played_repo.set_index("timestamp"))
-
-#     # Only care about occassions where we've flagged a clean session in cli
-#     df_gold_hour = df_gold_hour[df_gold_hour["clean_session"] == True]
-
-#     # Account for time not spent auctioning
-#     df_gold_hour["played_offset"] = df_gold_hour["leveling_seconds"].cumsum()
-
-#     # Record hours played since we implemented played time
-#     df_gold_hour["played_seconds"] = (
-#         df_gold_hour["played_seconds"] - df_gold_hour["played_offset"]
-#     )
-#     df_gold_hour["played_hours"] = df_gold_hour["played_seconds"] / (60 * 60)
-
-#     # Calculate incremental versus last period, setting first period to 0
-#     df_gold_hour["inc_hold"] = (
-#         df_gold_hour["Total Holdings"] - df_gold_hour["Total Holdings"].shift(1)
-#     ).fillna(0)
-#     df_gold_hour["inc_hours"] = (
-#         df_gold_hour["played_hours"] - df_gold_hour["played_hours"].shift(1)
-#     ).fillna(0)
-
-#     df_gold_hour["gold_per_hour"] = df_gold_hour["inc_hold"] / df_gold_hour["inc_hours"]
-
-#     total_time_played = df_gold_hour["inc_hours"].sum().round(2)
-#     all_time_gold_hour = (df_gold_hour["inc_hold"].sum() / total_time_played).round(2)
-
-#     # Gold per hour may vary over runs due to market price calc of inventory
-#     recent_gold_hour = df_gold_hour.iloc[-1].loc["gold_per_hour"].round(2)
-#     recent_timestamp = df_gold_hour.iloc[-1].name
-#     logger.info(
-#         f"Time played: {total_time_played}, Total gold/hour: {all_time_gold_hour}"
-#     )
-#     logger.info(
-#         f"Most recent gold per hour: {recent_gold_hour}, last recorded: {str(recent_timestamp)}"
-#     )
-
-#     latest_inventory = inventory_trade[
-#         inventory_trade["timestamp"] == inventory_trade["timestamp"].max()
-#     ]
-#     latest_inventory["total_value"] = (latest_inventory["total_value"] / 10000).round(2)
-#     latest_inventory = latest_inventory.groupby("item").sum()[["count", "total_value"]]
-#     latest_inventory = latest_inventory.sort_values("total_value", ascending=False)
-
-#     earnings = pd.DataFrame([holdings.iloc[-10], holdings.iloc[-1]])
-#     earnings.loc[str(earnings.index[1] - earnings.index[0])] = (
-#         earnings.iloc[1] - earnings.iloc[0]
-#     )
-#     earnings.index = earnings.index.astype(str)
-
-#     if test:
-#         return None  # avoid saves
-#     plt.figure.savefig("data/outputs/holdings.png")
-#     latest_inventory.to_parquet(
-#         "data/outputs/latest_inventory_value.parquet", compression="gzip"
-#     )
-#     earnings.to_parquet("data/outputs/earnings_days.parquet", compression="gzip")
 
