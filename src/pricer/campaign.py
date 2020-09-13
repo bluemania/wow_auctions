@@ -34,11 +34,11 @@ def analyse_buy_policy() -> None:
     bb_listings.columns = ["count", "price", "agent", "price_per", "item"]
 
     items: Dict[str, Any] = utils.load_items()
-    sell_policy = pd.read_parquet("data/outputs/sell_policy.parquet")
+    item_table = pd.read_parquet("data/intermediate/item_table.parquet")
 
     # Determine how many potions I have, and how many need to be replaced
     replenish = (
-        sell_policy["auctions"] + sell_policy["inventory"] + sell_policy["storage"]
+        item_table["auctions"] + item_table["inventory"] + item_table["storage"]
     )
     replenish.name = "inventory"
     replenish = pd.DataFrame(replenish)
@@ -189,7 +189,7 @@ def analyse_sell_policy(stack: int = 1, leads: int = 15, duration: str = 'm') ->
     Returns:
         None
     """
-    df_sell_policy = pd.read_parquet("data/outputs/sell_policy.parquet")
+    df_sell_policy = pd.read_parquet("data/intermediate/item_table.parquet")
 
     duration_choices: Dict[str, int] = {"s": 720, "m": 1440, "l": 2880}
 

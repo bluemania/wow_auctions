@@ -143,7 +143,7 @@ def analyse_material_cost() -> None:
     item_min_sale.to_parquet(path, compression="gzip")
 
 
-def analyse_sell_data(test: bool = False) -> None:
+def create_item_table(test: bool = False) -> None:
     """It creates a table with latest market information per item.
 
     Loads minimum listing price/item and current auction minimum price/item.
@@ -277,5 +277,5 @@ def analyse_sell_data(test: bool = False) -> None:
 
     if test:
         return None  # avoid saves
-    df.to_parquet("data/outputs/sell_policy.parquet", compression="gzip")
+    df.to_parquet("data/intermediate/item_table.parquet", compression="gzip")
 

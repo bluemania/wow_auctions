@@ -59,7 +59,7 @@ def main() -> None:
 
     if args.a:
         # sources.get_bb_data()
-        # sources.clean_bb_data()
+        sources.clean_bb_data()
         sources.get_arkinventory_data()
         sources.clean_arkinventory_data(run_dt)
         sources.get_beancounter_data()
@@ -68,7 +68,7 @@ def main() -> None:
         analysis.predict_item_prices()
         analysis.current_price_from_listings()
         analysis.analyse_material_cost()
-        analysis.analyse_sell_data()
+        analysis.create_item_table()
 
         campaign.analyse_buy_policy()
         campaign.write_buy_policy()
