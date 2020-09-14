@@ -28,13 +28,13 @@ def analyse_buy_policy() -> None:
         KeyError: All user specified 'Buy' items must be present in the
             Auctioneer 'snatch' listing.
     """
-    items: Dict[str, Any] = utils.load_items()
+    user_items: Dict[str, Any] = utils.load_items()
     item_table = pd.read_parquet("data/intermediate/item_table.parquet")
 
     path = "data/cleaned/bb_listings.parquet"
     logger.debug(f"Write bb_listings parquet to {path}")
     bb_listings = pd.read_parquet(path)
-
+    bb_listings.columns = ["count", "price", "agent", "price_per", "item"]
 
     # Determine how many potions I have, and how many need to be replaced
     replenish = (
@@ -44,19 +44,16 @@ def analyse_buy_policy() -> None:
     replenish = pd.DataFrame(replenish)
 
     for potion in replenish.index:
-        replenish.loc[potion, "max"] = items[potion].get("ideal_holding", 60)
+        replenish.loc[potion, "max"] = user_items[potion].get("ideal_holding", 60)
 
-    replenish["inventory_target"] = (replenish["max"] - replenish["inventory"]).apply(
+    replenish["target"] = (replenish["max"] - replenish["inventory"]).apply(
         lambda x: max(0, x)
-    )
-
-    # Downweight requirements according to recent auction success
-    replenish["target"] = (replenish["inventory_target"]).astype(int)
+    ).astype(int)
 
     # From potions required, get herbs required
     herbs_required = pd.Series()
     for potion, quantity in replenish["target"].iteritems():
-        for herb, count in items[potion].get("made_from").items():
+        for herb, count in user_items[potion].get("made_from").items():
             if herb in herbs_required:
                 herbs_required.loc[herb] += count * quantity
             else:
@@ -91,7 +88,7 @@ def analyse_buy_policy() -> None:
     item_prices["market_price"] = item_prices["price"]
 
     # Clean up auction data
-    bb_listings = bb_listings[bb_listings["item"].isin(items)]
+    bb_listings = bb_listings[bb_listings["item"].isin(user_items)]
     bb_listings = bb_listings[bb_listings["price"] > 0]
     bb_listings = bb_listings.sort_values("price_per")
     bb_listings["price_per"] = bb_listings["price_per"].astype(int)

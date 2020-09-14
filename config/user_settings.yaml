@@ -1,6 +1,6 @@
 # Base path to WoW directory
 warcraft_path: /Applications/World of Warcraft/_classic_/
-auction_main: 
+auction_main:
   name: Amazona
   realm: Grobbulus
   account: 396255466#1

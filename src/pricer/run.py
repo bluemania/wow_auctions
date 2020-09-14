@@ -68,6 +68,12 @@ def main() -> None:
         analysis.predict_item_prices()
         analysis.current_price_from_listings()
         analysis.analyse_material_cost()
+        
+        analysis.create_item_table_skeleton()
+        analysis.create_items_inventory()
+        analysis.create_volume_range()        
+        analysis.create_new_item_table()
+
         analysis.create_item_table()
 
         campaign.analyse_buy_policy()

@@ -5,167 +5,195 @@
 # made_from is the recipe for the item including vials. Referenced items must be included in this doc
 
 Arcane Crystal:
-  ideal_holding: 6
-  max_holding: 18
-  group: Buy
+  min_holding: 8
+  max_holding: 20
+  Buy: True
 Arcanite Bar:
-  ideal_holding: 6
-  max_holding: 12
-  group: Sell
+  min_holding: 4
+  max_holding: 24
+  Sell: True
 Thorium Bar:
-  group: Other
+  min_holding: 8
+  max_holding: 28
+  Buy: True
 
 Black Lotus:
-  group: Buy # Set to sell so that it doesnt appear in snatch list
+  min_holding: 1
+  max_holding: 10
+  Buy: True
 
 # 1255 potions, 251 stacks
 # Roughly 304 stacks of materials
 Flask of the Titans:
-  group: Sell
+  min_holding: 2
+  max_holding: 10
+  Sell: True
   made_from:
     Gromsblood: 30
     Stonescale Eel: 10
     Black Lotus: 1
     Crystal Vial: 1 
-  ideal_holding: 5
 Elixir of Fortitude:
-  group: Sell
+  min_holding: 20
+  max_holding: 100
+  Sell: True
   made_from:
     Goldthorn: 1
     Leaded Vial: 1
     Wild Steelbloom: 1 
-  ideal_holding: 100
 Elixir of Giants:
-  group: Sell
+  min_holding: 20
+  max_holding: 100  
+  Sell: True
   made_from:
     Crystal Vial: 1
     Gromsblood: 1
     Sungrass: 1 
-  ideal_holding: 125
 Elixir of Greater Agility:
-  group: Sell
+  min_holding: 20
+  max_holding: 50
+  Sell: True
   made_from:
     Crystal Vial: 1
     Goldthorn: 1
     Sungrass: 1
-  ideal_holding: 100
 Elixir of Superior Defense:
-  group: Sell
+  min_holding: 20
+  max_holding: 50
+  Sell: True
   made_from:
     Crystal Vial: 1
     Leaded Vial: 2
     Stonescale Eel: 2
     Sungrass: 1 
-  ideal_holding: 100
 Elixir of the Mongoose:
-  group: Sell
+  min_holding: 20
+  max_holding: 50
+  Sell: True
   made_from:
     Crystal Vial: 1
     Mountain Silversage: 2
     Plaguebloom: 2   
-  ideal_holding: 100
 Free Action Potion:
-  group: Sell
+  min_holding: 20
+  max_holding: 50
+  Sell: True
   made_from:
     Empty Vial: 2
     Leaded Vial: 1
     Oily Blackmouth: 4
     Stranglekelp: 1 
-  ideal_holding: 125
 Greater Arcane Protection Potion:
-  group: Sell
+  min_holding: 5
+  max_holding: 30
+  Sell: True
   made_from:
     Crystal Vial: 1
     Dream Dust: 1
     Dreamfoil: 1 
-  ideal_holding: 50
 Greater Stoneshield Potion:
-  group: Sell
+  min_holding: 20
+  max_holding: 50
+  Sell: True
   made_from:
     Crystal Vial: 1
     Leaded Vial: 3
     Stonescale Eel: 3
     Thorium Ore: 1 
-  ideal_holding: 50
 Invisibility Potion:
-  group: Sell
+  min_holding: 20
+  max_holding: 50
+  Sell: True
   made_from:
     Crystal Vial: 1
     Ghost Mushroom: 1
     Sungrass: 1 
-  ideal_holding: 100
 Limited Invulnerability Potion:
-  group: Sell
+  min_holding: 20
+  max_holding: 50
+  Sell: True
   made_from:
     Blindweed: 2
     Crystal Vial: 1
     Ghost Mushroom: 1 
-  ideal_holding: 100
 Mighty Rage Potion:
-  group: Sell
+  min_holding: 20
+  max_holding: 100
+  Sell: True
   made_from:
     Crystal Vial: 1
     Gromsblood: 3  
-  ideal_holding: 100
 Swiftness Potion:
-  group: Sell
+  min_holding: 10
+  max_holding: 30
+  Sell: True
   made_from:
     Briarthorn: 1
     Empty Vial: 1
     Swiftthistle: 1 
-  ideal_holding: 100
 
 Blackmouth Oil:
-  group: Other
   made_from:
     Empty Vial: 1
     Oily Blackmouth: 2
 Stonescale Oil:
-  group: Other
   made_from:
     Leaded Vial: 1
     Stonescale Eel: 1
 
 Oily Blackmouth:
-  group: Buy 
+  max_holding: 100
+  Buy: True 
 Stonescale Eel:
-  group: Buy
+  max_holding: 100
+  Buy: True
 
 Blindweed:
-  group: Buy
+  max_holding: 100
+  Buy: True
 Briarthorn:
-  group: Buy  
+  max_holding: 100
+  Buy: True  
 Dream Dust:
-  group: Buy
+  max_holding: 100
+  Buy: True
 Dreamfoil:
-  group: Buy
+  max_holding: 100
+  Buy: True
 Swiftthistle:
-  group: Buy
+  max_holding: 100
+  Buy: True
 Ghost Mushroom:
-  group: Buy
+  max_holding: 100
+  Buy: True
 Goldthorn:
-  group: Buy
+  max_holding: 100
+  Buy: True
 Gromsblood:
-  group: Buy
+  max_holding: 100
+  Buy: True
 Mountain Silversage:
-  group: Buy
+  max_holding: 100
+  Buy: True
 Plaguebloom:
-  group: Buy
+  max_holding: 100
+  Buy: True
 Stranglekelp:
-  group: Buy
+  max_holding: 100
+  Buy: True
 Sungrass:
-  group: Buy
+  max_holding: 100
+  Buy: True
 Thorium Ore:
-  group: Buy
+  max_holding: 100
+  Buy: True
 Wild Steelbloom:
-  group: Buy
+  max_holding: 100
+  Buy: True
 
 Crystal Vial:
-  backup_price: 400
-  group: Vendor
+  vendor_price: 400
 Leaded Vial:
-  backup_price: 32
-  group: Vendor
+  vendor_price: 32
 Empty Vial:
-  backup_price: 3
-  group: Vendor
+  vendor_price: 3
