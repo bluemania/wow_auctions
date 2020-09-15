@@ -71,7 +71,9 @@ def main() -> None:
         
         analysis.create_item_table_skeleton()
         analysis.create_items_inventory()
-        analysis.create_volume_range()        
+        analysis.create_volume_range()   
+        analysis.analyse_undercut_leads()
+
         analysis.create_new_item_table()
 
         analysis.create_item_table()

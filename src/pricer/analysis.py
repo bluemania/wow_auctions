@@ -225,6 +225,61 @@ def create_volume_range():
     volume_range.to_parquet(path, compression='gzip')
 
 
+def analyse_undercut_leads() -> None:
+    path = "data/intermediate/item_table_skeleton.parquet"
+    item_table_skeleton = pd.read_parquet(path)
+    item_table_skeleton.index.name = 'item'
+
+    path = "data/intermediate/listings_minprice.parquet"
+    logger.debug(f"Reading listings_minprice parquet from {path}")
+    listings_minprice = pd.read_parquet(path)
+
+    path = "data/cleaned/bb_listings.parquet"
+    logger.debug(f"Write bb_listings parquet to {path}")
+    bb_listings = pd.read_parquet(path)
+
+    bb_listings = bb_listings[bb_listings['item'].isin(item_table_skeleton.index)]
+    bb_listings = bb_listings[bb_listings["price_per"] > 0]
+    listings = pd.merge(bb_listings, listings_minprice, how='left', on='item', validate="m:1")
+
+    # Find my minimum price per item, join back (if exists)
+    my_auction_mins = (
+        listings[listings["sellername"] == "Amazona"].groupby("item").min()
+    )
+    my_auction_mins = my_auction_mins["price_per"]
+    my_auction_mins.name = "my_min"
+    listings = pd.merge(
+        listings, my_auction_mins, how="left", left_on="item", right_index=True
+    )
+    listings = listings.dropna()  # Ignores items I'm not selling
+
+    # Find items below my min price (i.e. competition); get count of items undercutting
+    undercut_count = listings[listings["price_per"] < listings["my_min"]]
+    undercut_count = undercut_count.groupby("item").sum()["quantity"]
+    undercut_count.name = "undercut_count"
+
+    undercuts_leads = item_table_skeleton.join(undercut_count)
+    undercuts_leads["undercut_count"] = undercuts_leads["undercut_count"].fillna(0).astype(int)
+
+    # If my min price is the same as the current min price and the
+    # same as the listing price, i'm winning
+    my_min_is_market = listings["my_min"] == listings["market_price"]
+    my_min_is_list = listings["my_min"] == listings["price_per"]
+    auction_leads = (
+        listings[my_min_is_market & my_min_is_list].groupby("item").sum()["quantity"]
+    )
+    auction_leads.name = "auction_leads"
+
+    undercuts_leads = undercuts_leads.join(auction_leads)
+    undercuts_leads["auction_leads"] = undercuts_leads["auction_leads"].fillna(0).astype(int)
+
+    undercuts_leads = undercuts_leads[['undercut_count','auction_leads']].reset_index()
+
+    path = 'data/intermediate/undercuts_leads.parquet'
+    logger.debug(f'Writing undercuts_leads parquet to {path}')
+    undercuts_leads.to_parquet(path, compression='gzip')
+
+
 def create_new_item_table():
 
     path = "data/intermediate/item_table_skeleton.parquet"
@@ -250,12 +305,17 @@ def create_new_item_table():
     logging.debug(f"Reading predicted_prices parquet from {path}")
     predicted_prices = pd.read_parquet(path)
 
+    path = 'data/intermediate/undercuts_leads.parquet'
+    logger.debug(f'Reading undercuts_leads parquet from {path}')
+    undercuts_leads = pd.read_parquet(path)
+
     item_table = (item_table_skeleton
          .join(material_costs.set_index('item'))
          .join(listings_minprice.set_index('item'))
          .join(predicted_prices)
          .join(item_inventory)
          .join(volume_range)
+         .join(undercuts_leads.set_index('item'))
          .fillna(0)
          .astype(int))
 
