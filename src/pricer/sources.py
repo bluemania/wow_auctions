@@ -105,7 +105,7 @@ def clean_bb_data() -> None:
 
         bb_listings_data = pd.DataFrame(data['auctions']['data'])
         bb_listings_data = bb_listings_data[['quantity', 'buy', 'sellerrealm', 'sellername']]
-        bb_listings_data['price_per'] = bb_listings_data['buy'] / bb_listings_data['quantity']
+        bb_listings_data['price_per'] = (bb_listings_data['buy'] / bb_listings_data['quantity']).astype(int)
         bb_listings_data = bb_listings_data.drop('sellerrealm', axis=1)
         bb_listings_data['item'] = item
         bb_listings.append(bb_listings_data)
@@ -368,11 +368,9 @@ def get_auctioneer_data():
     ropes = []
     with open(path, "r") as f:
         on = False
-        rope_count = 0
         for line in f.readlines():
-            if on and rope_count < 5:
+            if on and "return" in line:
                 ropes.append(line)
-                rope_count += 1
             elif '["ropes"]' in line:
                 on = True
 
@@ -405,16 +403,16 @@ def clean_auctioneer_data() -> None:
     auc_listings = pd.DataFrame(aucscan_data)
     auc_listings["time_remaining"] = auc_listings[6].astype(int).replace(auction_timing)
     auc_listings["item"] = auc_listings[8].str.replace('"', "").str[1:-1]
-    auc_listings["count"] = auc_listings[10].replace("nil", 0).astype(int)
-    auc_listings["price"] = auc_listings[16].astype(int)
-    auc_listings["agent"] = auc_listings[19].str.replace('"', "").str[1:-1]
+    auc_listings["quantity"] = auc_listings[10].replace("nil", 0).astype(int)
+    auc_listings["buy"] = auc_listings[16].astype(int)
+    auc_listings["sellername"] = auc_listings[19].str.replace('"', "").str[1:-1]
 
-    auc_listings = auc_listings[auc_listings["count"] > 0]
+    auc_listings = auc_listings[auc_listings["quantity"] > 0]
 
-    auc_listings["price_per"] = (auc_listings["price"] / auc_listings["count"]).astype(int)
+    auc_listings["price_per"] = (auc_listings["buy"] / auc_listings["quantity"]).astype(int)
     auc_listings = auc_listings[auc_listings["price_per"] > 0]
 
-    cols = ["item", "count", "price", "agent", "price_per", "time_remaining"]
+    cols = ["item", "quantity", "buy", "sellername", "price_per", "time_remaining"]
     auc_listings = auc_listings[cols]
 
     # Saves latest scan to intermediate (immediate)

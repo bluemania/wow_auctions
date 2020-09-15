@@ -72,17 +72,17 @@ def predict_item_prices() -> None:
     predicted_prices.to_parquet(path, compression="gzip")
 
 
-def current_price_from_listings(test: bool = False) -> None:
+def current_price_from_listings() -> None:
 
-    path = "data/cleaned/bb_listings.parquet"
-    logger.debug(f"Write bb_listings parquet to {path}")
-    bb_listings = pd.read_parquet(path)
-    bb_listings.columns = ["count", "price", "agent", "price_per", "item"]
+    path = "data/cleaned/auc_listings.parquet"
+    logger.debug(f"Reading auc_listings parquet to {path}")
+    auc_listings = pd.read_parquet(path)
+    auc_listings.columns = ["item", "count", "price", "agent", "price_per", "time_remaining"]
 
     # Note this SHOULD be a simple groupby min, but getting 0's for some strange reason!
     item_mins = {}
-    for item in bb_listings['item'].unique():
-        x = bb_listings[(bb_listings['item']==item)]
+    for item in auc_listings['item'].unique():
+        x = auc_listings[(auc_listings['item']==item)]
         item_mins[item] = int(x['price_per'].min())
         
     price_df = pd.DataFrame(pd.Series(item_mins)).reset_index()
@@ -185,17 +185,20 @@ def create_item_inventory():
 
 def create_volume_range():
 
-    path = "data/cleaned/bb_listings.parquet"
-    logger.debug(f"Reading bb_listings parquet from {path}")
-    bb_listings = pd.read_parquet(path)
-    bb_listings.columns = ["count", "price", "agent", "price_per", "item"]
-    bb_listings = bb_listings.drop('price', axis=1)
+    path = "data/cleaned/auc_listings.parquet"
+    logger.debug(f"Reading auc_listings parquet from {path}")
+    auc_listings = pd.read_parquet(path)
+    auc_listings.columns = ["item", "count", "price", "agent", "price_per", "time_remaining"]
+    auc_listings = auc_listings.drop('price', axis=1)
 
     path = "data/intermediate/predicted_prices.parquet"
     logging.debug(f"Reading predicted_prices parquet from {path}")
     predicted_prices = pd.read_parquet(path)
 
-    ranges = pd.merge(bb_listings, predicted_prices, how='left', left_on='item', right_index=True, validate='m:1')
+    user_items = cfg.ui.copy()
+    auc_listings = auc_listings[auc_listings['item'].isin(user_items)]
+
+    ranges = pd.merge(auc_listings, predicted_prices, how='left', left_on='item', right_index=True, validate='m:1')
 
     ranges['z'] = (ranges['price_per'] - ranges['price']) / ranges['std']
 
@@ -233,13 +236,13 @@ def analyse_undercut_leads() -> None:
     logger.debug(f"Reading listings_minprice parquet from {path}")
     listings_minprice = pd.read_parquet(path)
 
-    path = "data/cleaned/bb_listings.parquet"
-    logger.debug(f"Write bb_listings parquet to {path}")
-    bb_listings = pd.read_parquet(path)
+    path = "data/cleaned/auc_listings.parquet"
+    logger.debug(f"Write auc_listings parquet to {path}")
+    auc_listings = pd.read_parquet(path)
 
-    bb_listings = bb_listings[bb_listings['item'].isin(item_table_skeleton.index)]
-    bb_listings = bb_listings[bb_listings["price_per"] > 0]
-    listings = pd.merge(bb_listings, listings_minprice, how='left', on='item', validate="m:1")
+    auc_listings = auc_listings[auc_listings['item'].isin(item_table_skeleton.index)]
+    auc_listings = auc_listings[auc_listings["price_per"] > 0]
+    listings = pd.merge(auc_listings, listings_minprice, how='left', on='item', validate="m:1")
 
     # Find my minimum price per item, join back (if exists)
     my_auction_mins = (
@@ -287,11 +290,6 @@ def analyse_replenishment() -> None:
     path = "data/intermediate/item_inventory.parquet"
     logger.debug(f"Reading item_inventory parquet from {path}")
     item_inventory = pd.read_parquet(path)
-
-    path = "data/cleaned/bb_listings.parquet"
-    logger.debug(f"Reading bb_listings parquet from {path}")
-    bb_listings = pd.read_parquet(path)
-    bb_listings.columns = ["count", "price", "agent", "price_per", "item"]
 
     replenish = (item_table_skeleton
                 .join(item_inventory)

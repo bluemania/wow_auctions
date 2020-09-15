@@ -12,7 +12,7 @@ def analyse_buy_policy(BUY_PENALTY=1, BUY_CAP=2):
     item_table = pd.read_parquet("data/intermediate/new_item_table.parquet")
 
     path = "data/intermediate/listing_each.parquet"
-    logger.debug(f"Write bb_listings parquet to {path}")
+    logger.debug(f"Read listing_each parquet from {path}")
     listing_each = pd.read_parquet(path)
     listing_each = listing_each.sort_values('price_per')
 
@@ -21,7 +21,11 @@ def analyse_buy_policy(BUY_PENALTY=1, BUY_CAP=2):
 
     buy_policy['buy_z_max'] = (buy_policy['replenish_z'] - BUY_PENALTY).clip(upper=BUY_CAP)
 
-    buy_policy['acceptable_buy_price'] = (buy_policy['price'] + (buy_policy['std'] * buy_policy['buy_z_max']))
+    buy_policy['acceptable_buy_price'] = (
+        (buy_policy['price'] + 
+        (buy_policy['std'] * buy_policy['buy_z_max'])
+        ).astype(int)
+        )
 
     listing_each = listing_each.join(buy_policy, on='item').dropna()
 
