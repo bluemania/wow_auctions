@@ -58,7 +58,7 @@ def main() -> None:
     logger.debug(args)
 
     if args.a:
-        # sources.get_bb_data()
+        sources.get_bb_data()
         sources.clean_bb_data()
         sources.get_arkinventory_data()
         sources.clean_arkinventory_data(run_dt)

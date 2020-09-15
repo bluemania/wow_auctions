@@ -49,7 +49,7 @@ def get_bb_data() -> None:
     input("Ready to continue after authentication...")
 
     # Get item_ids for user specified items of interest
-    user_items = utils.load_items()
+    user_items = cfg.ui.copy()
     user_items.pop('Empty Vial')
     user_items.pop('Leaded Vial')
     user_items.pop('Crystal Vial')

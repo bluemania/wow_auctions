@@ -30,7 +30,9 @@ def analyse_buy_policy(BUY_PENALTY=1, BUY_CAP=2):
     listing_each = listing_each[listing_each['rank'] < listing_each['replenish_qty']]
 
     buy_policy['buy_price'] = listing_each.groupby('item')['price_per'].max()
-    buy_policy['buy_price'] = buy_policy['buy_price'].fillna(buy_policy['acceptable_buy_price']).astype(int)
+
+    # TODO should have a way to manually specify want to buy partial of huge block of auctions
+    buy_policy['buy_price'] = buy_policy['buy_price'].fillna(1).astype(int)
 
     buy_policy.index.name = 'item'
     buy_policy = buy_policy.reset_index()
