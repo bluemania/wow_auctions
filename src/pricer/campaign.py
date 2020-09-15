@@ -1,7 +1,9 @@
 import logging
 import pandas as pd
 
+from pricer import config as cfg
 from pricer import utils
+
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +30,7 @@ def analyse_buy_policy() -> None:
         KeyError: All user specified 'Buy' items must be present in the
             Auctioneer 'snatch' listing.
     """
-    user_items: Dict[str, Any] = utils.load_items()
+    user_items: Dict[str, Any] = cfg.ui.copy()
     item_table = pd.read_parquet("data/intermediate/item_table.parquet")
 
     path = "data/cleaned/bb_listings.parquet"

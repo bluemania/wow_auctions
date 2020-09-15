@@ -54,3 +54,6 @@ def set_loggers(
 # This should add account information (automatically)
 with open("config/user_settings.yaml", "r") as f:
     us = yaml.safe_load(f)
+
+with open("config/user_items.yaml", "r") as f:
+    ui = yaml.safe_load(f)

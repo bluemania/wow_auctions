@@ -14,7 +14,7 @@ from typing import Any, Dict
 import pandas as pd
 import seaborn as sns
 
-from pricer import utils, config
+from pricer import utils, config as cfg
 
 sns.set(rc={"figure.figsize": (11.7, 8.27)})
 logger = logging.getLogger(__name__)
@@ -42,7 +42,7 @@ def predict_item_prices() -> None:
     logger.debug('Reading bb_fortnight parquet from {path}')
     bb_fortnight = pd.read_parquet(path)
 
-    user_items = utils.load_items()
+    user_items = cfg.ui.copy()
 
     # Work out if an item is auctionable, or get default price
     item_prices = {}
@@ -116,7 +116,7 @@ def analyse_material_cost() -> None:
             has corrupted.
     """
     item_prices = pd.read_parquet("data/intermediate/predicted_prices.parquet")
-    user_items = utils.load_items()
+    user_items = cfg.ui.copy()
 
     # Determine raw material cost for manufactured items
     item_costs = {}
@@ -144,12 +144,15 @@ def analyse_material_cost() -> None:
 
 def create_item_table_skeleton():
 
-    user_items = utils.load_items()
+    user_items = cfg.ui.copy()
     item_table = pd.DataFrame(user_items).T
 
     item_table = item_table.drop('made_from', axis=1)
     int_cols = ['min_holding', 'max_holding', 'vendor_price']
     item_table[int_cols] = item_table[int_cols].fillna(0).astype(int)
+
+    item_table['std_holding'] = (item_table['max_holding'] - item_table['min_holding'])/4
+    item_table['mean_holding'] = item_table[['min_holding', 'max_holding']].mean(axis=1).astype(int)
 
     bool_cols = ['Buy', 'Sell']
     item_table[bool_cols] = item_table[bool_cols].fillna(False).astype(int)
@@ -164,7 +167,7 @@ def create_items_inventory():
     logger.debug(f'Reading ark_inventory parquet from {path}')
     items_inventory = pd.read_parquet(path)    
     
-    auction_main = config.us.get('auction_main', {}).get('name')
+    auction_main = cfg.us.get('auction_main', {}).get('name')
 
     items_inventory['auction_main'] = (
         (items_inventory['character']==auction_main)
@@ -176,6 +179,9 @@ def create_items_inventory():
 
     if 'Auction_Auctions' not in items_inventory:
         items_inventory['Mule_Auctions'] = 0
+
+    mule_cols = ['Mule_Auctions', 'Mule_Inventory', 'Mule_Bank']
+    items_inventory['Mule'] = items_inventory[mule_cols].sum(axis=1)
     
     path = "data/intermediate/item_inventory.parquet"
     logger.debug(f'Reading item_inventory parquet from {path}')

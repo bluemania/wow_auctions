@@ -12,7 +12,7 @@ from typing import Any, Dict
 
 import pandas as pd
 
-from pricer import config
+from pricer import config as cfg
 from pricer import utils
 
 import json
@@ -33,9 +33,9 @@ def get_bb_data() -> None:
     """Reads Booty Bay web API data using selenium and blizzard login."""
     password = getpass.getpass('Password:')
     try:
-        driver = webdriver.Chrome(config.us['bb_selenium']['CHROMEDRIVER_PATH'])
-        driver.implicitly_wait(config.us['bb_selenium']['PAGE_WAIT'])
-        driver.get(config.us['bb_selenium']['BB_BASEURL'])
+        driver = webdriver.Chrome(cfg.us['bb_selenium']['CHROMEDRIVER_PATH'])
+        driver.implicitly_wait(cfg.us['bb_selenium']['PAGE_WAIT'])
+        driver.get(cfg.us['bb_selenium']['BB_BASEURL'])
 
         WebDriverWait(driver, 20).until(EC.element_to_be_clickable((By.CLASS_NAME, "battle-net"))).click()
 
@@ -60,7 +60,7 @@ def get_bb_data() -> None:
     # Get bb data from API
     item_data = defaultdict(dict)
     for item, item_id in items_ids.items():
-        driver.get(config.us['bb_selenium']['BB_ITEMAPI'] + str(item_id))
+        driver.get(cfg.us['bb_selenium']['BB_ITEMAPI'] + str(item_id))
         soup = BeautifulSoup(driver.page_source)
         text = soup.find("body").text
         if "captcha" in text:
@@ -68,7 +68,7 @@ def get_bb_data() -> None:
             input("User action required")
 
             # Redo
-            driver.get(config.us['bb_selenium']['BB_ITEMAPI'] + str(item_id))
+            driver.get(cfg.us['bb_selenium']['BB_ITEMAPI'] + str(item_id))
             soup = BeautifulSoup(driver.page_source)
             text = soup.find("body").text
         item_data[item] = json.loads(text)
@@ -132,7 +132,7 @@ def clean_bb_data() -> None:
 
 def get_arkinventory_data() -> None:
     acc_inv: dict = {}
-    for account_name in config.us.get('accounts'):
+    for account_name in cfg.us.get('accounts'):
         path = utils.make_lua_path(account_name, "ArkInventory")
         data = utils.read_lua(path)
         acc_inv = utils.source_merge(acc_inv, data).copy()
@@ -210,7 +210,7 @@ def clean_arkinventory_data(run_dt) -> None:
 def get_beancounter_data() -> None:
 
     data: dict = {}
-    for account_name in config.us.get('accounts'):
+    for account_name in cfg.us.get('accounts'):
         path = utils.make_lua_path(account_name, "BeanCounter")
         bean = utils.read_lua(path)
         data = utils.source_merge(data, bean).copy()
@@ -331,10 +331,8 @@ def clean_beancounter_failed(df) -> pd.DataFrame:
     failed.columns = columns
     failed = failed.drop([col for col in columns if 'drop_' in col], axis=1)
 
-    failed['qty'] = failed['qty'].astype(int)
-    failed['deposit'] = failed['deposit'].astype(int)
-    failed['buyout'] = failed['buyout'].astype(float)
-    failed['bid'] = failed['bid'].astype(int)
+    col = ['qty', 'deposit', 'buyout', 'bid']
+    failed[col] = failed[col].replace('',0).astype(int)
 
     failed['buyout_per'] = failed['buyout'] / failed['qty']
     failed['bid_per'] = failed['bid'] / failed['qty']
@@ -351,12 +349,8 @@ def clean_beancounter_success(df) -> pd.DataFrame:
     success.columns = columns
     success = success.drop([col for col in columns if 'drop_' in col], axis=1)
 
-    success['qty'] = success['qty'].astype(int)
-    success['received'] = success['received'].astype(int)
-    success['deposit'] = success['deposit'].astype(int)
-    success['ah_cut'] = success['ah_cut'].astype(int)
-    success['buyout'] = success['buyout'].astype(float)
-    success['bid'] = success['bid'].astype(int)
+    col = ['qty', 'received', 'deposit', 'ah_cut', 'buyout', 'bid']
+    success[col] = success[col].replace('',0).astype(int)
 
     success['received_per'] = success['received'] / success['qty']
     success['buyout_per'] = success['buyout'] / success['qty']

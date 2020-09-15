@@ -12,7 +12,7 @@ import pandas as pd
 from slpp import slpp as lua  # pip install git+https://github.com/SirAnthony/slpp
 import yaml
 
-from pricer import config
+from pricer import config as cfg
 
 logger = logging.getLogger(__name__)
 
@@ -55,7 +55,7 @@ def source_merge(a: dict, b: dict, path: list = None) -> Dict[Any, Any]:
 
 
 def make_lua_path(account_name="", datasource=""):
-    warcraft_path = config.us.get("warcraft_path").rstrip("/")
+    warcraft_path = cfg.us.get("warcraft_path").rstrip("/")
     path = (
         f"{warcraft_path}/WTF/Account/{account_name}/"
         + f"SavedVariables/{datasource}.lua"
@@ -67,14 +67,6 @@ def read_lua(path):
     logger.debug(f"Loading lua from {path}")
     with open(path, "r") as f:
         return lua.decode("{" + f.read() + "}")    
-
-
-def load_items() -> Dict[str, Any]:
-    """Loads user specified items of interest."""
-    path = "config/items.yaml"
-    logger.debug(f"Reading yaml from {path}")    
-    with open(path, "r") as f:
-        return yaml.safe_load(f)
 
 
 def get_general_settings() -> Dict[str, Any]:
@@ -99,7 +91,7 @@ def write_lua(
     """Write python dict as lua object."""
     lua_print = dict_to_lua(data)
 
-    warcraft_path = config.us.get("warcraft_path").rstrip("/")
+    warcraft_path = cfg.us.get("warcraft_path").rstrip("/")
     path = f"{warcraft_path}/WTF/Account/{account}/SavedVariables/{name}.lua"
     logger.debug(f"Writing lua to {path}")
     with open(path, "w") as f:
