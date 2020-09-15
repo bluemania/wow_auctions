@@ -12,6 +12,7 @@ import logging
 from typing import Any, Dict
 
 import pandas as pd
+from numpy import inf
 import seaborn as sns
 
 from pricer import utils, config as cfg
@@ -142,50 +143,44 @@ def analyse_material_cost() -> None:
     item_min_sale.to_parquet(path, compression="gzip")
 
 
-def create_item_table_skeleton():
-
-    user_items = cfg.ui.copy()
-    item_table = pd.DataFrame(user_items).T
-
-    item_table = item_table.drop('made_from', axis=1)
-    int_cols = ['min_holding', 'max_holding', 'vendor_price']
-    item_table[int_cols] = item_table[int_cols].fillna(0).astype(int)
-
-    item_table['std_holding'] = (item_table['max_holding'] - item_table['min_holding'])/4
-    item_table['mean_holding'] = item_table[['min_holding', 'max_holding']].mean(axis=1).astype(int)
-
-    bool_cols = ['Buy', 'Sell']
-    item_table[bool_cols] = item_table[bool_cols].fillna(False).astype(int)
-
-    path = "data/intermediate/item_table_skeleton.parquet"
-    logger.debug(f"Writing item_table_skeleton parquet to {path}")
-    item_table.to_parquet(path, compression="gzip")  
-
-
-def create_items_inventory():
+def create_item_inventory():
     path = "data/cleaned/ark_inventory.parquet"
     logger.debug(f'Reading ark_inventory parquet from {path}')
-    items_inventory = pd.read_parquet(path)    
-    
-    auction_main = cfg.us.get('auction_main', {}).get('name')
+    item_inventory = pd.read_parquet(path)    
 
-    items_inventory['auction_main'] = (
-        (items_inventory['character']==auction_main)
-        .replace({True: 'Mule', False: 'Other'}))
+    roles = {char['name'] : char['role'] for char in cfg.us.get('roles', {})}   
 
-    items_inventory['inventory'] = items_inventory['auction_main'] + "_" + items_inventory['location']
+    item_inventory['role'] = item_inventory['character'].apply(lambda x: roles[x] if x in roles else 'char')
+    role_types = ['ahm', 'mule', 'char']
+    assert item_inventory['role'].isin(role_types).all()
 
-    items_inventory = items_inventory.groupby(['inventory', 'item']).sum()['count'].unstack().T
+    location_rename = {'Inventory': 'bag', 'Bank': 'bank', 'Auctions': 'auc'}
+    item_inventory['loc_short'] = item_inventory['location'].replace(location_rename)
+    item_inventory['inv'] = "inv_" + item_inventory['role'] + "_" + item_inventory['loc_short']
 
-    if 'Auction_Auctions' not in items_inventory:
-        items_inventory['Mule_Auctions'] = 0
+    item_inventory = item_inventory.groupby(['inv', 'item']).sum()['count'].unstack().T
 
-    mule_cols = ['Mule_Auctions', 'Mule_Inventory', 'Mule_Bank']
-    items_inventory['Mule'] = items_inventory[mule_cols].sum(axis=1)
-    
+    # Ensure 9x grid of columns
+    for role in role_types:
+        for loc in location_rename.values():
+            col = f"inv_{role}_{loc}"
+            if col not in item_inventory.columns:
+                item_inventory[col] = 0
+                
+    item_inventory = item_inventory.fillna(0).astype(int)
+
+    # Analyse aggregate; ordering important here
+    item_inventory['inv_total_all'] = item_inventory.sum(axis=1)
+
+    cols = [x for x in item_inventory.columns if 'ahm' in x or 'mule' in x]
+    item_inventory['inv_total_hold'] = item_inventory[cols].sum(axis=1)
+
+    cols = [x for x in item_inventory.columns if 'ahm' in x]
+    item_inventory['inv_total_ahm'] = item_inventory[cols].sum(axis=1)
+
     path = "data/intermediate/item_inventory.parquet"
     logger.debug(f'Reading item_inventory parquet from {path}')
-    items_inventory.to_parquet(path, compression='gzip')
+    item_inventory.to_parquet(path, compression='gzip')
 
 
 def create_volume_range():
@@ -209,6 +204,10 @@ def create_volume_range():
     z = sum(ranges.apply(lambda x: [x['z']]*x['count'], axis=1).tolist(), [])
 
     listing_each = pd.DataFrame([item, price_per, z], index=['item', 'price_per', 'z']).T
+
+    path = "data/intermediate/listing_each.parquet"
+    logger.debug(f'Writing volume_range parquet to {path}')
+    listing_each.to_parquet(path, compression='gzip')
 
     listing_each['z_1'] = listing_each['z'] < -2
     listing_each['z_2'] = (listing_each['z'] >= -2) & (listing_each['z'] < -1)
@@ -280,6 +279,45 @@ def analyse_undercut_leads() -> None:
     undercuts_leads.to_parquet(path, compression='gzip')
 
 
+def analyse_replenishment() -> None:
+    path = "data/intermediate/item_table_skeleton.parquet"
+    item_table_skeleton = pd.read_parquet(path)
+    item_table_skeleton.index.name = 'item'
+
+    path = "data/intermediate/item_inventory.parquet"
+    logger.debug(f"Reading item_inventory parquet from {path}")
+    item_inventory = pd.read_parquet(path)
+
+    path = "data/cleaned/bb_listings.parquet"
+    logger.debug(f"Reading bb_listings parquet from {path}")
+    bb_listings = pd.read_parquet(path)
+    bb_listings.columns = ["count", "price", "agent", "price_per", "item"]
+
+    replenish = (item_table_skeleton
+                .join(item_inventory)
+                .fillna(0)
+                .astype(int))
+
+    user_items = cfg.ui.copy()
+
+    replenish['replenish_qty'] = replenish['mean_holding'] - replenish['inv_total_all']
+
+    # Update replenish list with made_from
+    for item, row in replenish.iterrows():
+        if row['replenish_qty'] > 0:
+            for ingredient, count in user_items[item].get('made_from', {}).items():
+                replenish.loc[ingredient, 'replenish_qty'] += count * row['replenish_qty']
+
+    replenish['replenish_z'] = replenish['replenish_qty'] / replenish['std_holding']
+    replenish['replenish_z'] = replenish['replenish_z'].replace([inf, -inf], 0).fillna(0)
+
+    replenish = replenish[['replenish_qty', 'replenish_z']].reset_index()
+
+    path = "data/intermediate/replenish.parquet"
+    logger.debug(f"Writing replenish parquet to {path}")
+    replenish.to_parquet(path, compression='gzip')
+
+
 def create_new_item_table():
 
     path = "data/intermediate/item_table_skeleton.parquet"
@@ -309,6 +347,10 @@ def create_new_item_table():
     logger.debug(f'Reading undercuts_leads parquet from {path}')
     undercuts_leads = pd.read_parquet(path)
 
+    path = "data/intermediate/replenish.parquet"
+    logger.debug(f"Reading replenish parquet from {path}")
+    replenish = pd.read_parquet(path)
+
     item_table = (item_table_skeleton
          .join(material_costs.set_index('item'))
          .join(listings_minprice.set_index('item'))
@@ -317,7 +359,14 @@ def create_new_item_table():
          .join(volume_range)
          .join(undercuts_leads.set_index('item'))
          .fillna(0)
-         .astype(int))
+         .astype(int)
+         .join(replenish.set_index('item'))
+         )
+
+    item_ids = utils.get_item_ids()
+
+    item_table['item_id'] = item_table.index
+    item_table['item_id'] = item_table['item_id'].replace(item_ids)
 
     path = "data/intermediate/new_item_table.parquet"
     logging.debug(f"Writing item_table parquet to {path}")

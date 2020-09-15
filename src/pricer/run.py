@@ -65,14 +65,15 @@ def main() -> None:
         sources.get_beancounter_data()
         sources.clean_beancounter_data()
 
+        sources.create_item_table_skeleton()
+
         analysis.predict_item_prices()
         analysis.current_price_from_listings()
         analysis.analyse_material_cost()
-        
-        analysis.create_item_table_skeleton()
-        analysis.create_items_inventory()
+        analysis.create_item_inventory()
         analysis.create_volume_range()   
         analysis.analyse_undercut_leads()
+        analysis.analyse_replenishment()
 
         analysis.create_new_item_table()
 

@@ -8,125 +8,36 @@ from pricer import utils
 logger = logging.getLogger(__name__)
 
 
-def analyse_buy_policy() -> None:
-    """Determines herbs to buy based on potions in inventory.
+def analyse_buy_policy(BUY_PENALTY=1, BUY_CAP=2):
+    item_table = pd.read_parquet("data/intermediate/new_item_table.parquet")
 
-    Loads user specified items of interest, and ideal holdings of the items.
-    Loads information on number of potions in inventory.
-    Loads auction success rate for potions, to downweight items that don't sell.
-    Calculates number of herbs required to fill the ideal holdings of potions,
-    minus herbs already held in inventory.
-    Looks through all auction listings of herbs available for sale (volume and price).
-    Sets a buy price at which we buy the right number of herbs to fill demand.
-    We set a minimum buy price such that we can always buy bargain herbs.
-    The buy policy is converted into lua format and saved to the WoW
-    Addon directory for Auctioneer (Snatch). Additionally, the buy policy
-    is saved as a parquet file.
-
-    Returns:
-        None
-
-    Raises:
-        KeyError: All user specified 'Buy' items must be present in the
-            Auctioneer 'snatch' listing.
-    """
-    user_items: Dict[str, Any] = cfg.ui.copy()
-    item_table = pd.read_parquet("data/intermediate/item_table.parquet")
-
-    path = "data/cleaned/bb_listings.parquet"
+    path = "data/intermediate/listing_each.parquet"
     logger.debug(f"Write bb_listings parquet to {path}")
-    bb_listings = pd.read_parquet(path)
-    bb_listings.columns = ["count", "price", "agent", "price_per", "item"]
+    listing_each = pd.read_parquet(path)
+    listing_each = listing_each.sort_values('price_per')
 
-    # Determine how many potions I have, and how many need to be replaced
-    replenish = (
-        item_table["auctions"] + item_table["inventory"] + item_table["storage"]
-    )
-    replenish.name = "inventory"
-    replenish = pd.DataFrame(replenish)
+    buy_policy = item_table[item_table['Buy']==True]
+    buy_policy = buy_policy[['price', 'std', 'inv_total_all', 'replenish_qty','std_holding','replenish_z']]
 
-    for potion in replenish.index:
-        replenish.loc[potion, "max"] = user_items[potion].get("ideal_holding", 60)
+    buy_policy['buy_z_max'] = (buy_policy['replenish_z'] - BUY_PENALTY).clip(upper=BUY_CAP)
 
-    replenish["target"] = (replenish["max"] - replenish["inventory"]).apply(
-        lambda x: max(0, x)
-    ).astype(int)
+    buy_policy['acceptable_buy_price'] = (buy_policy['price'] + (buy_policy['std'] * buy_policy['buy_z_max']))
 
-    # From potions required, get herbs required
-    herbs_required = pd.Series()
-    for potion, quantity in replenish["target"].iteritems():
-        for herb, count in user_items[potion].get("made_from").items():
-            if herb in herbs_required:
-                herbs_required.loc[herb] += count * quantity
-            else:
-                herbs_required.loc[herb] = count * quantity
+    listing_each = listing_each.join(buy_policy, on='item').dropna()
 
-                herbs_required.name = "herbs_needed"
-    herbs = pd.DataFrame(herbs_required)
+    listing_each = listing_each[listing_each['price_per'] < listing_each['acceptable_buy_price']]
+    listing_each['rank'] = listing_each.groupby('item')['price_per'].rank()
+    listing_each = listing_each[listing_each['rank'] < listing_each['replenish_qty']]
 
-    # Add item codes from beancounter, used for entering into snatch
-    item_ids = utils.get_item_ids()
-    herbs = herbs.join(pd.Series(item_ids, name="code"))
+    buy_policy['buy_price'] = listing_each.groupby('item')['price_per'].max()
+    buy_policy['buy_price'] = buy_policy['buy_price'].fillna(buy_policy['acceptable_buy_price']).astype(int)
 
-    # Remove herbs already in inventory
+    buy_policy.index.name = 'item'
+    buy_policy = buy_policy.reset_index()
 
-    path = "data/cleaned/ark_inventory.parquet"
-    logger.debug(f'Reading ark_inventory parquet from {path}')
-    ark = pd.read_parquet(path)
-    inventory = ark[ark["character"].isin(["Amazoni", "Amazona"])]
-
-    #inventory = pd.read_parquet("data/intermediate/inventory.parquet")
-    herbs = herbs.join(inventory.groupby("item").sum()["count"]).fillna(0).astype(int)
-    herbs["herbs_purchasing"] = (herbs["herbs_needed"] - herbs["count"]).apply(
-        lambda x: max(0, x)
-    )
-
-    # Cleanup
-    herbs = herbs.drop(["Crystal Vial", "Empty Vial", "Leaded Vial"])
-    herbs = herbs.sort_index()
-
-    # Get market values
-    item_prices = pd.read_parquet('data/intermediate/predicted_prices.parquet')
-    item_prices["market_price"] = item_prices["price"]
-
-    # Clean up auction data
-    bb_listings = bb_listings[bb_listings["item"].isin(user_items)]
-    bb_listings = bb_listings[bb_listings["price"] > 0]
-    bb_listings = bb_listings.sort_values("price_per")
-    bb_listings["price_per"] = bb_listings["price_per"].astype(int)
-
-    for herb, _ in herbs["herbs_purchasing"].iteritems():
-        # Always buy at way below market
-        buy_price = item_prices.loc[herb, "market_price"] * 0.3
-
-        # Filter to herbs below market price
-        listings = bb_listings[bb_listings["item"] == herb]
-        listings = listings[
-            listings["price_per"] < (item_prices.loc[herb, "market_price"])
-        ]
-        listings["cumsum"] = listings["count"].cumsum()
-
-        # Filter to lowest priced herbs for the quantity needed
-        herbs_needed = herbs.loc[herb, "herbs_purchasing"]
-        listings = listings[listings["cumsum"] < herbs_needed]
-
-        # If there are herbs available after filtering...
-        if listings.shape[0] > 0:
-            # Reject the highest priced item, in case there are 100s of
-            # listings at that price (conservative)
-            not_last_priced = listings[
-                listings["price_per"] != listings["price_per"].iloc[-1]
-            ]
-            if not_last_priced.shape[0] > 0:
-                buy_price = not_last_priced["price_per"].iloc[-1]
-
-        herbs.loc[herb, "buy_price"] = buy_price
-
-    herbs["buy_price"] = herbs["buy_price"].astype(int)
-    herbs.index.name = 'item'
-    herbs = herbs.reset_index()
-
-    herbs.to_parquet("data/outputs/buy_policy.parquet", compression="gzip")
+    path = "data/outputs/buy_policy.parquet"
+    logger.debug(f'Write buy_policy parquet to {path}')
+    buy_policy.to_parquet(path, compression="gzip")
 
 
 def encode_buy_campaign(buy_policy):

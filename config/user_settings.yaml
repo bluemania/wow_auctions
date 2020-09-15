@@ -1,9 +1,16 @@
 # Base path to WoW directory
 warcraft_path: /Applications/World of Warcraft/_classic_/
-auction_main:
-  name: Amazona
-  realm: Grobbulus
-  account: 396255466#1
+
+roles:
+  - name: Amazona
+    account: 396255466#1
+    role: ahm
+  - name: Amazoni
+    account: BLUEM
+    role: mule
+  - name: Quicksa
+    account: BLUEM
+    role: mule
 
 accounts:
   - BLUEM

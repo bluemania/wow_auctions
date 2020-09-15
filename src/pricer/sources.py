@@ -360,6 +360,26 @@ def clean_beancounter_success(df) -> pd.DataFrame:
     return success
 
 
+def create_item_table_skeleton():
+
+    user_items = cfg.ui.copy()
+    item_table = pd.DataFrame(user_items).T
+
+    item_table = item_table.drop('made_from', axis=1)
+    int_cols = ['min_holding', 'max_holding', 'vendor_price']
+    item_table[int_cols] = item_table[int_cols].fillna(0).astype(int)
+
+    item_table['std_holding'] = (item_table['max_holding'] - item_table['min_holding'])/4
+    item_table['mean_holding'] = item_table[['min_holding', 'max_holding']].mean(axis=1).astype(int)
+
+    bool_cols = ['Buy', 'Sell']
+    item_table[bool_cols] = item_table[bool_cols].fillna(False).astype(int)
+
+    path = "data/intermediate/item_table_skeleton.parquet"
+    logger.debug(f"Writing item_table_skeleton parquet to {path}")
+    item_table.to_parquet(path, compression="gzip")  
+
+
 # def create_playtime_record(
 #     test: bool = False,
 #     run_dt: dt = None,
