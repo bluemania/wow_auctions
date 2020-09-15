@@ -360,6 +360,69 @@ def clean_beancounter_success(df) -> pd.DataFrame:
     return success
 
 
+def get_auctioneer_data():
+    ahm_account = [r['account'] for r in cfg.us.get('roles') if r.get('role')=='ahm'][0]
+    path = utils.make_lua_path(ahm_account, "Auc-ScanData")
+
+    logger.debug(f"Reading auctioneer lua from {path}")
+    ropes = []
+    with open(path, "r") as f:
+        on = False
+        rope_count = 0
+        for line in f.readlines():
+            if on and rope_count < 5:
+                ropes.append(line)
+                rope_count += 1
+            elif '["ropes"]' in line:
+                on = True
+
+    listings = []
+    for rope in ropes:
+        if len(rope) < 10:
+            continue
+        listings_part = rope.split("},{")
+        listings_part[0] = listings_part[0].split("{{")[1]
+        listings_part[-1] = listings_part[-1].split("},}")[0]
+
+        listings.extend(listings_part)
+
+    listings = [x.split("|")[-1].split(",") for x in listings]
+
+    path = "data/raw/aucscan_data.json"
+    logger.debug(f"Write aucscan json to {path}")
+    with open(path, 'w') as f:
+        json.dump(listings, f)
+
+
+def clean_auctioneer_data() -> None:
+    path = "data/raw/aucscan_data.json"
+    logger.debug(f"Reading aucscan json from {path}")
+    with open(path, 'r') as f:
+        aucscan_data = json.load(f)
+
+    auction_timing = {1: 30, 2: 60 * 2, 3: 60 * 12, 4: 60 * 24}
+
+    auc_listings = pd.DataFrame(aucscan_data)
+    auc_listings["time_remaining"] = auc_listings[6].astype(int).replace(auction_timing)
+    auc_listings["item"] = auc_listings[8].str.replace('"', "").str[1:-1]
+    auc_listings["count"] = auc_listings[10].replace("nil", 0).astype(int)
+    auc_listings["price"] = auc_listings[16].astype(int)
+    auc_listings["agent"] = auc_listings[19].str.replace('"', "").str[1:-1]
+
+    auc_listings = auc_listings[auc_listings["count"] > 0]
+
+    auc_listings["price_per"] = (auc_listings["price"] / auc_listings["count"]).astype(int)
+    auc_listings = auc_listings[auc_listings["price_per"] > 0]
+
+    cols = ["item", "count", "price", "agent", "price_per", "time_remaining"]
+    auc_listings = auc_listings[cols]
+
+    # Saves latest scan to intermediate (immediate)
+    path = "data/cleaned/auc_listings.parquet"
+    logger.debug(f"Writing auc_listings parquet to {path}")
+    auc_listings.to_parquet(path, compression="gzip")
+
+
 def create_item_table_skeleton():
 
     user_items = cfg.ui.copy()

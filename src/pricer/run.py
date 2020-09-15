@@ -58,12 +58,14 @@ def main() -> None:
     logger.debug(args)
 
     if args.a:
-        sources.get_bb_data()
+        #sources.get_bb_data()
         sources.clean_bb_data()
         sources.get_arkinventory_data()
         sources.clean_arkinventory_data(run_dt)
         sources.get_beancounter_data()
         sources.clean_beancounter_data()
+        sources.get_auctioneer_data()
+        sources.clean_auctioneer_data()
 
         sources.create_item_table_skeleton()
 
