@@ -8,34 +8,33 @@ from pricer import utils
 logger = logging.getLogger(__name__)
 
 
-def analyse_buy_policy(BUY_PENALTY=1, BUY_CAP=2):
+def analyse_buy_policy(MAX_BUY_STD=2):
     item_table = pd.read_parquet("data/intermediate/new_item_table.parquet")
+
+    buy_policy = item_table[item_table['Buy']==True]
+    buy_policy = buy_policy[['price', 'std', 'inv_total_all', 'replenish_qty','std_holding','replenish_z']]
 
     path = "data/intermediate/listing_each.parquet"
     logger.debug(f"Read listing_each parquet from {path}")
     listing_each = pd.read_parquet(path)
     listing_each = listing_each.sort_values('price_per')
 
-    buy_policy = item_table[item_table['Buy']==True]
-    buy_policy = buy_policy[['price', 'std', 'inv_total_all', 'replenish_qty','std_holding','replenish_z']]
+    rank_list = listing_each.join(buy_policy, on='item').dropna()
 
-    buy_policy['buy_z_max'] = (buy_policy['replenish_z'] - BUY_PENALTY).clip(upper=BUY_CAP)
+    rank_list['rank'] = rank_list.groupby('item')['price_per'].rank(method='max')
 
-    buy_policy['acceptable_buy_price'] = (
-        (buy_policy['price'] + 
-        (buy_policy['std'] * buy_policy['buy_z_max'])
-        ).astype(int)
-        )
+    rank_list = rank_list.drop_duplicates()
+    rank_list['updated_rank'] = rank_list['replenish_qty'] - rank_list['rank']
+    rank_list['updated_replenish_z'] = rank_list['updated_rank'] / rank_list['std_holding']
 
-    listing_each = listing_each.join(buy_policy, on='item').dropna()
+    rank_list['updated_replenish_z'] = rank_list['updated_replenish_z'].clip(upper=MAX_BUY_STD)
 
-    listing_each = listing_each[listing_each['price_per'] < listing_each['acceptable_buy_price']]
-    listing_each['rank'] = listing_each.groupby('item')['price_per'].rank()
-    listing_each = listing_each[listing_each['rank'] < listing_each['replenish_qty']]
+    rank_list = rank_list[rank_list['updated_replenish_z'] > rank_list['z']]
 
-    buy_policy['buy_price'] = listing_each.groupby('item')['price_per'].max()
+    path = 'data/outputs/buy_rank.parquet'
+    rank_list.to_parquet(path)
 
-    # TODO should have a way to manually specify want to buy partial of huge block of auctions
+    buy_policy['buy_price'] = rank_list.groupby('item')['price_per'].max()
     buy_policy['buy_price'] = buy_policy['buy_price'].fillna(1).astype(int)
 
     buy_policy.index.name = 'item'
@@ -44,7 +43,6 @@ def analyse_buy_policy(BUY_PENALTY=1, BUY_CAP=2):
     path = "data/outputs/buy_policy.parquet"
     logger.debug(f'Write buy_policy parquet to {path}')
     buy_policy.to_parquet(path, compression="gzip")
-
 
 def encode_buy_campaign(buy_policy):
 
