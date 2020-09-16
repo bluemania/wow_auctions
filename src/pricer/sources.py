@@ -421,7 +421,7 @@ def clean_auctioneer_data() -> None:
     auc_listings.to_parquet(path, compression="gzip")
 
 
-def create_item_table_skeleton():
+def create_item_skeleton():
 
     user_items = cfg.ui.copy()
     item_table = pd.DataFrame(user_items).T
@@ -436,8 +436,8 @@ def create_item_table_skeleton():
     bool_cols = ['Buy', 'Sell']
     item_table[bool_cols] = item_table[bool_cols].fillna(False).astype(int)
 
-    path = "data/intermediate/item_table_skeleton.parquet"
-    logger.debug(f"Writing item_table_skeleton parquet to {path}")
+    path = "data/intermediate/item_skeleton.parquet"
+    logger.debug(f"Writing item_skeleton parquet to {path}")
     item_table.to_parquet(path, compression="gzip")  
 
 

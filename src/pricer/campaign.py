@@ -9,10 +9,12 @@ logger = logging.getLogger(__name__)
 
 
 def analyse_buy_policy(MAX_BUY_STD=2):
-    item_table = pd.read_parquet("data/intermediate/new_item_table.parquet")
+    item_table = pd.read_parquet("data/intermediate/item_table.parquet")
 
     buy_policy = item_table[item_table['Buy']==True]
-    buy_policy = buy_policy[['price', 'std', 'inv_total_all', 'replenish_qty','std_holding','replenish_z']]
+    subset_cols = ['pred_price', 'pred_std', 'inv_total_all', 
+                   'replenish_qty', 'std_holding', 'replenish_z']
+    buy_policy = buy_policy[subset_cols]
 
     path = "data/intermediate/listing_each.parquet"
     logger.debug(f"Read listing_each parquet from {path}")
@@ -29,7 +31,7 @@ def analyse_buy_policy(MAX_BUY_STD=2):
 
     rank_list['updated_replenish_z'] = rank_list['updated_replenish_z'].clip(upper=MAX_BUY_STD)
 
-    rank_list = rank_list[rank_list['updated_replenish_z'] > rank_list['z']]
+    rank_list = rank_list[rank_list['updated_replenish_z'] > rank_list['pred_z']]
 
     path = 'data/outputs/buy_rank.parquet'
     rank_list.to_parquet(path, compression="gzip")
@@ -43,6 +45,7 @@ def analyse_buy_policy(MAX_BUY_STD=2):
     path = "data/outputs/buy_policy.parquet"
     logger.debug(f'Write buy_policy parquet to {path}')
     buy_policy.to_parquet(path, compression="gzip")
+
 
 def encode_buy_campaign(buy_policy):
 
@@ -82,37 +85,19 @@ def write_buy_policy() -> None:
 
 
 def analyse_sell_policy(stack: int = 1, leads: int = 15, duration: str = 'm') -> None:
-    """Combines user input & market data to write a sell policy to WoW addon folder.
+    item_table = pd.read_parquet("data/intermediate/item_table.parquet")
+    sell_policy = item_table[item_table['Sell']==1]
 
-    Given user specified parameters, create a selling policy across
-    all items, based on the market and inventory information.
-    The sell policy is converted into lua format and saved to the WoW
-    Addon directory for Auctioneer.
-
-    Args:
-        stack: stack size to sell items
-        leads: total number of undercut auctions we want to achieve
-        duration: length of auction
-        update: when True, will re-save the market data after applying the sell
-            policy. This is useful to run a second sell policy without needing to
-            re-run the full analysis.
-        test: when True prevents data saving (early return)
-
-    Returns:
-        None
-    """
-    df_sell_policy = pd.read_parquet("data/intermediate/item_table.parquet")
+    sell_policy["sell_price"] = (sell_policy["listing_minprice"] * 0.9933).astype(int)  # Undercut %
+    sell_policy["infeasible"] = (sell_policy["material_costs"] >= sell_policy["sell_price"]).astype(int)
 
     duration_choices: Dict[str, int] = {"s": 720, "m": 1440, "l": 2880}
 
-    for item, row in df_sell_policy.iterrows():
+    for item, row in sell_policy.iterrows():
 
         current_leads = row.loc["auction_leads"]
-        aucs = row.loc["auctions"]
-        inv = row.loc["immediate_inv"]
-
-        # Could optionally leave one item remaining
-        # stacks = max(int(inv / stack) - int(leave_one), 0)
+        aucs = row.loc["inv_ahm_auc"]
+        inv = row.loc["inv_ahm_bag"]
 
         stacks = max(int(inv / stack), 0)
         available_to_sell = stacks * stack
@@ -124,26 +109,27 @@ def analyse_sell_policy(stack: int = 1, leads: int = 15, duration: str = 'm') ->
             available_to_sell -= stack
             sell_count += 1
 
-        df_sell_policy.loc[item, "stack"] = stack
+        sell_policy.loc[item, "stack"] = stack
 
-        if sell_count > 0 and df_sell_policy.loc[item, "infeasible"] == 0:
-            df_sell_policy.loc[item, "sell_count"] = sell_count
-            df_sell_policy.loc[item, "auction_leads"] = current_leads
-            df_sell_policy.loc[item, "immediate_inv"] -= sell_count * stack
-            df_sell_policy.loc[item, "auctions"] = aucs
+        if sell_count > 0 and sell_policy.loc[item, "infeasible"] == 0:
+            sell_policy.loc[item, "sell_count"] = sell_count
+            sell_policy.loc[item, "auction_leads"] = current_leads
+            sell_policy.loc[item, "inv_ahm_bag"] -= sell_count * stack
+            sell_policy.loc[item, "inv_ahm_auc"] = aucs
         else:
-            df_sell_policy.loc[item, "sell_count"] = inv + 1
+            sell_policy.loc[item, "sell_count"] = inv + 1
 
-    df_sell_policy["sell_count"] = df_sell_policy["sell_count"].astype(int)
-    df_sell_policy["stack"] = df_sell_policy["stack"].astype(int)
-    df_sell_policy["auction_leads"] = df_sell_policy["auction_leads"].astype(int)
-    df_sell_policy['duration'] = duration_choices[duration]
+    sell_policy["sell_count"] = sell_policy["sell_count"].astype(int)
+    sell_policy["stack"] = sell_policy["stack"].astype(int)
+    sell_policy["auction_leads"] = sell_policy["auction_leads"].astype(int)
+    sell_policy['duration'] = duration_choices[duration]
 
-    df_sell_policy = df_sell_policy.reset_index()
+    sell_policy.index.name = 'item'
+    sell_policy = sell_policy.reset_index()
 
     path = 'data/outputs/sell_policy.parquet'
     logger.debug(f'Write sell_policy parquet to {path}')
-    df_sell_policy.to_parquet(path, compression="gzip")
+    sell_policy.to_parquet(path, compression="gzip")
 
 
 def encode_sell_campaign(sell_policy):
@@ -164,17 +150,17 @@ def encode_sell_campaign(sell_policy):
     }
 
     for item, d in sell_policy.iterrows():
-        key = f"item.{item_ids[item]}.fixed.bid"
+        code = item_ids[item]
 
-        new_appraiser[key] = int(d["sell_price"] + d["infeasible"])
-        new_appraiser[key] = int(d["sell_price"])
-        new_appraiser[key] = int(d['duration'])
-        new_appraiser[key] = int(d["sell_count"])
-        new_appraiser[key] = int(d["stack"])
+        new_appraiser[f"item.{code}.fixed.bid"] = int(d["sell_price"] + d["infeasible"])
+        new_appraiser[f"item.{code}.fixed.buy"] = int(d["sell_price"])
+        new_appraiser[f"item.{code}.duration"] = int(d['duration'])
+        new_appraiser[f"item.{code}.number"] = int(d["sell_count"])
+        new_appraiser[f"item.{code}.stack"] = int(d["stack"])
 
-        new_appraiser[key] = True
-        new_appraiser[key] = False
-        new_appraiser[key] = "fixed"
+        new_appraiser[f"item.{code}.bulk"] = True
+        new_appraiser[f"item.{code}.match"] = False
+        new_appraiser[f"item.{code}.model"] = "fixed"
 
     return new_appraiser
 

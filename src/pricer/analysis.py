@@ -40,7 +40,7 @@ def predict_item_prices() -> None:
         None
     """
     path = "data/cleaned/bb_fortnight.parquet"
-    logger.debug('Reading bb_fortnight parquet from {path}')
+    logger.debug(f'Reading bb_fortnight parquet from {path}')
     bb_fortnight = pd.read_parquet(path)
 
     user_items = cfg.ui.copy()
@@ -73,12 +73,11 @@ def predict_item_prices() -> None:
     predicted_prices.to_parquet(path, compression="gzip")
 
 
-def current_price_from_listings() -> None:
+def analyse_listing_minprice() -> None:
 
     path = "data/cleaned/auc_listings.parquet"
     logger.debug(f"Reading auc_listings parquet to {path}")
     auc_listings = pd.read_parquet(path)
-    auc_listings.columns = ["item", "count", "price", "agent", "price_per", "time_remaining"]
 
     # Note this SHOULD be a simple groupby min, but getting 0's for some strange reason!
     item_mins = {}
@@ -87,7 +86,7 @@ def current_price_from_listings() -> None:
         item_mins[item] = int(x['price_per'].min())
         
     price_df = pd.DataFrame(pd.Series(item_mins)).reset_index()
-    price_df.columns = ['item', 'market_price']
+    price_df.columns = ['item', 'listing_minprice']
 
     path = "data/intermediate/listings_minprice.parquet"
     logger.debug(f"Writing price parquet to {path}")
@@ -125,10 +124,7 @@ def analyse_material_cost() -> None:
     for item_name, item_details in user_items.items():
         material_cost = 0
         for ingredient, count in item_details.get("made_from", {}).items():
-            material_cost += item_prices.loc[ingredient, "price"] * count
-            logger.debug(
-                f"item_name: {item_name}, ingre: {ingredient}, $ {material_cost}"
-            )
+            material_cost += item_prices.loc[ingredient, "pred_price"] * count
         if material_cost > 0:
             logger.debug(f"{item_name}, {material_cost}")
             try:
@@ -137,7 +133,7 @@ def analyse_material_cost() -> None:
                 raise ValueError(f"Material cost is missing for {item_name}")
                 
     item_min_sale = pd.DataFrame.from_dict(item_costs, orient="index").reset_index()
-    item_min_sale.columns = ["item", "material_costs"]            
+    item_min_sale.columns = ["item", "material_costs"]
 
     path = "data/intermediate/material_costs.parquet"
     logger.debug(f'Write material_costs parquet to {path}')
@@ -184,13 +180,11 @@ def create_item_inventory():
     item_inventory.to_parquet(path, compression='gzip')
 
 
-def create_volume_range():
+def analyse_listings():
 
     path = "data/cleaned/auc_listings.parquet"
     logger.debug(f"Reading auc_listings parquet from {path}")
     auc_listings = pd.read_parquet(path)
-    auc_listings.columns = ["item", "count", "price", "agent", "price_per", "time_remaining"]
-    auc_listings = auc_listings.drop('price', axis=1)
 
     path = "data/intermediate/predicted_prices.parquet"
     logging.debug(f"Reading predicted_prices parquet from {path}")
@@ -201,37 +195,37 @@ def create_volume_range():
 
     ranges = pd.merge(auc_listings, predicted_prices, how='left', left_on='item', right_index=True, validate='m:1')
 
-    ranges['z'] = (ranges['price_per'] - ranges['price']) / ranges['std']
+    ranges['pred_z'] = (ranges['price_per'] - ranges['pred_price']) / ranges['pred_std']
 
-    item = sum(ranges.apply(lambda x: [x['item']]*x['count'], axis=1).tolist(), [])
-    price_per = sum(ranges.apply(lambda x: [x['price_per']]*x['count'], axis=1).tolist(), [])
-    z = sum(ranges.apply(lambda x: [x['z']]*x['count'], axis=1).tolist(), [])
+    item = sum(ranges.apply(lambda x: [x['item']]*x['quantity'], axis=1).tolist(), [])
+    price_per = sum(ranges.apply(lambda x: [x['price_per']]*x['quantity'], axis=1).tolist(), [])
+    z = sum(ranges.apply(lambda x: [x['pred_z']]*x['quantity'], axis=1).tolist(), [])
 
-    listing_each = pd.DataFrame([item, price_per, z], index=['item', 'price_per', 'z']).T
+    listing_each = pd.DataFrame([item, price_per, z], index=['item', 'price_per', 'pred_z']).T
 
     path = "data/intermediate/listing_each.parquet"
     logger.debug(f'Writing volume_range parquet to {path}')
     listing_each.to_parquet(path, compression='gzip')
 
-    listing_each['z_1'] = listing_each['z'] < -2
-    listing_each['z_2'] = (listing_each['z'] >= -2) & (listing_each['z'] < -1)
-    listing_each['z_3'] = (listing_each['z'] >= -1) & (listing_each['z'] < -0.25)
-    listing_each['z_4'] = (listing_each['z'] >= -0.25) & (listing_each['z'] < 0.25)
-    listing_each['z_5'] = (listing_each['z'] >= 0.25) & (listing_each['z'] < 1)
-    listing_each['z_6'] = (listing_each['z'] >= 1) & (listing_each['z'] < 2)
-    listing_each['z_7'] = (listing_each['z'] >= 2)
+    # listing_each['z_1'] = listing_each['z'] < -2
+    # listing_each['z_2'] = (listing_each['z'] >= -2) & (listing_each['z'] < -1)
+    # listing_each['z_3'] = (listing_each['z'] >= -1) & (listing_each['z'] < -0.25)
+    # listing_each['z_4'] = (listing_each['z'] >= -0.25) & (listing_each['z'] < 0.25)
+    # listing_each['z_5'] = (listing_each['z'] >= 0.25) & (listing_each['z'] < 1)
+    # listing_each['z_6'] = (listing_each['z'] >= 1) & (listing_each['z'] < 2)
+    # listing_each['z_7'] = (listing_each['z'] >= 2)
 
-    volume_range = listing_each.groupby('item').sum().astype(int).cumsum(axis=1)
+    # volume_range = listing_each.groupby('item').sum().astype(int).cumsum(axis=1)
 
-    path = "data/intermediate/volume_range.parquet"
-    logger.debug(f'Writing volume_range parquet to {path}')
-    volume_range.to_parquet(path, compression='gzip')
+    # path = "data/intermediate/volume_range.parquet"
+    # logger.debug(f'Writing volume_range parquet to {path}')
+    # volume_range.to_parquet(path, compression='gzip')
 
 
 def analyse_undercut_leads() -> None:
-    path = "data/intermediate/item_table_skeleton.parquet"
-    item_table_skeleton = pd.read_parquet(path)
-    item_table_skeleton.index.name = 'item'
+    path = "data/intermediate/item_skeleton.parquet"
+    item_skeleton = pd.read_parquet(path)
+    item_skeleton.index.name = 'item'
 
     path = "data/intermediate/listings_minprice.parquet"
     logger.debug(f"Reading listings_minprice parquet from {path}")
@@ -241,7 +235,7 @@ def analyse_undercut_leads() -> None:
     logger.debug(f"Write auc_listings parquet to {path}")
     auc_listings = pd.read_parquet(path)
 
-    auc_listings = auc_listings[auc_listings['item'].isin(item_table_skeleton.index)]
+    auc_listings = auc_listings[auc_listings['item'].isin(item_skeleton.index)]
     auc_listings = auc_listings[auc_listings["price_per"] > 0]
     listings = pd.merge(auc_listings, listings_minprice, how='left', on='item', validate="m:1")
 
@@ -261,12 +255,12 @@ def analyse_undercut_leads() -> None:
     undercut_count = undercut_count.groupby("item").sum()["quantity"]
     undercut_count.name = "undercut_count"
 
-    undercuts_leads = item_table_skeleton.join(undercut_count)
+    undercuts_leads = item_skeleton.join(undercut_count)
     undercuts_leads["undercut_count"] = undercuts_leads["undercut_count"].fillna(0).astype(int)
 
     # If my min price is the same as the current min price and the
     # same as the listing price, i'm winning
-    my_min_is_market = listings["my_min"] == listings["market_price"]
+    my_min_is_market = listings["my_min"] == listings["listing_minprice"]
     my_min_is_list = listings["my_min"] == listings["price_per"]
     auction_leads = (
         listings[my_min_is_market & my_min_is_list].groupby("item").sum()["quantity"]
@@ -284,15 +278,15 @@ def analyse_undercut_leads() -> None:
 
 
 def analyse_replenishment() -> None:
-    path = "data/intermediate/item_table_skeleton.parquet"
-    item_table_skeleton = pd.read_parquet(path)
-    item_table_skeleton.index.name = 'item'
+    path = "data/intermediate/item_skeleton.parquet"
+    item_skeleton = pd.read_parquet(path)
+    item_skeleton.index.name = 'item'
 
     path = "data/intermediate/item_inventory.parquet"
     logger.debug(f"Reading item_inventory parquet from {path}")
     item_inventory = pd.read_parquet(path)
 
-    replenish = (item_table_skeleton
+    replenish = (item_skeleton
                 .join(item_inventory)
                 .fillna(0)
                 .astype(int))
@@ -317,10 +311,10 @@ def analyse_replenishment() -> None:
     replenish.to_parquet(path, compression='gzip')
 
 
-def create_new_item_table():
+def create_item_table():
 
-    path = "data/intermediate/item_table_skeleton.parquet"
-    item_table_skeleton = pd.read_parquet(path)
+    path = "data/intermediate/item_skeleton.parquet"
+    item_skeleton = pd.read_parquet(path)
 
     path = "data/intermediate/material_costs.parquet"
     logger.debug(f"Reading material_costs parquet from {path}")
@@ -334,9 +328,9 @@ def create_new_item_table():
     logger.debug(f'Reading item_inventory parquet from {path}')
     item_inventory = pd.read_parquet(path)
 
-    path = "data/intermediate/volume_range.parquet"
-    logger.debug(f'Reading volume_range parquet from {path}')
-    volume_range = pd.read_parquet(path)
+    # path = "data/intermediate/volume_range.parquet"
+    # logger.debug(f'Reading volume_range parquet from {path}')
+    # volume_range = pd.read_parquet(path)
 
     path = "data/intermediate/predicted_prices.parquet"
     logging.debug(f"Reading predicted_prices parquet from {path}")
@@ -350,12 +344,12 @@ def create_new_item_table():
     logger.debug(f"Reading replenish parquet from {path}")
     replenish = pd.read_parquet(path)
 
-    item_table = (item_table_skeleton
+    item_table = (item_skeleton
          .join(material_costs.set_index('item'))
          .join(listings_minprice.set_index('item'))
          .join(predicted_prices)
          .join(item_inventory)
-         .join(volume_range)
+         # .join(volume_range)
          .join(undercuts_leads.set_index('item'))
          .fillna(0)
          .astype(int)
@@ -367,135 +361,7 @@ def create_new_item_table():
     item_table['item_id'] = item_table.index
     item_table['item_id'] = item_table['item_id'].replace(item_ids)
 
-    path = "data/intermediate/new_item_table.parquet"
+    path = "data/intermediate/item_table.parquet"
     logging.debug(f"Writing item_table parquet to {path}")
     item_table.to_parquet(path, compression='gzip')
-
-
-def create_item_table(test: bool = False) -> None:
-    """It creates a table with latest market information per item.
-
-    Loads minimum listing price/item and current auction minimum price/item.
-    From these, determines if it is feasible to sell items at a profit.
-
-    It loads current auction data to determine if we currently have auctions,
-    and whether they are being undercut.
-
-    Adds inventory data per item, to determine if we have items available for sale.
-
-    Args:
-        test: when True prevents data saving (early return)
-
-    Returns:
-        None
-    """
-
-    # Need to start with skeleton, perform calcs using skeleton then bring all together
-    # Final cleanup of values
-
-    path = "data/cleaned/bb_listings.parquet"
-    logger.debug(f"Reading bb_listings parquet from {path}")
-    bb_listings = pd.read_parquet(path)
-    bb_listings.columns = ["count", "price", "agent", "price_per", "item"]
-    
-    path = "data/intermediate/material_costs.parquet"
-    logger.debug(f"Reading material_costs parquet from {path}")
-    material_costs = pd.read_parquet(path)
-
-    path = "data/intermediate/listings_minprice.parquet"
-    logger.debug(f"Reading listings_minprice parquet from {path}")
-    listings_minprice = pd.read_parquet(path)
-    
-    path = "data/cleaned/ark_inventory.parquet"
-    logger.debug(f'Reading ark_inventory parquet from {path}')
-    ark_inventory = pd.read_parquet(path)
-
-    listings_minprice = listings_minprice.set_index("item")
-
-    item_table = material_costs.set_index('item').join(listings_minprice)
-
-    # If item isnt appearing in market atm (NaN), fill with doubled min list price
-    item_table["market_price"] = item_table["market_price"].fillna(item_table["material_costs"] * 2)
-
-    # This belongs in the sell policy
-    # Create sell price from market price, create check if lower than reserve
-    item_table["sell_price"] = (item_table["market_price"] * 0.9933).astype(int)  # Undercut %
-    item_table["infeasible"] = (item_table["material_costs"] >= item_table["sell_price"]).astype(int)
-    item_table["material_costs"] = item_table["material_costs"].astype(int)
-    item_table["profit_per_item"] = item_table["sell_price"] - item_table["material_costs"]
-
-    # Get latest auction data to get the entire sell listing
-    # bb_listings = pd.read_parquet("data/intermediate/auction_scandata.parquet")
-    bb_listings = bb_listings[bb_listings["item"].isin(material_costs.index)]
-    bb_listings = bb_listings[bb_listings["price_per"] > 0]
-
-    # Find the minimum price per item, join back
-    bb_listings = pd.merge(bb_listings, item_table["market_price"], how="left", left_on="item", right_index=True)
-
-    # Find my minimum price per item, join back (if exists)
-    my_auction_mins = (
-        bb_listings[bb_listings["agent"] == "Amazona"].groupby("item").min()
-    )
-    my_auction_mins = my_auction_mins["price_per"]
-    my_auction_mins.name = "my_min"
-    bb_listings = pd.merge(
-        bb_listings, my_auction_mins, how="left", left_on="item", right_index=True
-    )
-    bb_listings = bb_listings.dropna()  # Ignores items I'm not selling
-
-    # Find items below my min price (i.e. competition); get count of items undercutting
-    undercut_count = bb_listings[bb_listings["price_per"] < bb_listings["my_min"]]
-    undercut_count = undercut_count.groupby("item").sum()["count"]
-    undercut_count.name = "undercut_count"
-
-    item_table = item_table.join(undercut_count)
-    item_table["undercut_count"] = item_table["undercut_count"].fillna(0).astype(int)
-
-    # If my min price is the same as the current min price and the
-    # same as the listing price, i'm winning
-    my_min_is_market = bb_listings["my_min"] == bb_listings["market_price"]
-    my_min_is_list = bb_listings["my_min"] == bb_listings["price_per"]
-    auction_leads = (
-        bb_listings[my_min_is_market & my_min_is_list].groupby("item").sum()["count"]
-    )
-    auction_leads.name = "auction_leads"
-
-    item_table = item_table.join(auction_leads)
-    item_table["auction_leads"] = item_table["auction_leads"].fillna(0).astype(int)
-
-    inventory_full = ark_inventory[ark_inventory["character"].isin(["Amazoni", "Amazona"])]
-
-    item_table["auctions"] = (
-        inventory_full[inventory_full["location"] == "Auctions"].groupby("item").sum()
-    )
-    item_table["auctions"] = item_table["auctions"].fillna(0).astype(int)
-
-    item_table["inventory"] = (
-        inventory_full[
-            (inventory_full["character"] == "Amazona")
-            & (inventory_full["location"] != "Auctions")
-        ]
-        .groupby("item")
-        .sum()
-    )
-    item_table["inventory"] = item_table["inventory"].fillna(0).astype(int)
-
-    item_table["immediate_inv"] = (
-        inventory_full[
-            (inventory_full["character"] == "Amazona")
-            & (inventory_full["location"] == "Inventory")]
-        .groupby("item")
-        .sum()
-    )
-    item_table["immediate_inv"] = item_table["immediate_inv"].fillna(0).astype(int)
-
-    item_table["storage"] = (
-        inventory_full[inventory_full["character"] == "Amazoni"]
-        .groupby("item").sum())
-    item_table["storage"] = item_table["storage"].fillna(0).astype(int)
-
-    path = "data/intermediate/item_table.parquet"
-    logger.debug(f'Write item_table parquet to {path}')
-    item_table.to_parquet(path, compression="gzip")
-
 
