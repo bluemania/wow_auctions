@@ -228,23 +228,23 @@ Elemental Earth:
 
 # Gear for characters
 Winterfall Firewater:
-  max_holding: 20
+  max_holding: 30
   Buy: True
 Elemental Sharpening Stone:
-  max_holding: 20
+  max_holding: 30
   Buy: True
 Major Healing Potion:
-  max_holding: 40
+  max_holding: 80
   Buy: True
 Heavy Runecloth Bandage:
-  max_holding: 60
+  max_holding: 100
   made_from:
     Runecloth: 2
 Runecloth:
   max_holding: 40
   Buy: True
 Spider Sausage:
-  max_holding: 80
+  max_holding: 100
   made_from:
     White Spider Meat: 2
 White Spider Meat:
