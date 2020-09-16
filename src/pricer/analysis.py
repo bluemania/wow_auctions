@@ -359,7 +359,8 @@ def create_item_table():
     item_ids = utils.get_item_ids()
 
     item_table['item_id'] = item_table.index
-    item_table['item_id'] = item_table['item_id'].replace(item_ids)
+    # TODO needs to be more generalizable
+    item_table['item_id'] = item_table['item_id'].replace(item_ids).replace('TRANSMUTE_TIME',0)
 
     path = "data/intermediate/item_table.parquet"
     logging.debug(f"Writing item_table parquet to {path}")

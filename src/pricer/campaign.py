@@ -89,7 +89,12 @@ def analyse_sell_policy(stack: int = 1, leads: int = 15, duration: str = 'm') ->
     sell_policy = item_table[item_table['Sell']==1]
 
     sell_policy["sell_price"] = (sell_policy["listing_minprice"] * 0.9933).astype(int)  # Undercut %
-    sell_policy["infeasible"] = (sell_policy["material_costs"] >= sell_policy["sell_price"]).astype(int)
+    
+    # I only sell when there's 1 std to be made above the material price
+    sell_policy["infeasible"] = (
+        (sell_policy["material_costs"] + sell_policy['pred_std'])
+         >= sell_policy["sell_price"]
+         ).astype(int)
 
     duration_choices: Dict[str, int] = {"s": 720, "m": 1440, "l": 2880}
 

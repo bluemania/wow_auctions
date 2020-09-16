@@ -12,6 +12,9 @@ Arcanite Bar:
   min_holding: 4
   max_holding: 24
   Sell: True
+  made_from:
+    Arcane Crystal: 1
+    TRANSMUTE_TIME: 1
 Thorium Bar:
   min_holding: 8
   max_holding: 28
@@ -83,14 +86,6 @@ Free Action Potion:
     Leaded Vial: 1
     Oily Blackmouth: 4
     Stranglekelp: 1 
-Greater Arcane Protection Potion:
-  min_holding: 5
-  max_holding: 30
-  Sell: True
-  made_from:
-    Crystal Vial: 1
-    Dream Dust: 1
-    Dreamfoil: 1 
 Greater Stoneshield Potion:
   min_holding: 20
   max_holding: 50
@@ -132,6 +127,31 @@ Swiftness Potion:
     Empty Vial: 1
     Swiftthistle: 1 
 
+Greater Arcane Protection Potion:
+  min_holding: 5
+  max_holding: 30
+  Sell: True
+  made_from:
+    Crystal Vial: 1
+    Dream Dust: 1
+    Dreamfoil: 1 
+Greater Nature Protection Potion:
+  min_holding: 5
+  max_holding: 40
+  Sell: True
+  made_from:
+    Crystal Vial: 1
+    Elemental Earth: 1
+    Dreamfoil: 1
+Greater Shadow Protection Potion:    
+  min_holding: 5
+  max_holding: 40
+  Sell: True
+  made_from:
+    Crystal Vial: 1
+    Shadow Oil: 1
+    Dreamfoil: 1 
+
 Blackmouth Oil:
   made_from:
     Empty Vial: 1
@@ -140,6 +160,11 @@ Stonescale Oil:
   made_from:
     Leaded Vial: 1
     Stonescale Eel: 1
+Shadow Oil:
+  made_from:
+    Leaded Vial: 1
+    Fadeleaf: 4
+    Grave Moss: 4
 
 Oily Blackmouth:
   max_holding: 100
@@ -191,9 +216,49 @@ Wild Steelbloom:
   max_holding: 100
   Buy: True
 
+Fadeleaf:
+  max_holding: 60
+  Buy: True
+Grave Moss:
+  max_holding: 60
+  Buy: True
+Elemental Earth:
+  max_holding: 40
+  Buy: True
+
+# Gear for characters
+Winterfall Firewater:
+  max_holding: 20
+  Buy: True
+Elemental Sharpening Stone:
+  max_holding: 20
+  Buy: True
+Major Healing Potion:
+  max_holding: 40
+  Buy: True
+Heavy Runecloth Bandage:
+  max_holding: 60
+  made_from:
+    Runecloth: 2
+Runecloth:
+  max_holding: 40
+  Buy: True
+Spider Sausage:
+  max_holding: 80
+  made_from:
+    White Spider Meat: 2
+White Spider Meat:
+  max_holding: 40
+  Buy: True
+Dense Sharpening Stone:
+  max_holding: 80
+  Buy: True
+
 Crystal Vial:
   vendor_price: 400
 Leaded Vial:
   vendor_price: 32
 Empty Vial:
   vendor_price: 3
+TRANSMUTE_TIME:
+  vendor_price: 100000
