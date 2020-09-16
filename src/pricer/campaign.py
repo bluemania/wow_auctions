@@ -32,7 +32,7 @@ def analyse_buy_policy(MAX_BUY_STD=2):
     rank_list = rank_list[rank_list['updated_replenish_z'] > rank_list['z']]
 
     path = 'data/outputs/buy_rank.parquet'
-    rank_list.to_parquet(path)
+    rank_list.to_parquet(path, compression="gzip")
 
     buy_policy['buy_price'] = rank_list.groupby('item')['price_per'].max()
     buy_policy['buy_price'] = buy_policy['buy_price'].fillna(1).astype(int)

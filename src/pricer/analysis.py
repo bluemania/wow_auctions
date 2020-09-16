@@ -49,7 +49,7 @@ def predict_item_prices() -> None:
     item_prices = {}
     for item_name, item_details in user_items.items():
         vendor_price = item_details.get('vendor_price')
-        
+
         if vendor_price:
             item_prices[item_name] = vendor_price
         else:
@@ -57,13 +57,14 @@ def predict_item_prices() -> None:
             item_prices[item_name] = int(df['silver'].ewm(alpha=0.2).mean().iloc[-1])
 
     predicted_prices = pd.DataFrame(pd.Series(item_prices))
-    predicted_prices.columns = ['price']
+    predicted_prices.columns = ['pred_price']
 
     std_df = bb_fortnight.groupby('item').std()['silver'].astype(int)
-    std_df.name = 'std'
+    std_df.name = 'pred_std'
 
     qty_df = bb_fortnight[bb_fortnight['snapshot']==bb_fortnight['snapshot'].max()]
     qty_df = qty_df.set_index('item')['quantity']
+    qty_df.name = 'pred_quantity'
 
     predicted_prices = predicted_prices.join(std_df).join(qty_df).fillna(0).astype(int) 
 
