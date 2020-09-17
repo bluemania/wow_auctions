@@ -240,14 +240,12 @@ Heavy Runecloth Bandage:
   made_from:
     Runecloth: 2
 Runecloth:
-  max_holding: 40
   Buy: True
 Spider Sausage:
   max_holding: 100
   made_from:
     White Spider Meat: 2
 White Spider Meat:
-  max_holding: 40
   Buy: True
 Dense Sharpening Stone:
   max_holding: 80
