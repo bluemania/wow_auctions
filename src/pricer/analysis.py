@@ -69,14 +69,14 @@ def predict_item_prices() -> None:
     predicted_prices = predicted_prices.join(std_df).join(qty_df).fillna(0).astype(int) 
 
     path = "data/intermediate/predicted_prices.parquet"
-    logger.debug(f"Write predicted_prices parquet to {path}")
+    logger.debug(f"Writing predicted_prices parquet to {path}")
     predicted_prices.to_parquet(path, compression="gzip")
 
 
 def analyse_listing_minprice() -> None:
 
     path = "data/cleaned/auc_listings.parquet"
-    logger.debug(f"Reading auc_listings parquet to {path}")
+    logger.debug(f"Reading auc_listings parquet from {path}")
     auc_listings = pd.read_parquet(path)
 
     # Note this SHOULD be a simple groupby min, but getting 0's for some strange reason!
@@ -116,7 +116,10 @@ def analyse_material_cost() -> None:
         ValueError: Error might raised when booty bay addon data sourcing
             has corrupted.
     """
-    item_prices = pd.read_parquet("data/intermediate/predicted_prices.parquet")
+    path = "data/intermediate/predicted_prices.parquet"
+    logger.debug(f"Reading predicted_prices parquet from {path}")    
+    item_prices = pd.read_parquet(path)
+
     user_items = cfg.ui.copy()
 
     # Determine raw material cost for manufactured items
@@ -136,7 +139,7 @@ def analyse_material_cost() -> None:
     item_min_sale.columns = ["item", "material_costs"]
 
     path = "data/intermediate/material_costs.parquet"
-    logger.debug(f'Write material_costs parquet to {path}')
+    logger.debug(f'Writing material_costs parquet to {path}')
     item_min_sale.to_parquet(path, compression="gzip")
 
 
@@ -176,7 +179,7 @@ def create_item_inventory():
     item_inventory['inv_total_ahm'] = item_inventory[cols].sum(axis=1)
 
     path = "data/intermediate/item_inventory.parquet"
-    logger.debug(f'Reading item_inventory parquet from {path}')
+    logger.debug(f'Writing item_inventory parquet from {path}')
     item_inventory.to_parquet(path, compression='gzip')
 
 
@@ -204,7 +207,7 @@ def analyse_listings():
     listing_each = pd.DataFrame([item, price_per, z], index=['item', 'price_per', 'pred_z']).T
 
     path = "data/intermediate/listing_each.parquet"
-    logger.debug(f'Writing volume_range parquet to {path}')
+    logger.debug(f'Writing listing_each parquet to {path}')
     listing_each.to_parquet(path, compression='gzip')
 
     # listing_each['z_1'] = listing_each['z'] < -2
@@ -224,6 +227,7 @@ def analyse_listings():
 
 def analyse_undercut_leads() -> None:
     path = "data/intermediate/item_skeleton.parquet"
+    logger.debug(f"Reading item_skeleton parquet from {path}")
     item_skeleton = pd.read_parquet(path)
     item_skeleton.index.name = 'item'
 
@@ -232,7 +236,7 @@ def analyse_undercut_leads() -> None:
     listings_minprice = pd.read_parquet(path)
 
     path = "data/cleaned/auc_listings.parquet"
-    logger.debug(f"Write auc_listings parquet to {path}")
+    logger.debug(f"Reading auc_listings parquet from {path}")
     auc_listings = pd.read_parquet(path)
 
     auc_listings = auc_listings[auc_listings['item'].isin(item_skeleton.index)]
@@ -279,6 +283,7 @@ def analyse_undercut_leads() -> None:
 
 def analyse_replenishment() -> None:
     path = "data/intermediate/item_skeleton.parquet"
+    logger.debug(f'Reading item_skeleton parquet from {path}')
     item_skeleton = pd.read_parquet(path)
     item_skeleton.index.name = 'item'
 
@@ -314,6 +319,7 @@ def analyse_replenishment() -> None:
 def create_item_table():
 
     path = "data/intermediate/item_skeleton.parquet"
+    logger.debug(f'Reading item_skeleton parquet from {path}') 
     item_skeleton = pd.read_parquet(path)
 
     path = "data/intermediate/material_costs.parquet"

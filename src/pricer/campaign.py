@@ -9,7 +9,10 @@ logger = logging.getLogger(__name__)
 
 
 def analyse_buy_policy(MAX_BUY_STD=2):
-    item_table = pd.read_parquet("data/intermediate/item_table.parquet")
+
+    path = "data/intermediate/item_table.parquet"
+    logging.debug(f"Reading item_table parquet from {path}")
+    item_table = pd.read_parquet(path)
 
     buy_policy = item_table[item_table['Buy']==True]
     subset_cols = ['pred_price', 'pred_std', 'inv_total_all', 
@@ -17,7 +20,7 @@ def analyse_buy_policy(MAX_BUY_STD=2):
     buy_policy = buy_policy[subset_cols]
 
     path = "data/intermediate/listing_each.parquet"
-    logger.debug(f"Read listing_each parquet from {path}")
+    logger.debug(f"Reading listing_each parquet from {path}")
     listing_each = pd.read_parquet(path)
     listing_each = listing_each.sort_values('price_per')
 
@@ -34,6 +37,7 @@ def analyse_buy_policy(MAX_BUY_STD=2):
     rank_list = rank_list[rank_list['updated_replenish_z'] > rank_list['pred_z']]
 
     path = 'data/outputs/buy_rank.parquet'
+    logger.debug(f"Writing buy_rank parquet to {path}")
     rank_list.to_parquet(path, compression="gzip")
 
     buy_policy['buy_price'] = rank_list.groupby('item')['price_per'].max()
@@ -43,7 +47,7 @@ def analyse_buy_policy(MAX_BUY_STD=2):
     buy_policy = buy_policy.reset_index()
 
     path = "data/outputs/buy_policy.parquet"
-    logger.debug(f'Write buy_policy parquet to {path}')
+    logger.debug(f'Writing buy_policy parquet to {path}')
     buy_policy.to_parquet(path, compression="gzip")
 
 
@@ -68,7 +72,7 @@ def encode_buy_campaign(buy_policy):
 
 def write_buy_policy() -> None:
     path = 'data/outputs/buy_policy.parquet'
-    logger.debug(f'Read buy_policy parquet to {path}')
+    logger.debug(f'Reading buy_policy parquet from {path}')
     buy_policy = pd.read_parquet(path)
 
     cols = ['item', 'buy_price']
@@ -81,11 +85,14 @@ def write_buy_policy() -> None:
     snatch["snatch.itemsList"] = {}
     snatch = snatch["snatch.itemsList"]
     data["AucAdvancedData"]["UtilSearchUiData"]["Current"]["snatch.itemsList"] = new_snatch
-    utils.write_lua(data)
+    utils.write_lua(data, path)
 
 
 def analyse_sell_policy(stack: int = 1, leads: int = 15, duration: str = 'm') -> None:
-    item_table = pd.read_parquet("data/intermediate/item_table.parquet")
+    path = "data/intermediate/item_table.parquet"
+    logging.debug(f"Reading item_table parquet from {path}")
+    item_table = pd.read_parquet(path)
+
     sell_policy = item_table[item_table['Sell']==1]
 
     sell_policy["sell_price"] = (sell_policy["listing_minprice"] * 0.9933).astype(int)  # Undercut %
@@ -133,7 +140,7 @@ def analyse_sell_policy(stack: int = 1, leads: int = 15, duration: str = 'm') ->
     sell_policy = sell_policy.reset_index()
 
     path = 'data/outputs/sell_policy.parquet'
-    logger.debug(f'Write sell_policy parquet to {path}')
+    logger.debug(f'Writing sell_policy parquet to {path}')
     sell_policy.to_parquet(path, compression="gzip")
 
 
@@ -172,7 +179,7 @@ def encode_sell_campaign(sell_policy):
 
 def write_sell_policy() -> None:
     path = 'data/outputs/sell_policy.parquet'
-    logger.debug(f'Read sell_policy parquet to {path}')
+    logger.debug(f'Reading sell_policy parquet from {path}')
     sell_policy = pd.read_parquet(path)
 
     cols = ["item", "sell_price", "infeasible", "sell_count", "stack", "duration"]
@@ -182,4 +189,4 @@ def write_sell_policy() -> None:
     path = utils.make_lua_path(account_name="396255466#1", datasource="Auc-Advanced")
     data = utils.read_lua(path)
     data["AucAdvancedConfig"]["profile.Default"]["util"]["appraiser"] = new_appraiser
-    utils.write_lua(data)
+    utils.write_lua(data, path)

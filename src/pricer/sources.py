@@ -76,7 +76,7 @@ def get_bb_data() -> None:
     driver.close()
 
     path = "data/raw/bb_data.json"
-    logger.debug(f"Write bb_data json to {path}")
+    logger.debug(f"Writing bb_data json to {path}")
     with open(path, 'w') as f:
         json.dump(item_data, f)
 
@@ -84,7 +84,7 @@ def get_bb_data() -> None:
 def clean_bb_data() -> None:
 
     path = "data/raw/bb_data.json"
-    logger.debug(f"Read bb_data json from {path}")
+    logger.debug(f"Reading bb_data json from {path}")
     with open(path, 'r') as f:
         item_data = json.load(f)
 
@@ -118,15 +118,15 @@ def clean_bb_data() -> None:
     bb_listings = bb_listings[bb_listings['price_per']>0]
 
     path = "data/cleaned/bb_fortnight.parquet"
-    logger.debug(f"Write bb_fortnight parquet to {path}")
+    logger.debug(f"Writing bb_fortnight parquet to {path}")
     bb_fortnight.to_parquet(path, compression="gzip")
 
     path = "data/cleaned/bb_history.parquet"
-    logger.debug(f"Write bb_history parquet to {path}")
+    logger.debug(f"Writing bb_history parquet to {path}")
     bb_history.to_parquet(path, compression="gzip")
 
     path = "data/cleaned/bb_listings.parquet"
-    logger.debug(f"Write bb_listings parquet to {path}")
+    logger.debug(f"Writing bb_listings parquet to {path}")
     bb_listings.to_parquet(path, compression="gzip")
 
 
@@ -140,7 +140,7 @@ def get_arkinventory_data() -> None:
     inventory_data = acc_inv["ARKINVDB"]["global"]["player"]["data"]
 
     path = "data/raw/arkinventory_data.json"
-    logger.debug(f"Write arkinventory json to {path}")
+    logger.debug(f"Writing arkinventory json to {path}")
     with open(path, 'w') as f:
         json.dump(inventory_data, f)
 
@@ -149,7 +149,7 @@ def clean_arkinventory_data(run_dt) -> None:
     # Search through inventory data to create dict of all items and counts
     # Also counts total monies
     path = "data/raw/arkinventory_data.json"
-    logger.debug(f"Read arkinventory json from {path}")
+    logger.debug(f"Reading arkinventory json from {path}")
     with open(path, 'r') as f:
         inventory_data = json.load(f)
 
@@ -194,7 +194,7 @@ def clean_arkinventory_data(run_dt) -> None:
     df_inventory["timestamp"] = run_dt
 
     path = "data/cleaned/ark_inventory.parquet"
-    logger.debug(f"Write ark_inventory parquet to {path}")
+    logger.debug(f"Writing ark_inventory parquet to {path}")
     df_inventory.to_parquet(path, compression="gzip")
 
     df_monies = pd.Series(monies)
@@ -203,7 +203,7 @@ def clean_arkinventory_data(run_dt) -> None:
     df_monies["timestamp"] = run_dt
 
     path = "data/cleaned/ark_monies.parquet"
-    logger.debug(f"Write ark_monies parquet to {path}")
+    logger.debug(f"Writing ark_monies parquet to {path}")
     df_monies.to_parquet(path, compression="gzip")
 
 
@@ -216,7 +216,7 @@ def get_beancounter_data() -> None:
         data = utils.source_merge(data, bean).copy()
 
     path = "data/raw/beancounter_data.json"
-    logger.debug(f"Write beancounter json to {path}")
+    logger.debug(f"Writing beancounter json to {path}")
     with open(path, 'w') as f:
         json.dump(data, f)
 
@@ -235,7 +235,7 @@ def clean_beancounter_data() -> None:
         None
     """
     path = "data/raw/beancounter_data.json"
-    logger.debug(f"Read beancounter json from {path}")
+    logger.debug(f"Reading beancounter json from {path}")
     with open(path, 'r') as f:
         data = json.load(f)
 
@@ -260,7 +260,7 @@ def clean_beancounter_data() -> None:
 
     bean_purchases = clean_beancounter_purchases(df)
     path = "data/cleaned/bean_purchases.parquet"
-    logger.debug(f"Write bean_purchases parquet to {path}")
+    logger.debug(f"Writing bean_purchases parquet to {path}")
     bean_purchases.to_parquet(path, compression="gzip")
 
     failed = clean_beancounter_failed(df)
@@ -270,7 +270,7 @@ def clean_beancounter_data() -> None:
     bean_results['success'] = bean_results['auction_type'].replace({"completedAuctions": 1, "failedAuctions": 0})
     
     path = "data/cleaned/bean_results.parquet"
-    logger.debug(f"Write bean_results parquet to {path}")
+    logger.debug(f"Writing bean_results parquet to {path}")
     bean_results.to_parquet(path, compression="gzip")
 
     bean_deposit = bean_results.copy()
@@ -279,7 +279,7 @@ def clean_beancounter_data() -> None:
     bean_deposit = pd.DataFrame(bean_deposit)
 
     path = "data/cleaned/bean_deposit.parquet"
-    logger.debug(f"Write bean_deposit parquet to {path}")
+    logger.debug(f"Writing bean_deposit parquet to {path}")
     bean_deposit.to_parquet(path, compression="gzip")
 
 
@@ -387,7 +387,7 @@ def get_auctioneer_data():
     listings = [x.split("|")[-1].split(",") for x in listings]
 
     path = "data/raw/aucscan_data.json"
-    logger.debug(f"Write aucscan json to {path}")
+    logger.debug(f"Writing aucscan json to {path}")
     with open(path, 'w') as f:
         json.dump(listings, f)
 

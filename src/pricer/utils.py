@@ -85,14 +85,9 @@ def get_item_ids() -> Dict[str, int]:
     return item_codes["entry"].to_dict()
 
 
-def write_lua(
-    data: dict, account: str = "396255466#1", name: str = "Auc-Advanced"
-) -> None:
+def write_lua(data: dict, path: str) -> None:
     """Write python dict as lua object."""
     lua_print = dict_to_lua(data)
-
-    warcraft_path = cfg.us.get("warcraft_path").rstrip("/")
-    path = f"{warcraft_path}/WTF/Account/{account}/SavedVariables/{name}.lua"
     logger.debug(f"Writing lua to {path}")
     with open(path, "w") as f:
         f.write(lua_print)
