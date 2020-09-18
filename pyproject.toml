@@ -20,6 +20,8 @@ importlib_metadata = "^1.7.0"
 deepdiff = "^5.0.2"
 selenium = "^3.141.0"
 beautifulsoup4 = "^4.9.1"
+sklearn = "^0.0"
+tqdm = "^4.49.0"
 
 [tool.poetry.dev-dependencies]
 black = "^19.10b0"

@@ -29,8 +29,23 @@ pd.options.mode.chained_assignment = None  # default='warn'
 logger = logging.getLogger(__name__)
 
 
-def get_bb_data() -> None:
-    """Reads Booty Bay web API data using selenium and blizzard login."""
+
+def get_bb_item_page(driver, item_id):
+    driver.get(cfg.us['bb_selenium']['BB_ITEMAPI'] + str(item_id))
+    soup = BeautifulSoup(driver.page_source)
+    text = soup.find("body").text
+    if "captcha" in text:
+        driver.get("https://www.bootybaygazette.com/#us/grobbulus-a/item/6049")
+        input("User action required")
+
+        # Redo
+        driver.get(cfg.us['bb_selenium']['BB_ITEMAPI'] + str(item_id))
+        soup = BeautifulSoup(driver.page_source)
+        text = soup.find("body").text
+    return json.loads(text)
+
+
+def start_driver():
     password = getpass.getpass('Password:')
     try:
         driver = webdriver.Chrome(cfg.us['bb_selenium']['CHROMEDRIVER_PATH'])
@@ -47,7 +62,13 @@ def get_bb_data() -> None:
         raise SystemError("Error connecting to bb")
 
     input("Ready to continue after authentication...")
+    return driver
 
+
+def get_bb_data() -> None:
+    """Reads Booty Bay web API data using selenium and blizzard login."""
+
+    driver = start_driver()
     # Get item_ids for user specified items of interest
     user_items = cfg.ui.copy()
     user_items.pop('Empty Vial')
@@ -60,18 +81,7 @@ def get_bb_data() -> None:
     # Get bb data from API
     item_data = defaultdict(dict)
     for item, item_id in items_ids.items():
-        driver.get(cfg.us['bb_selenium']['BB_ITEMAPI'] + str(item_id))
-        soup = BeautifulSoup(driver.page_source)
-        text = soup.find("body").text
-        if "captcha" in text:
-            driver.get("https://www.bootybaygazette.com/#us/grobbulus-a/item/6049")
-            input("User action required")
-
-            # Redo
-            driver.get(cfg.us['bb_selenium']['BB_ITEMAPI'] + str(item_id))
-            soup = BeautifulSoup(driver.page_source)
-            text = soup.find("body").text
-        item_data[item] = json.loads(text)
+        item_data[item] = get_bb_item_page(driver, item_id)
 
     driver.close()
 
@@ -91,6 +101,7 @@ def clean_bb_data() -> None:
     bb_fortnight = []
     bb_history = []
     bb_listings = []
+    bb_alltime = []
 
     for item, data in item_data.items():
 
@@ -103,16 +114,26 @@ def clean_bb_data() -> None:
         bb_history_data['item'] = item
         bb_history.append(bb_history_data)
 
-        bb_listings_data = pd.DataFrame(data['auctions']['data'])
-        bb_listings_data = bb_listings_data[['quantity', 'buy', 'sellerrealm', 'sellername']]
-        bb_listings_data['price_per'] = (bb_listings_data['buy'] / bb_listings_data['quantity']).astype(int)
-        bb_listings_data = bb_listings_data.drop('sellerrealm', axis=1)
-        bb_listings_data['item'] = item
-        bb_listings.append(bb_listings_data)
+        if data['auctions']['data']:
+            bb_listings_data = pd.DataFrame(data['auctions']['data'])
+            bb_listings_data = bb_listings_data[['quantity', 'buy', 'sellerrealm', 'sellername']]
+            bb_listings_data['price_per'] = (bb_listings_data['buy'] / bb_listings_data['quantity']).astype(int)
+            bb_listings_data = bb_listings_data.drop('sellerrealm', axis=1)
+            bb_listings_data['item'] = item
+            bb_listings.append(bb_listings_data)
+
+        bb_alltime_data = pd.DataFrame(data['monthly'][0])
+        bb_alltime_data['item'] = item
+        bb_alltime.append(bb_alltime_data)
 
     bb_fortnight = pd.concat(bb_fortnight)
+    bb_fortnight['snapshot'] = pd.to_datetime(bb_fortnight['snapshot'])
 
     bb_history = pd.concat(bb_history)
+    bb_history['date'] = pd.to_datetime(bb_history['date'])
+
+    bb_alltime = pd.concat(bb_alltime)    
+    bb_alltime['date'] = pd.to_datetime(bb_alltime['date'])    
 
     bb_listings = pd.concat(bb_listings)
     bb_listings = bb_listings[bb_listings['price_per']>0]
@@ -124,6 +145,10 @@ def clean_bb_data() -> None:
     path = "data/cleaned/bb_history.parquet"
     logger.debug(f"Writing bb_history parquet to {path}")
     bb_history.to_parquet(path, compression="gzip")
+
+    path = "data/cleaned/bb_alltime.parquet"
+    logger.debug(f"Writing bb_alltime parquet to {path}")
+    bb_alltime.to_parquet(path, compression="gzip")
 
     path = "data/cleaned/bb_listings.parquet"
     logger.debug(f"Writing bb_listings parquet to {path}")

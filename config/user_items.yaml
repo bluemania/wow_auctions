@@ -34,6 +34,7 @@ Flask of the Titans:
   made_from:
     Gromsblood: 30
     Stonescale Eel: 10
+    Leaded Vial: 10
     Black Lotus: 1
     Crystal Vial: 1 
 Elixir of Fortitude:
@@ -149,22 +150,25 @@ Greater Shadow Protection Potion:
   Sell: True
   made_from:
     Crystal Vial: 1
-    Shadow Oil: 1
+    # Shadow Oil: 1
     Dreamfoil: 1 
-
-Blackmouth Oil:
-  made_from:
-    Empty Vial: 1
-    Oily Blackmouth: 2
-Stonescale Oil:
-  made_from:
-    Leaded Vial: 1
-    Stonescale Eel: 1
-Shadow Oil:
-  made_from:
     Leaded Vial: 1
     Fadeleaf: 4
-    Grave Moss: 4
+    Grave Moss: 4    
+
+# Blackmouth Oil:
+#   made_from:
+#     Empty Vial: 1
+#     Oily Blackmouth: 2
+# Stonescale Oil:
+#   made_from:
+#     Leaded Vial: 1
+#     Stonescale Eel: 1
+# Shadow Oil:
+#   made_from:
+#     Leaded Vial: 1
+#     Fadeleaf: 4
+#     Grave Moss: 4
 
 Oily Blackmouth:
   max_holding: 100
@@ -177,10 +181,12 @@ Blindweed:
   Buy: True
 Briarthorn:
   max_holding: 100
-  Buy: True  
+  Buy: True
+  Sell: True  
 Dream Dust:
   max_holding: 100
   Buy: True
+  Sell: True
 Dreamfoil:
   max_holding: 100
   Buy: True

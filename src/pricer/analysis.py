@@ -116,9 +116,16 @@ def analyse_material_cost() -> None:
         ValueError: Error might raised when booty bay addon data sourcing
             has corrupted.
     """
+    path = "data/intermediate/listings_minprice.parquet"
+    logger.debug(f"Reading listings_minprice parquet from {path}")    
+    listings_minprice = pd.read_parquet(path)
+
     path = "data/intermediate/predicted_prices.parquet"
     logger.debug(f"Reading predicted_prices parquet from {path}")    
     item_prices = pd.read_parquet(path)
+
+    mat_prices = item_prices.join(listings_minprice.set_index('item')).fillna(0).astype(int)
+    mat_prices['material_price'] = mat_prices[['pred_price', 'listing_minprice']].max(axis=1)
 
     user_items = cfg.ui.copy()
 
@@ -126,21 +133,20 @@ def analyse_material_cost() -> None:
     item_costs = {}
     for item_name, item_details in user_items.items():
         material_cost = 0
-        for ingredient, count in item_details.get("made_from", {}).items():
-            material_cost += item_prices.loc[ingredient, "pred_price"] * count
-        if material_cost > 0:
-            logger.debug(f"{item_name}, {material_cost}")
-            try:
-                item_costs[item_name] = int(material_cost)
-            except ValueError:
-                raise ValueError(f"Material cost is missing for {item_name}")
-                
-    item_min_sale = pd.DataFrame.from_dict(item_costs, orient="index").reset_index()
-    item_min_sale.columns = ["item", "material_costs"]
+        made_from = item_details.get("made_from", {})
+        if made_from:
+            for ingredient, count in made_from.items():
+                material_cost += mat_prices.loc[ingredient, "pred_price"] * count
+        else:
+            material_cost = mat_prices.loc[item_name, "pred_price"]
+        item_costs[item_name] = int(material_cost)
+
+    material_costs = pd.DataFrame.from_dict(item_costs, orient="index").reset_index()
+    material_costs.columns = ["item", "material_costs"]
 
     path = "data/intermediate/material_costs.parquet"
     logger.debug(f'Writing material_costs parquet to {path}')
-    item_min_sale.to_parquet(path, compression="gzip")
+    material_costs.to_parquet(path, compression="gzip")
 
 
 def create_item_inventory():
