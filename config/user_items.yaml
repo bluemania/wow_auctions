@@ -7,10 +7,13 @@
 Arcane Crystal:
   min_holding: 8
   max_holding: 20
+  max_sell: 4
   Buy: True
+  Sell: True    
 Arcanite Bar:
   min_holding: 4
   max_holding: 24
+  max_sell: 8  
   Sell: True
   made_from:
     Arcane Crystal: 1
@@ -19,17 +22,20 @@ Thorium Bar:
   min_holding: 8
   max_holding: 28
   Buy: True
-
+  Sell: True  
 Black Lotus:
   min_holding: 1
   max_holding: 10
+  max_sell: 2  
   Buy: True
+  Sell: True    
 
 # 1255 potions, 251 stacks
 # Roughly 304 stacks of materials
 Flask of the Titans:
   min_holding: 2
   max_holding: 10
+  max_sell: 3
   Sell: True
   made_from:
     Gromsblood: 30
@@ -173,12 +179,15 @@ Greater Shadow Protection Potion:
 Oily Blackmouth:
   max_holding: 100
   Buy: True 
+  Sell: True    
 Stonescale Eel:
   max_holding: 100
   Buy: True
+  Sell: True    
 Blindweed:
   max_holding: 100
   Buy: True
+  Sell: True    
 Briarthorn:
   max_holding: 100
   Buy: True
@@ -190,59 +199,79 @@ Dream Dust:
 Dreamfoil:
   max_holding: 100
   Buy: True
+  Sell: True    
 Swiftthistle:
   max_holding: 100
   Buy: True
+  Sell: True    
 Ghost Mushroom:
   max_holding: 100
   Buy: True
+  Sell: True    
 Goldthorn:
   max_holding: 100
   Buy: True
+  Sell: True    
 Gromsblood:
   max_holding: 100
   Buy: True
+  Sell: True    
 Mountain Silversage:
   max_holding: 100
   Buy: True
+  Sell: True    
 Plaguebloom:
   max_holding: 100
   Buy: True
+  Sell: True    
 Stranglekelp:
   max_holding: 100
   Buy: True
+  Sell: True    
 Sungrass:
   max_holding: 100
   Buy: True
+  Sell: True    
 Thorium Ore:
   max_holding: 100
   Buy: True
+  Sell: True    
 Wild Steelbloom:
   max_holding: 100
   Buy: True
+  Sell: True    
 
 Fadeleaf:
   max_holding: 60
   Buy: True
+  Sell: True    
 Grave Moss:
   max_holding: 60
   Buy: True
+  Sell: True    
 Elemental Earth:
   max_holding: 40
   Buy: True
+  Sell: True  
 
 # Gear for characters
 Winterfall Firewater:
   max_holding: 30
+  max_sell: 5
   Buy: True
+  Sell: True    
 Elemental Sharpening Stone:
   max_holding: 30
+  max_sell: 5
   Buy: True
+  Sell: True    
 Major Healing Potion:
   max_holding: 80
   Buy: True
+  Sell: True    
 Heavy Runecloth Bandage:
   max_holding: 100
+  Sell: True    
   made_from:
     Runecloth: 2
 Runecloth:

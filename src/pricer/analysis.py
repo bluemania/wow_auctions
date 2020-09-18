@@ -196,7 +196,7 @@ def analyse_listings():
     auc_listings = pd.read_parquet(path)
 
     path = "data/intermediate/predicted_prices.parquet"
-    logging.debug(f"Reading predicted_prices parquet from {path}")
+    logger.debug(f"Reading predicted_prices parquet from {path}")
     predicted_prices = pd.read_parquet(path)
 
     user_items = cfg.ui.copy()
@@ -345,7 +345,7 @@ def create_item_table():
     # volume_range = pd.read_parquet(path)
 
     path = "data/intermediate/predicted_prices.parquet"
-    logging.debug(f"Reading predicted_prices parquet from {path}")
+    logger.debug(f"Reading predicted_prices parquet from {path}")
     predicted_prices = pd.read_parquet(path)
 
     path = 'data/intermediate/undercuts_leads.parquet'
@@ -375,6 +375,6 @@ def create_item_table():
     item_table['item_id'] = item_table['item_id'].replace(item_ids).replace('TRANSMUTE_TIME',0)
 
     path = "data/intermediate/item_table.parquet"
-    logging.debug(f"Writing item_table parquet to {path}")
+    logger.debug(f"Writing item_table parquet to {path}")
     item_table.to_parquet(path, compression='gzip')
 
