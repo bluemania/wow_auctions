@@ -98,7 +98,7 @@ def analyse_sell_policy(stack: int = 1, max_sell: int = 10, duration: str = 'm')
 
     sell_policy = item_table[item_table['Sell']==1]
 
-    duration_choices: Dict[str, int] = {"s": 720, "m": 1440, "l": 2880}
+    duration_choices: Dict[str, int] = {"s": 120, "m": 480, "l": 1440}
     sell_policy['duration'] = duration_choices[duration]
 
     sell_policy['replenish_z_cap'] = sell_policy['replenish_z'].clip(lower=-2) + 2
