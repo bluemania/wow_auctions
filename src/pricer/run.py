@@ -13,7 +13,7 @@ from datetime import datetime as dt
 import logging
 import warnings
 
-from . import analysis, config, campaign, sources, utils
+from . import analysis, config, campaign, reporting, sources, utils
 
 warnings.simplefilter(action="ignore")
 logger = logging.getLogger(__name__)
@@ -60,6 +60,8 @@ def main() -> None:
     analysis.analyse_undercut_leads()
     analysis.analyse_replenishment()
 
+    analysis.predict_volume_sell_probability(args.d)
+
     analysis.create_item_table()
 
     campaign.analyse_buy_policy()
@@ -67,6 +69,9 @@ def main() -> None:
 
     campaign.analyse_sell_policy(stack=args.s, max_sell=args.m, duration=args.d)
     campaign.write_sell_policy()
+    campaign.create_new_sell_policy()
+
+    reporting.what_make()
 
     logger.info(f"Program end, seconds {(dt.now() - run_dt).total_seconds()}")
 

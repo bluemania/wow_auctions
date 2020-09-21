@@ -13,6 +13,7 @@ from typing import Any, Dict
 
 import pandas as pd
 from numpy import inf
+from scipy.stats import gaussian_kde
 import seaborn as sns
 
 from pricer import utils, config as cfg
@@ -332,6 +333,10 @@ def create_item_table():
     logger.debug(f"Reading material_costs parquet from {path}")
     material_costs = pd.read_parquet(path)
 
+    path = "data/cleaned/bb_deposit.parquet"
+    logger.debug(f'Reading bb_deposit parquet from {path}')
+    bb_deposit = pd.read_parquet(path)
+
     path = "data/intermediate/listings_minprice.parquet"
     logger.debug(f"Reading listings_minprice parquet from {path}")
     listings_minprice = pd.read_parquet(path)
@@ -361,7 +366,7 @@ def create_item_table():
          .join(listings_minprice.set_index('item'))
          .join(predicted_prices)
          .join(item_inventory)
-         # .join(volume_range)
+         .join(bb_deposit)
          .join(undercuts_leads.set_index('item'))
          .fillna(0)
          .astype(int)
@@ -377,4 +382,42 @@ def create_item_table():
     path = "data/intermediate/item_table.parquet"
     logger.debug(f"Writing item_table parquet to {path}")
     item_table.to_parquet(path, compression='gzip')
+
+
+def predict_volume_sell_probability(dur_char: str = 'm', MAX_LISTINGS: int = 1000) -> None:
+    """Calculates interperiod volume change, to estimate liklihood of sale for a listing queue.
+    """
+    path = "data/cleaned/bb_fortnight.parquet"
+    logger.debug(f"Reading bb_fortnight parquet from {path}")
+    bb_fortnight = pd.read_parquet(path)
+
+    user_sells = [k for k, v in cfg.ui.items() if v.get('Sell')]
+
+    duration_mins = utils.duration_str_to_mins(dur_char)
+    polls = int(duration_mins / 60 / 2)
+    logger.debug(f"{polls} polls")
+
+    item_volume_change_probability = pd.DataFrame(columns=user_sells)
+    for item in user_sells:
+        item_fortnight = bb_fortnight[bb_fortnight['item']==item]
+
+        results = pd.DataFrame()
+        for i in range(1, polls + 1):
+            item_fortnight['snapshot_prev'] = item_fortnight['snapshot'].shift(i)
+            offset_test = pd.merge(item_fortnight, item_fortnight, left_on=['snapshot', 'item'], right_on=['snapshot_prev','item'])
+            results[i] = (offset_test['quantity_y'] - offset_test['quantity_x'])
+
+        gkde = gaussian_kde(results.dropna().mean(axis=1))
+
+        listing_range = range(-MAX_LISTINGS + 1, 1)
+        probability = pd.Series(gkde(listing_range), index=listing_range)
+
+        probability = probability.cumsum()    
+        probability.index = [-i for i in probability.index]
+
+        item_volume_change_probability[item] = probability.sort_index()
+
+    path = "data/intermediate/item_volume_change_probability.parquet"
+    logger.debug(f"Writing item_volume_change_probability parquet to {path}")    
+    item_volume_change_probability.to_parquet(path, compression='gzip')
 

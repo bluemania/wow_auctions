@@ -102,6 +102,7 @@ def clean_bb_data() -> None:
     bb_history = []
     bb_listings = []
     bb_alltime = []
+    bb_deposit = {}
 
     for item, data in item_data.items():
 
@@ -125,6 +126,9 @@ def clean_bb_data() -> None:
         bb_alltime_data = pd.DataFrame(data['monthly'][0])
         bb_alltime_data['item'] = item
         bb_alltime.append(bb_alltime_data)
+        
+        vendorprice = item_data[item]['stats'][0]['selltovendor']
+        bb_deposit[item] = int(vendorprice / 20 * 12)
 
     bb_fortnight = pd.concat(bb_fortnight)
     bb_fortnight['snapshot'] = pd.to_datetime(bb_fortnight['snapshot'])
@@ -137,6 +141,10 @@ def clean_bb_data() -> None:
 
     bb_listings = pd.concat(bb_listings)
     bb_listings = bb_listings[bb_listings['price_per']>0]
+
+    bb_deposit = pd.DataFrame.from_dict(bb_deposit, orient='index')
+    bb_deposit.columns = ['deposit']
+    bb_deposit.index.name = 'item'
 
     path = "data/cleaned/bb_fortnight.parquet"
     logger.debug(f"Writing bb_fortnight parquet to {path}")
@@ -153,6 +161,10 @@ def clean_bb_data() -> None:
     path = "data/cleaned/bb_listings.parquet"
     logger.debug(f"Writing bb_listings parquet to {path}")
     bb_listings.to_parquet(path, compression="gzip")
+
+    path = "data/cleaned/bb_deposit.parquet"
+    logger.debug(f"Writing bb_deposit parquet to {path}")
+    bb_deposit.to_parquet(path, compression="gzip")
 
 
 def get_arkinventory_data() -> None:
@@ -297,15 +309,6 @@ def clean_beancounter_data() -> None:
     path = "data/cleaned/bean_results.parquet"
     logger.debug(f"Writing bean_results parquet to {path}")
     bean_results.to_parquet(path, compression="gzip")
-
-    bean_deposit = bean_results.copy()
-    bean_deposit['deposit_each'] = (bean_deposit['deposit'] / bean_deposit['qty']).astype(int)
-    bean_deposit = bean_deposit.groupby('item')['deposit_each'].max()
-    bean_deposit = pd.DataFrame(bean_deposit)
-
-    path = "data/cleaned/bean_deposit.parquet"
-    logger.debug(f"Writing bean_deposit parquet to {path}")
-    bean_deposit.to_parquet(path, compression="gzip")
 
 
 def clean_beancounter_purchases(df) -> pd.DataFrame:

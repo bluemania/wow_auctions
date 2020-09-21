@@ -37,6 +37,11 @@ def get_seconds_played(time_played: str) -> int:
     return total_seconds
 
 
+def duration_str_to_mins(dur_char: str = 'm') -> int:
+    choices: Dict[str, int] = {"s": 120, "m": 480, "l": 1440}
+    return choices[dur_char]
+
+
 def source_merge(a: dict, b: dict, path: list = None) -> Dict[Any, Any]:
     """Merges b into a."""
     if path is None:
