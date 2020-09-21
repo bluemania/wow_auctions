@@ -69,7 +69,6 @@ def main() -> None:
 
     campaign.analyse_sell_policy(stack=args.s, max_sell=args.m, duration=args.d)
     campaign.write_sell_policy()
-    campaign.create_new_sell_policy()
 
     reporting.what_make()
 

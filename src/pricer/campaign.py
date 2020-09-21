@@ -89,48 +89,6 @@ def write_buy_policy() -> None:
     utils.write_lua(data, path)
 
 
-def analyse_sell_policy(stack: int = 1, max_sell: int = 10, duration: str = 'm') -> None:
-    logger.debug(f"stack {stack} max_sell {max_sell} duration {duration}")
-
-    path = "data/intermediate/item_table.parquet"
-    logger.debug(f"Reading item_table parquet from {path}")
-    item_table = pd.read_parquet(path)
-
-    sell_policy = item_table[item_table['Sell']==1]
-
-    sell_policy['duration'] = utils.duration_str_to_mins(duration)
-
-    sell_policy['replenish_z_cap'] = sell_policy['replenish_z'].clip(lower=-2) + 2
-
-    sell_policy['proposed_bid'] = (sell_policy['material_costs'] + 
-                                    (sell_policy['pred_std'] * sell_policy['replenish_z_cap'])
-                                    ).astype(int)
-
-    sell_policy['proposed_buy'] = sell_policy[['listing_minprice','pred_price']].max(axis=1) * 0.9933
-    sell_policy['proposed_buy'] = sell_policy[['proposed_buy','proposed_bid']].max(axis=1).astype(int)
-
-    sell_policy['stack'] = stack
-    sell_policy['max_sell'] = sell_policy['max_sell'].replace(0, max_sell)
-    sell_policy["sell_count"] = sell_policy[["inv_ahm_bag", "max_sell"]].min(axis=1)
-    sell_policy['sell_count'] = (sell_policy['sell_count'] / sell_policy['stack']).astype(int)
-
-    sell_policy['min_sell'] = sell_policy[['max_sell', 'inv_ahm_bag']].min(axis=1)
-    adjust_stack = sell_policy[sell_policy['min_sell'] < sell_policy['stack']].index
-    sell_policy.loc[adjust_stack, 'stack'] = 1
-    sell_policy.loc[adjust_stack, 'sell_count'] = sell_policy.loc[adjust_stack, 'min_sell']
-
-    # sell_policy[['material_costs', 'pred_std', 'replenish_z_cap', 'proposed_bid', 
-    #              'proposed_buy', 'listing_minprice', 'pred_price', 
-    #              'inv_ahm_bag', 'max_sell', 'sell_count', 'stack']]
-
-    sell_policy.index.name = 'item'
-    sell_policy = sell_policy.reset_index()
-
-    path = 'data/outputs/sell_policy.parquet'
-    logger.debug(f'Writing sell_policy parquet to {path}')
-    sell_policy.to_parquet(path, compression="gzip")
-
-
 def encode_sell_campaign(sell_policy):
     
     cols = ["item", "proposed_buy", "proposed_bid", "sell_count", "stack", "duration"]
@@ -182,96 +140,72 @@ def write_sell_policy() -> None:
 from scipy.stats import gaussian_kde
 
 
-def create_new_sell_policy(DURATION: int = 8):
-    
+def analyse_sell_policy(stack: int = 1, max_sell: int = 10, duration: str = 'm', MAX_STD: int =5):
     path = "data/intermediate/item_table.parquet"
     logger.debug(f'Reading item_table parquet from {path}')    
     item_table = pd.read_parquet(path)
 
-    path = "data/cleaned/bb_deposit.parquet"
-    logger.debug(f'Reading bb_deposit parquet from {path}')
-    bb_deposit = pd.read_parquet(path)
-    deposit = bb_deposit * (DURATION / 24)
-
-
-    item_table['proposed_buy'] = 0
-    item_table['expected_profit'] = 0
-
-    path = "data/cleaned/bb_fortnight.parquet"
-    bb_fortnight = pd.read_parquet(path)
-
     path = "data/intermediate/listing_each.parquet"
+    logger.debug(f'Reading listing_each parquet from {path}')
     listing_each = pd.read_parquet(path)
-    listing_each = listing_each[listing_each['pred_z'] < 4]
+
+    path = "data/intermediate/item_volume_change_probability.parquet"
+    logger.debug(f'Reading item_volume_change_probability parquet from {path}')
+    item_volume_change_probability = pd.read_parquet(path)
+
+    cols = ['deposit', 'material_costs', 'pred_std', 
+            'max_sell', 'inv_ahm_bag']
+    sell_items = item_table[item_table['Sell']==True][cols]
+    sell_items['deposit'] = sell_items['deposit'] * (
+        utils.duration_str_to_mins(duration) / 24)
+
+    listing_each = listing_each[listing_each['pred_z'] < MAX_STD]
     listing_each = listing_each.sort_values(['item', 'price_per'])
+    listing_each['rank'] = listing_each.groupby('item')['pred_z'].rank(method='first').astype(int) - 1
 
+    listing_each = pd.merge(item_volume_change_probability, listing_each, how='left', on=['item', 'rank'])
+    listing_each = listing_each.set_index(['item'])
+    listing_each['pred_z'] = listing_each['pred_z'].fillna(MAX_STD)
 
-    for item in item_table[item_table['Sell']==1].index:
-        
-        item_fortnight = bb_fortnight[bb_fortnight['item']==item]
+    additional_std = (MAX_STD - listing_each.groupby('item')['pred_z'].max())
+    gouge_price = (listing_each.groupby('item')['price_per'].max() 
+                   + (sell_items['pred_std'] * additional_std))
+    listing_each['price_per'] = listing_each['price_per'].fillna(gouge_price).astype(int)
+    listing_each = listing_each.reset_index().sort_values(['item', 'rank'])
 
-        results = pd.DataFrame()
-        for i in range(1, DURATION + 1):
-            item_fortnight['snapshot_prev'] = item_fortnight['snapshot'].shift(i)
-            test = pd.merge(item_fortnight, item_fortnight, left_on=['snapshot', 'item'], right_on=['snapshot_prev','item'])
-            results[i] = (test['quantity_y'] - test['quantity_x'])
+    
+    listing_profits = pd.merge(listing_each, sell_items, 
+                           how='left', left_on='item', right_index=True)
 
+    listing_profits['proposed_buy'] = listing_profits['price_per'] - 9
 
-        results = results.dropna()
-
-        results['mean'] = results.mean(axis=1)
-        
-        gkde = gaussian_kde(results['mean'])
-        rrange = range(results['mean'].min().astype(int),results['mean'].max().astype(int))
-        probability = pd.Series(gkde(rrange), index=rrange)
-    #    probability.plot()
-
-
-        probability = probability.cumsum().loc[:0]
-        probability.index = [-i for i in probability.index]
-        probability.name = 'probability'
-        probability = pd.DataFrame(probability).sort_index()
-
-        listing_item = listing_each[listing_each['item']==item].reset_index(drop=True)
-
-
-        listing_item = probability.join(listing_item)
-
-        listing_item['price_per'] = listing_item['price_per'].fillna(listing_item['price_per'].max() + 5000)
-        listing_item = listing_item.ffill()
-
-        listing_item = pd.merge(listing_item, deposit, how='left', left_on='item', right_index=True)
-        listing_item['deposit'] = listing_item['deposit'].fillna(50)
-        
-        listing_item = pd.merge(listing_item, item_table['material_costs'], left_on='item', right_index=True)
-
-        listing_item['my_sale'] = listing_item['price_per'] - 9
-
-        listing_item['profit'] = (
-            ((listing_item['my_sale'] - listing_item['material_costs']) * listing_item['probability']) -
-            (listing_item['deposit'] * (1 - listing_item['probability']))
+    listing_profits['estimated_profit'] = (
+            (
+                (listing_profits['proposed_buy'] * 0.95 - listing_profits['material_costs'])
+                * listing_profits['probability'] 
+            ) 
+            - (
+                 listing_profits['deposit'] * (1 - listing_profits['probability'])
+             )
             )
 
-        listing_pricing = listing_item.loc[listing_item['profit'].idxmax()]
-        item_table.loc[item, 'proposed_buy'] = listing_pricing['my_sale'].astype(int)
-        item_table.loc[item, 'expected_profit'] = listing_pricing['profit'].astype(int)
+    best_profits_ind = listing_profits.groupby('item')['estimated_profit'].idxmax()
+    sell_policy = listing_profits.loc[best_profits_ind]
+    sell_policy['proposed_bid'] = sell_policy['proposed_buy'] + (sell_policy['estimated_profit'] < 1000)
+    sell_policy['duration'] = utils.duration_str_to_mins(duration)
+    sell_policy = sell_policy.sort_values('estimated_profit', ascending=False)
 
+    sell_policy['stack'] = stack
+    sell_policy['max_sell'] = sell_policy['max_sell'].replace(0, max_sell)
+    sell_policy["sell_count"] = sell_policy[["inv_ahm_bag", "max_sell"]].min(axis=1)
+    sell_policy['sell_count'] = (sell_policy['sell_count'] / sell_policy['stack']).astype(int)
 
-    item_table['expected_profit'].sort_values()
-
+    sell_policy['min_sell'] = sell_policy[['max_sell', 'inv_ahm_bag']].min(axis=1)
+    adjust_stack = sell_policy[sell_policy['min_sell'] < sell_policy['stack']].index
+    sell_policy.loc[adjust_stack, 'stack'] = 1
+    sell_policy.loc[adjust_stack, 'sell_count'] = sell_policy.loc[adjust_stack, 'min_sell']
 
     path = 'data/outputs/sell_policy.parquet'
-    logger.debug(f'Reading sell_policy parquet from {path}')
-    sell_policy = pd.read_parquet(path)
-
-    sell_policy = sell_policy.set_index('item')
-    sell_policy['proposed_buy'].update(item_table['proposed_buy'])
-
-    sell_policy['proposed_bid'].update(item_table['proposed_buy'])
-    sell_policy['proposed_bid'] = sell_policy['proposed_bid'] + (item_table['expected_profit'] < 1000).astype(int)
-    sell_policy['proposed_bid'] = sell_policy['proposed_bid'].astype(int)
-
-    sell_policy.reset_index().to_parquet(path, compression='gzip')
-    write_sell_policy()
-
+    logger.debug(f'Writing sell_policy parquet to {path}')
+    sell_policy.to_parquet(path, compression='gzip')
 

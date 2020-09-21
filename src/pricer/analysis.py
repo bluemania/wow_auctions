@@ -417,6 +417,12 @@ def predict_volume_sell_probability(dur_char: str = 'm', MAX_LISTINGS: int = 100
 
         item_volume_change_probability[item] = probability.sort_index()
 
+    item_volume_change_probability.index.name = 'rank'
+    item_volume_change_probability.columns.name = 'item'
+    item_volume_change_probability = item_volume_change_probability.stack()
+    item_volume_change_probability.name = 'probability'
+    item_volume_change_probability = item_volume_change_probability.reset_index()
+
     path = "data/intermediate/item_volume_change_probability.parquet"
     logger.debug(f"Writing item_volume_change_probability parquet to {path}")    
     item_volume_change_probability.to_parquet(path, compression='gzip')
