@@ -153,7 +153,7 @@ def analyse_sell_policy(stack: int = 1, max_sell: int = 10, duration: str = 'm',
     logger.debug(f'Reading item_volume_change_probability parquet from {path}')
     item_volume_change_probability = pd.read_parquet(path)
 
-    cols = ['deposit', 'material_costs', 'pred_std', 
+    cols = ['deposit', 'material_costs', 'pred_std', 'pred_price',
             'max_sell', 'inv_ahm_bag']
     sell_items = item_table[item_table['Sell']==True][cols]
     sell_items['deposit'] = sell_items['deposit'] * (
@@ -167,9 +167,8 @@ def analyse_sell_policy(stack: int = 1, max_sell: int = 10, duration: str = 'm',
     listing_each = listing_each.set_index(['item'])
     listing_each['pred_z'] = listing_each['pred_z'].fillna(MAX_STD)
 
-    additional_std = (MAX_STD - listing_each.groupby('item')['pred_z'].max())
-    gouge_price = (listing_each.groupby('item')['price_per'].max() 
-                   + (sell_items['pred_std'] * additional_std))
+    gouge_price = sell_items['pred_price'] + (sell_items['pred_std'] * MAX_STD)
+
     listing_each['price_per'] = listing_each['price_per'].fillna(gouge_price).astype(int)
     listing_each = listing_each.reset_index().sort_values(['item', 'rank'])
 

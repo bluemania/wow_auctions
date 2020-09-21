@@ -55,7 +55,11 @@ def predict_item_prices() -> None:
             item_prices[item_name] = vendor_price
         else:
             df = bb_fortnight[bb_fortnight['item']==item_name]
-            item_prices[item_name] = int(df['silver'].ewm(alpha=0.2).mean().iloc[-1])
+            try:
+                item_prices[item_name] = int(df['silver'].ewm(alpha=0.2).mean().iloc[-1])
+            except:
+                logging.exception(f"""Price prediction problem for {item_name}. 
+                    Did you add something and not use booty bay?""")
 
     predicted_prices = pd.DataFrame(pd.Series(item_prices))
     predicted_prices.columns = ['pred_price']

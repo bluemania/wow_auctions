@@ -60,9 +60,9 @@ def main() -> None:
     analysis.analyse_undercut_leads()
     analysis.analyse_replenishment()
 
-    analysis.predict_volume_sell_probability(args.d)
-
     analysis.create_item_table()
+
+    analysis.predict_volume_sell_probability(args.d)
 
     campaign.analyse_buy_policy()
     campaign.write_buy_policy()

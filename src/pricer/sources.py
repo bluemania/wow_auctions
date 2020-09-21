@@ -11,6 +11,7 @@ import logging
 from typing import Any, Dict
 
 import pandas as pd
+import yaml
 
 from pricer import config as cfg
 from pricer import utils
@@ -29,7 +30,6 @@ pd.options.mode.chained_assignment = None  # default='warn'
 logger = logging.getLogger(__name__)
 
 
-
 def get_bb_item_page(driver, item_id):
     driver.get(cfg.us['bb_selenium']['BB_ITEMAPI'] + str(item_id))
     soup = BeautifulSoup(driver.page_source)
@@ -46,7 +46,12 @@ def get_bb_item_page(driver, item_id):
 
 
 def start_driver():
-    password = getpass.getpass('Password:')
+    try:
+        path = 'SECRETS.yaml'
+        with open(path, "r") as f:
+            password = yaml.safe_load(f).get('password')
+    except:
+        password = getpass.getpass('Password:')
     try:
         driver = webdriver.Chrome(cfg.us['bb_selenium']['CHROMEDRIVER_PATH'])
         driver.implicitly_wait(cfg.us['bb_selenium']['PAGE_WAIT'])

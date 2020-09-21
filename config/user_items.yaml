@@ -10,6 +10,11 @@ Arcane Crystal:
   max_sell: 4
   Buy: True
   Sell: True    
+Essence of Water:
+  min_holding: 0
+  max_holding: 20
+  Sell: True
+  Buy: True  
 Arcanite Bar:
   min_holding: 4
   max_holding: 24
@@ -133,7 +138,6 @@ Swiftness Potion:
     Briarthorn: 1
     Empty Vial: 1
     Swiftthistle: 1 
-
 Greater Arcane Protection Potion:
   min_holding: 5
   max_holding: 30
@@ -161,6 +165,9 @@ Greater Shadow Protection Potion:
     Leaded Vial: 1
     Fadeleaf: 4
     Grave Moss: 4    
+Fire Protection Potion:
+  Sell: True
+
 
 # Blackmouth Oil:
 #   made_from:
