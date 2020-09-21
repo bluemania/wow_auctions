@@ -3,6 +3,8 @@
 *__pycache__
 venv/
 
+SECRETS.yaml
+
 data/*
 !data/.gitkeep
 
