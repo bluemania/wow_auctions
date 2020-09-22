@@ -1,9 +1,9 @@
 import logging
 import pandas as pd
+from scipy.stats import gaussian_kde
 
 from pricer import config as cfg
 from pricer import utils
-
 
 logger = logging.getLogger(__name__)
 
@@ -137,10 +137,7 @@ def write_sell_policy() -> None:
     utils.write_lua(data, path)
 
 
-from scipy.stats import gaussian_kde
-
-
-def analyse_sell_policy(stack: int = 1, max_sell: int = 10, duration: str = 'm', MAX_STD: int =5):
+def analyse_sell_policy(stack: int = 1, max_sell: int = 10, duration: str = 'm', MAX_STD: int = 5):
     path = "data/intermediate/item_table.parquet"
     logger.debug(f'Reading item_table parquet from {path}')    
     item_table = pd.read_parquet(path)
@@ -157,7 +154,7 @@ def analyse_sell_policy(stack: int = 1, max_sell: int = 10, duration: str = 'm',
             'max_sell', 'inv_ahm_bag']
     sell_items = item_table[item_table['Sell']==True][cols]
     sell_items['deposit'] = sell_items['deposit'] * (
-        utils.duration_str_to_mins(duration) / 24)
+        utils.duration_str_to_mins(duration) / (60 * 24))
 
     listing_each = listing_each[listing_each['pred_z'] < MAX_STD]
     listing_each = listing_each.sort_values(['item', 'price_per'])

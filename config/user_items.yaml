@@ -167,6 +167,10 @@ Greater Shadow Protection Potion:
     Grave Moss: 4    
 Fire Protection Potion:
   Sell: True
+  made_from:
+    Leaded Vial: 1
+    Small Flame Sac: 1
+    Fire Oil: 1
 
 
 # Blackmouth Oil:
@@ -247,7 +251,6 @@ Wild Steelbloom:
   max_holding: 100
   Buy: True
   Sell: True    
-
 Fadeleaf:
   max_holding: 60
   Buy: True
@@ -260,6 +263,12 @@ Elemental Earth:
   max_holding: 40
   Buy: True
   Sell: True  
+
+Small Flame Sac:
+  Sell: True
+Fire Oil:
+  Sell: True
+
 
 # Gear for characters
 Winterfall Firewater:

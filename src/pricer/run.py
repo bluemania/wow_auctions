@@ -71,6 +71,7 @@ def main() -> None:
     campaign.write_sell_policy()
 
     reporting.what_make()
+    reporting.have_in_bag()
 
     logger.info(f"Program end, seconds {(dt.now() - run_dt).total_seconds()}")
 

@@ -99,38 +99,37 @@ def analyse_listing_minprice() -> None:
 
 
 def analyse_material_cost() -> None:
-    """It calculates item minimum sell price given costs.
+    path = "data/cleaned/bean_purchases.parquet"
+    logger.debug(f"Reading bean_purchases parquet from {path}")    
+    bean_purchases = pd.read_parquet(path)
 
-    It loads user specified items of interest. It loads booty bay data for
-    pricing information. * Note this will likely be changed in future development.
-    Filters to user specified items which are classed as 'buy' or 'sell'.
-    Determines minimum sell price given raw ingredient costs, deposit loss from
-    auction fail rate, 5% auction house cut, and a minimum profit margin buffer.
-
-    Args:
-        MIN_PROFIT_MARGIN: User specified 'buffer' to add to prices to help
-            ensure profit. Can be considered the 'min acceptable profit'.
-        MAT_DEV: Adds or subtracts pricing standard deviation. Adding
-            standard deviation means we will only sell items at higher prices.
-        test: when True prevents data saving (early return)
-
-    Returns:
-        None
-
-    Raises:
-        ValueError: Error might raised when booty bay addon data sourcing
-            has corrupted.
-    """
-    path = "data/intermediate/listings_minprice.parquet"
-    logger.debug(f"Reading listings_minprice parquet from {path}")    
-    listings_minprice = pd.read_parquet(path)
+    path = "data/intermediate/item_skeleton.parquet"
+    logger.debug(f"Reading item_skeleton parquet from {path}")
+    item_skeleton = pd.read_parquet(path)
+    item_skeleton.index.name = 'item'
 
     path = "data/intermediate/predicted_prices.parquet"
     logger.debug(f"Reading predicted_prices parquet from {path}")    
     item_prices = pd.read_parquet(path)
 
-    mat_prices = item_prices.join(listings_minprice.set_index('item')).fillna(0).astype(int)
-    mat_prices['material_price'] = mat_prices[['pred_price', 'listing_minprice']].max(axis=1)
+    user_items = cfg.ui.copy()
+    user_buys = [k for k, v in user_items.items() if v.get('Buy')]
+
+    bean_purchases = bean_purchases[bean_purchases['item'].isin(user_buys)].sort_values(['item','timestamp'])
+
+    item = sum(bean_purchases.apply(lambda x: [x['item']]*x['qty'], axis=1).tolist(), [])
+    price_per = sum(bean_purchases.apply(lambda x: [x['buyout_per']]*x['qty'], axis=1).tolist(), [])
+    purchase_each = pd.DataFrame([item, price_per], index=['item', 'price_per']).T
+
+    ewm = purchase_each.groupby('item').apply(lambda x: x['price_per'].ewm(span=100).mean()).reset_index()
+    purchase_rolling = purchase_each.join(ewm, rsuffix='_rolling')
+    #purchase_rolling[purchase_rolling['item']=='Sungrass'].reset_index()[['price_per', 'price_per_rolling']].plot()
+    purchase_rolling = purchase_rolling.drop_duplicates('item', keep='last').set_index('item')['price_per_rolling']
+    purchase_rolling = purchase_rolling.astype(int)
+
+    mat_prices = item_skeleton.join(purchase_rolling).join(item_prices)
+
+    mat_prices['material_price'] = mat_prices['price_per_rolling'].fillna(mat_prices['pred_price']).astype(int)
 
     user_items = cfg.ui.copy()
 
@@ -165,7 +164,7 @@ def create_item_inventory():
     role_types = ['ahm', 'mule', 'char']
     assert item_inventory['role'].isin(role_types).all()
 
-    location_rename = {'Inventory': 'bag', 'Bank': 'bank', 'Auctions': 'auc'}
+    location_rename = {'Inventory': 'bag', 'Bank': 'bank', 'Auctions': 'auc', 'Mailbox': 'mail'}
     item_inventory['loc_short'] = item_inventory['location'].replace(location_rename)
     item_inventory['inv'] = "inv_" + item_inventory['role'] + "_" + item_inventory['loc_short']
 

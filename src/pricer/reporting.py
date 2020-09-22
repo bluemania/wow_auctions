@@ -17,4 +17,12 @@ def what_make():
 
     make = item_table.loc[made_from]
     make['make'] = (make['mean_holding'] - make['inv_total_all'])
+    make = make[make['make']>-5]
     print(make['make'].sort_values(ascending=False))
+
+def have_in_bag():
+    path = "data/outputs/sell_policy.parquet"
+    sell_policy = pd.read_parquet(path)
+
+    items = sell_policy[(sell_policy['estimated_profit']>1000)&(sell_policy['inv_ahm_bag']<10)]['item'].tolist()
+    print(f"Put in bag: {items}")
