@@ -44,6 +44,8 @@ def predict_item_prices() -> None:
     logger.debug(f'Reading bb_fortnight parquet from {path}')
     bb_fortnight = pd.read_parquet(path)
 
+
+
     user_items = cfg.ui.copy()
 
     # Work out if an item is auctionable, or get default price
@@ -55,6 +57,9 @@ def predict_item_prices() -> None:
             item_prices[item_name] = vendor_price
         else:
             df = bb_fortnight[bb_fortnight['item']==item_name]
+            df['silver'] = df['silver'].clip(
+                lower=df['silver'].quantile(0.01), 
+                upper=df['silver'].quantile(0.99))
             try:
                 item_prices[item_name] = int(df['silver'].ewm(alpha=0.2).mean().iloc[-1])
             except:

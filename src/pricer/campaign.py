@@ -1,6 +1,6 @@
 import logging
 import pandas as pd
-from scipy.stats import gaussian_kde
+from scipy.stats import gaussian_kde, norm
 
 from pricer import config as cfg
 from pricer import utils
@@ -157,7 +157,7 @@ def analyse_sell_policy(stack: int = 1, max_sell: int = 10, duration: str = 'm',
     sell_items['deposit'] = sell_items['deposit'] * (
         utils.duration_str_to_mins(duration) / (60 * 24))
 
-    sell_items['exponential_percent'] = 2 - sell_items['replenish_z'].apply(lambda x: st.norm.cdf(x))
+    sell_items['exponential_percent'] = 2 - sell_items['replenish_z'].apply(lambda x: norm.cdf(x))
 
     listing_each = listing_each[listing_each['pred_z'] < MAX_STD]
     listing_each = listing_each.sort_values(['item', 'price_per'])
