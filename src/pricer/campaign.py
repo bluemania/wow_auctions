@@ -137,7 +137,8 @@ def write_sell_policy() -> None:
     utils.write_lua(data, path)
 
 
-def analyse_sell_policy(stack: int = 1, max_sell: int = 10, duration: str = 'm', MAX_STD: int = 5):
+def analyse_sell_policy(stack: int = 1, max_sell: int = 10, duration: str = 'm', 
+                MAX_STD: int = 5, MIN_PROFIT: int= 500, MIN_PROFIT_PCT: int = 0.02):
     path = "data/intermediate/item_table.parquet"
     logger.debug(f'Reading item_table parquet from {path}')    
     item_table = pd.read_parquet(path)
@@ -151,10 +152,12 @@ def analyse_sell_policy(stack: int = 1, max_sell: int = 10, duration: str = 'm',
     item_volume_change_probability = pd.read_parquet(path)
 
     cols = ['deposit', 'material_costs', 'pred_std', 'pred_price',
-            'max_sell', 'inv_ahm_bag']
+            'max_sell', 'inv_ahm_bag', 'replenish_qty', 'replenish_z']
     sell_items = item_table[item_table['Sell']==True][cols]
     sell_items['deposit'] = sell_items['deposit'] * (
         utils.duration_str_to_mins(duration) / (60 * 24))
+
+    sell_items['exponential_percent'] = 2 - sell_items['replenish_z'].apply(lambda x: st.norm.cdf(x))
 
     listing_each = listing_each[listing_each['pred_z'] < MAX_STD]
     listing_each = listing_each.sort_values(['item', 'price_per'])
@@ -178,7 +181,7 @@ def analyse_sell_policy(stack: int = 1, max_sell: int = 10, duration: str = 'm',
     listing_profits['estimated_profit'] = (
             (
                 (listing_profits['proposed_buy'] * 0.95 - listing_profits['material_costs'])
-                * listing_profits['probability'] 
+                * (listing_profits['probability'] ** listing_profits['exponential_percent'])
             ) 
             - (
                  listing_profits['deposit'] * (1 - listing_profits['probability'])
@@ -187,7 +190,15 @@ def analyse_sell_policy(stack: int = 1, max_sell: int = 10, duration: str = 'm',
 
     best_profits_ind = listing_profits.groupby('item')['estimated_profit'].idxmax()
     sell_policy = listing_profits.loc[best_profits_ind]
-    sell_policy['proposed_bid'] = sell_policy['proposed_buy'] + (sell_policy['estimated_profit'] < 1000)
+
+
+    sell_policy['min_profit'] = MIN_PROFIT
+    sell_policy['profit_pct'] = MIN_PROFIT_PCT * sell_policy['pred_price']
+    sell_policy['feasible_profit'] = sell_policy[["min_profit", "profit_pct"]].max(axis=1)
+    sell_policy['infeasible'] = sell_policy['feasible_profit'] > sell_policy['estimated_profit']
+    sell_policy['proposed_bid'] = sell_policy['proposed_buy'] + sell_policy['infeasible']
+
+
     sell_policy['duration'] = utils.duration_str_to_mins(duration)
     sell_policy = sell_policy.sort_values('estimated_profit', ascending=False)
 
@@ -205,3 +216,7 @@ def analyse_sell_policy(stack: int = 1, max_sell: int = 10, duration: str = 'm',
     logger.debug(f'Writing sell_policy parquet to {path}')
     sell_policy.to_parquet(path, compression='gzip')
 
+    listing_profits = listing_profits.set_index(['rank', 'item'])['estimated_profit'].unstack()
+    path = 'data/reporting/listing_profits.parquet'
+    logger.debug(f'Writing sell_policy parquet to {path}')
+    listing_profits.to_parquet(path, compression='gzip')

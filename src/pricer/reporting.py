@@ -17,7 +17,7 @@ def what_make():
 
     make = item_table.loc[made_from]
     make['make'] = (make['mean_holding'] - make['inv_total_all'])
-    make = make[make['make']>-5]
+    #make = make[make['make']>-5]
     print(make['make'].sort_values(ascending=False))
 
 def have_in_bag():
