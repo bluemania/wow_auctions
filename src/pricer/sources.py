@@ -1,30 +1,29 @@
 """Responsible for reading and cleaning input data sources."""
 from collections import defaultdict
 from datetime import datetime as dt
+import getpass
+import json
 import logging
 from typing import Any, Dict
 
+from bs4 import BeautifulSoup
 import pandas as pd
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
 import yaml
+
 
 from pricer import config as cfg
 from pricer import utils
-
-import json
-from bs4 import BeautifulSoup
-import getpass
-
-from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-
 
 pd.options.mode.chained_assignment = None  # default='warn'
 logger = logging.getLogger(__name__)
 
 
-def get_bb_item_page(driver, item_id):
+def get_bb_item_page(driver: webdriver, item_id: str) -> Dict[Any, Any]:
+    """Get Booty Bay json info for a given item_id."""
     driver.get(cfg.us["bb_selenium"]["BB_ITEMAPI"] + str(item_id))
     soup = BeautifulSoup(driver.page_source)
     text = soup.find("body").text
@@ -39,12 +38,13 @@ def get_bb_item_page(driver, item_id):
     return json.loads(text)
 
 
-def start_driver():
+def start_driver() -> None:
+    """Spin up selenium driver for Booty Bay scraping."""
     try:
         path = "SECRETS.yaml"
         with open(path, "r") as f:
             password = yaml.safe_load(f).get("password")
-    except:
+    except FileNotFoundError:
         password = getpass.getpass("Password:")
     try:
         driver = webdriver.Chrome(cfg.us["bb_selenium"]["CHROMEDRIVER_PATH"])
@@ -63,7 +63,7 @@ def start_driver():
         WebDriverWait(driver, 20).until(
             EC.element_to_be_clickable((By.ID, "submit"))
         ).click()
-    except:
+    except Exception:
         raise SystemError("Error connecting to bb")
 
     input("Ready to continue after authentication...")
@@ -72,7 +72,6 @@ def start_driver():
 
 def get_bb_data() -> None:
     """Reads Booty Bay web API data using selenium and blizzard login."""
-
     driver = start_driver()
     # Get item_ids for user specified items of interest
     user_items = cfg.ui.copy()
@@ -97,7 +96,7 @@ def get_bb_data() -> None:
 
 
 def clean_bb_data() -> None:
-
+    """Parses all Booty Bay item json into tabular formats."""
     path = "data/raw/bb_data.json"
     logger.debug(f"Reading bb_data json from {path}")
     with open(path, "r") as f:
@@ -179,6 +178,7 @@ def clean_bb_data() -> None:
 
 
 def get_arkinventory_data() -> None:
+    """Reads WoW Addon Ark Inventory lua data and saves local copy as json."""
     acc_inv: dict = {}
     for account_name in cfg.us.get("accounts"):
         path = utils.make_lua_path(account_name, "ArkInventory")
@@ -193,9 +193,8 @@ def get_arkinventory_data() -> None:
         json.dump(inventory_data, f)
 
 
-def clean_arkinventory_data(run_dt) -> None:
-    # Search through inventory data to create dict of all items and counts
-    # Also counts total monies
+def clean_arkinventory_data(run_dt: dt) -> None:
+    """Reads Ark Inventory json and parses into tabular format."""
     path = "data/raw/arkinventory_data.json"
     logger.debug(f"Reading arkinventory json from {path}")
     with open(path, "r") as f:
@@ -256,7 +255,8 @@ def clean_arkinventory_data(run_dt) -> None:
 
 
 def get_beancounter_data() -> None:
-
+    """Reads WoW Addon Beancounter lua and saves to local json."""
+    """Reads Ark Inventory json and parses into tabular format."""
     data: dict = {}
     for account_name in cfg.us.get("accounts"):
         path = utils.make_lua_path(account_name, "BeanCounter")
@@ -270,18 +270,7 @@ def get_beancounter_data() -> None:
 
 
 def clean_beancounter_data() -> None:
-    """Read and clean BeanCounter addon data, and save to parquet.
-
-    For all characters on all user specified accounts, collates info on
-    auction history in terms of failed/succesful sales, and purchases made.
-    Works the data into a labelled and cleaned pandas before parquet saves
-
-    Args:
-        test: when True prevents data saving (early return)
-
-    Returns:
-        None
-    """
+    """Reads Beancounter json and parses into tabular format."""
     path = "data/raw/beancounter_data.json"
     logger.debug(f"Reading beancounter json from {path}")
     with open(path, "r") as f:
@@ -324,7 +313,8 @@ def clean_beancounter_data() -> None:
     bean_results.to_parquet(path, compression="gzip")
 
 
-def clean_beancounter_purchases(df) -> pd.DataFrame:
+def clean_beancounter_purchases(df: pd.DataFrame) -> pd.DataFrame:
+    """Further processing of purchase beancounter data."""
     purchases = df[df[0] == "completedBidsBuyouts"]
 
     columns = [
@@ -356,7 +346,8 @@ def clean_beancounter_purchases(df) -> pd.DataFrame:
     return purchases
 
 
-def clean_beancounter_posted(df) -> pd.DataFrame:
+def clean_beancounter_posted(df: pd.DataFrame) -> pd.DataFrame:
+    """Further processing of posted auction beancounter data."""
     posted = df[df[0] == "postedAuctions"]
 
     columns = [
@@ -390,7 +381,8 @@ def clean_beancounter_posted(df) -> pd.DataFrame:
     return posted
 
 
-def clean_beancounter_failed(df) -> pd.DataFrame:
+def clean_beancounter_failed(df: pd.DataFrame) -> pd.DataFrame:
+    """Further processing of failed auction beancounter data."""
     failed = df[df[0] == "failedAuctions"]
 
     columns = [
@@ -421,7 +413,8 @@ def clean_beancounter_failed(df) -> pd.DataFrame:
     return failed
 
 
-def clean_beancounter_success(df) -> pd.DataFrame:
+def clean_beancounter_success(df: pd.DataFrame) -> pd.DataFrame:
+    """Further processing of successful auction beancounter data."""
     success = df[df[0] == "completedAuctions"]
 
     columns = [
@@ -453,11 +446,10 @@ def clean_beancounter_success(df) -> pd.DataFrame:
     return success
 
 
-def get_auctioneer_data():
-    ahm_account = [r["account"] for r in cfg.us.get("roles") if r.get("role") == "ahm"][
-        0
-    ]
-    path = utils.make_lua_path(ahm_account, "Auc-ScanData")
+def get_auctioneer_data() -> None:
+    """Reads WoW Addon Auctioneer lua and parses text file into json."""
+    ahm_account = [r["account"] for r in cfg.us.get("roles") if r.get("role") == "ahm"]
+    path = utils.make_lua_path(ahm_account[0], "Auc-ScanData")
 
     logger.debug(f"Reading auctioneer lua from {path}")
     ropes = []
@@ -488,12 +480,13 @@ def get_auctioneer_data():
 
 
 def clean_auctioneer_data() -> None:
+    """Cleans Auctioneer json data into tablular format."""
     path = "data/raw/aucscan_data.json"
     logger.debug(f"Reading aucscan json from {path}")
     with open(path, "r") as f:
         aucscan_data = json.load(f)
 
-    auction_timing = {1: 30, 2: 60 * 2, 3: 60 * 12, 4: 60 * 24}
+    auction_timing: Dict[int, int] = {1: 30, 2: 60 * 2, 3: 60 * 12, 4: 60 * 24}
 
     auc_listings = pd.DataFrame(aucscan_data)
     auc_listings["time_remaining"] = auc_listings[6].astype(int).replace(auction_timing)
@@ -518,8 +511,8 @@ def clean_auctioneer_data() -> None:
     auc_listings.to_parquet(path, compression="gzip")
 
 
-def create_item_skeleton():
-
+def create_item_skeleton() -> None:
+    """Creates basic dataframe from user items information."""
     user_items = cfg.ui.copy()
     item_table = pd.DataFrame(user_items).T
 
@@ -540,67 +533,3 @@ def create_item_skeleton():
     path = "data/intermediate/item_skeleton.parquet"
     logger.debug(f"Writing item_skeleton parquet to {path}")
     item_table.to_parquet(path, compression="gzip")
-
-
-# def create_playtime_record(
-#     test: bool = False,
-#     run_dt: dt = None,
-#     clean_session: bool = False,
-#     played: str = "",
-#     level_time: str = "",
-# ) -> None:
-#     """Preserves record of how we are spending time on our auction character.
-
-#     We record info such as time played (played) or spent leveling (level_time)
-#     This is useful for calcs involving real time vs game time,
-#     therefore gold earnt per hour.
-#     Time played may be automated in future, however we retain 'clean_session'
-#     as a user specified flag to indicate inventory is stable (no missing items).
-
-#     When in test mode, loading and calcs are performed but no file saves
-#     Otherwise, saves current analysis as intermediate, loads full, saves backup,
-#     append interm, and save full
-
-#     Args:
-#         test: when True prevents data saving (early return)
-#         run_dt: The common session runtime
-#         clean_session: User specified flag indicating inventory is stable
-#         played: Ingame timelike string in '00d-00h-00m-00s' format,
-#             this field is a 'total time' field and is expected to relate to
-#             the amount of time spent on auctioning alt doing auctions
-#         level_time: Ingame timelike string in '00d-00h-00m-00s' format
-#             this field helps record instances where we've done other things
-#             on our auction character such as leveling, long AFK etc.
-
-#     Returns:
-#         None
-#     """
-#     played_seconds = utils.get_seconds_played(played)
-#     leveling_seconds = utils.get_seconds_played(level_time)
-
-#     if leveling_seconds > 0:
-#         level_adjust = played_seconds - leveling_seconds
-#     else:
-#         level_adjust = 0
-
-#     data = {
-#         "timestamp": run_dt,
-#         "played_raw": played,
-#         "played_seconds": utils.get_seconds_played(played),
-#         "clean_session": clean_session,
-#         "leveling_raw": level_time,
-#         "leveling_seconds": level_adjust,
-#     }
-#     df_played = pd.DataFrame(pd.Series(data)).T
-
-#     if test:
-#         return None  # avoid saves
-
-#     df_played.to_parquet("data/intermediate/time_played.parquet", compression="gzip")
-
-#     played_repo = pd.read_parquet("data/full/time_played.parquet")
-#     played_repo.to_parquet("data/full_backup/time_played.parquet", compression="gzip")
-#     played_repo = played_repo.append(df_played)
-#     played_repo.to_parquet("data/full/time_played.parquet", compression="gzip")
-
-#     logger.info(f"Time played recorded, marked as clean_session: {clean_session}")

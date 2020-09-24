@@ -1,20 +1,16 @@
 """Analyses cleaned data sources to form intermediate tables."""
-from collections import defaultdict
 import logging
-from typing import Any, Dict
 
-import pandas as pd
 from numpy import inf
+import pandas as pd
 from scipy.stats import gaussian_kde
-import seaborn as sns
+from pricer import config as cfg, utils
 
-from pricer import utils, config as cfg
-
-sns.set(rc={"figure.figsize": (11.7, 8.27)})
 logger = logging.getLogger(__name__)
 
 
 def predict_item_prices() -> None:
+    """Analyse exponential average mean and std of items given 14 day, 2 hour history."""
     path = "data/cleaned/bb_fortnight.parquet"
     logger.debug(f"Reading bb_fortnight parquet from {path}")
     bb_fortnight = pd.read_parquet(path)
@@ -37,7 +33,7 @@ def predict_item_prices() -> None:
                 item_prices[item_name] = int(
                     df["silver"].ewm(alpha=0.2).mean().iloc[-1]
                 )
-            except:
+            except KeyError:
                 logging.exception(
                     f"""Price prediction problem for {item_name}.
                     Did you add something and not use booty bay?"""
@@ -61,6 +57,7 @@ def predict_item_prices() -> None:
 
 
 def analyse_listing_minprice() -> None:
+    """Determine current Auctions minimum price. TODO Is this needed?"""
     path = "data/cleaned/auc_listings.parquet"
     logger.debug(f"Reading auc_listings parquet from {path}")
     auc_listings = pd.read_parquet(path)
@@ -80,6 +77,7 @@ def analyse_listing_minprice() -> None:
 
 
 def analyse_material_cost() -> None:
+    """Analyse cost of materials for items, using purchase history or BB predicted price."""
     path = "data/cleaned/bean_purchases.parquet"
     logger.debug(f"Reading bean_purchases parquet from {path}")
     bean_purchases = pd.read_parquet(path)
@@ -115,11 +113,10 @@ def analyse_material_cost() -> None:
         .reset_index()
     )
     purchase_rolling = purchase_each.join(ewm, rsuffix="_rolling")
-    # purchase_rolling[purchase_rolling['item']=='Sungrass'].reset_index()[['price_per', 'price_per_rolling']].plot()
-    purchase_rolling = purchase_rolling.drop_duplicates("item", keep="last").set_index(
-        "item"
-    )["price_per_rolling"]
-    purchase_rolling = purchase_rolling.astype(int)
+    purchase_rolling = purchase_rolling.drop_duplicates("item", keep="last")
+    purchase_rolling = purchase_rolling.set_index("item")["price_per_rolling"].astype(
+        int
+    )
 
     mat_prices = item_skeleton.join(purchase_rolling).join(item_prices)
 
@@ -149,7 +146,8 @@ def analyse_material_cost() -> None:
     material_costs.to_parquet(path, compression="gzip")
 
 
-def create_item_inventory():
+def create_item_inventory() -> None:
+    """Convert Arkinventory tabular data into dataframe of counts for user items."""
     path = "data/cleaned/ark_inventory.parquet"
     logger.debug(f"Reading ark_inventory parquet from {path}")
     item_inventory = pd.read_parquet(path)
@@ -198,8 +196,8 @@ def create_item_inventory():
     item_inventory.to_parquet(path, compression="gzip")
 
 
-def analyse_listings():
-
+def analyse_listings() -> None:
+    """Convert live listings into single items."""
     path = "data/cleaned/auc_listings.parquet"
     logger.debug(f"Reading auc_listings parquet from {path}")
     auc_listings = pd.read_parquet(path)
@@ -236,22 +234,9 @@ def analyse_listings():
     logger.debug(f"Writing listing_each parquet to {path}")
     listing_each.to_parquet(path, compression="gzip")
 
-    # listing_each['z_1'] = listing_each['z'] < -2
-    # listing_each['z_2'] = (listing_each['z'] >= -2) & (listing_each['z'] < -1)
-    # listing_each['z_3'] = (listing_each['z'] >= -1) & (listing_each['z'] < -0.25)
-    # listing_each['z_4'] = (listing_each['z'] >= -0.25) & (listing_each['z'] < 0.25)
-    # listing_each['z_5'] = (listing_each['z'] >= 0.25) & (listing_each['z'] < 1)
-    # listing_each['z_6'] = (listing_each['z'] >= 1) & (listing_each['z'] < 2)
-    # listing_each['z_7'] = (listing_each['z'] >= 2)
-
-    # volume_range = listing_each.groupby('item').sum().astype(int).cumsum(axis=1)
-
-    # path = "data/intermediate/volume_range.parquet"
-    # logger.debug(f'Writing volume_range parquet to {path}')
-    # volume_range.to_parquet(path, compression='gzip')
-
 
 def analyse_undercut_leads() -> None:
+    """Determine how many auctions i'm currently leading."""
     path = "data/intermediate/item_skeleton.parquet"
     logger.debug(f"Reading item_skeleton parquet from {path}")
     item_skeleton = pd.read_parquet(path)
@@ -314,6 +299,7 @@ def analyse_undercut_leads() -> None:
 
 
 def analyse_replenishment() -> None:
+    """Determine the demand for item replenishment."""
     path = "data/intermediate/item_skeleton.parquet"
     logger.debug(f"Reading item_skeleton parquet from {path}")
     item_skeleton = pd.read_parquet(path)
@@ -349,8 +335,8 @@ def analyse_replenishment() -> None:
     replenish.to_parquet(path, compression="gzip")
 
 
-def create_item_table():
-
+def create_item_table() -> None:
+    """Combine item information into single master table."""
     path = "data/intermediate/item_skeleton.parquet"
     logger.debug(f"Reading item_skeleton parquet from {path}")
     item_skeleton = pd.read_parquet(path)
@@ -410,8 +396,7 @@ def create_item_table():
 def predict_volume_sell_probability(
     dur_char: str = "m", MAX_LISTINGS: int = 1000
 ) -> None:
-    """Calculates interperiod volume change, to estimate liklihood of sale for a listing queue.
-    """
+    """Expected volume changes as a probability of sale given BB recent history."""
     path = "data/cleaned/bb_fortnight.parquet"
     logger.debug(f"Reading bb_fortnight parquet from {path}")
     bb_fortnight = pd.read_parquet(path)

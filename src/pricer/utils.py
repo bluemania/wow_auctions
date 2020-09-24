@@ -1,8 +1,5 @@
 """Contains helper functions to support data pipeline."""
-from datetime import datetime as dt
 import logging
-import os
-import shutil
 from typing import Any, Dict
 
 import pandas as pd
@@ -35,6 +32,7 @@ def get_seconds_played(time_played: str) -> int:
 
 
 def duration_str_to_mins(dur_char: str = "m") -> int:
+    """Convert duration string to auction minutes."""
     choices: Dict[str, int] = {"s": 120, "m": 480, "l": 1440}
     return choices[dur_char]
 
@@ -56,7 +54,8 @@ def source_merge(a: dict, b: dict, path: list = None) -> Dict[Any, Any]:
     return a
 
 
-def make_lua_path(account_name="", datasource=""):
+def make_lua_path(account_name: str = "", datasource: str = "") -> str:
+    """Forms a path to a lua file."""
     warcraft_path = cfg.us.get("warcraft_path").rstrip("/")
     path = (
         f"{warcraft_path}/WTF/Account/{account_name}/"
@@ -65,7 +64,8 @@ def make_lua_path(account_name="", datasource=""):
     return path
 
 
-def read_lua(path):
+def read_lua(path: str) -> Dict[Any, Any]:
+    """Reads and decodes a lua path."""
     logger.debug(f"Loading lua from {path}")
     with open(path, "r") as f:
         return lua.decode("{" + f.read() + "}")
@@ -80,7 +80,7 @@ def get_general_settings() -> Dict[str, Any]:
 
 
 def get_item_ids() -> Dict[str, int]:
-    """Read item id database"""
+    """Read item id database."""
     path = "data/static/items.csv"
     logger.debug(f"Reading csv from {path}")
     item_codes = pd.read_csv(path, index_col="name")
@@ -96,7 +96,7 @@ def write_lua(data: dict, path: str) -> None:
 
 
 def dict_to_lua(data: dict) -> str:
-    """converts python dict into long str"""
+    """Converts python dict into long str."""
     lua_print = "\n"
     for key in data.keys():
         lua_print += f"{key} = " + dump_lua(data[key]) + "\n"
@@ -122,15 +122,3 @@ def dump_lua(data: Any) -> Any:
         dict_work += "}"
         return dict_work
     logger.warning(f"Lua parsing error; unknown type {type(data)}")
-
-
-def read_multiple_parquet(path: str) -> pd.DataFrame:
-    """Scan directory path for parquet files, concatenate and return."""
-    files = os.listdir(path)
-    logger.debug(f"Reading multiple ({len(files)}) parquet from {path}")
-    df_list = []
-    for file in files:
-        df = pd.read_parquet(f"{loc}{file}")
-        df_list.append(df)
-    df_total = pd.concat(df_list)
-    return df_total

@@ -4,7 +4,7 @@ from datetime import datetime as dt
 import logging
 import warnings
 
-from . import analysis, config, campaign, reporting, sources, utils
+from . import analysis, campaign, config as cfg, reporting, sources
 
 warnings.simplefilter(action="ignore")
 logger = logging.getLogger(__name__)
@@ -13,6 +13,7 @@ logger = logging.getLogger(__name__)
 def main() -> None:
     """Main program runner."""
     run_dt = dt.now().replace(microsecond=0)
+    print(type(run_dt))
 
     parser = argparse.ArgumentParser(description="WoW Auctions")
     parser.add_argument("-b", help="Update web booty bay analysis", action="store_true")
@@ -25,7 +26,7 @@ def main() -> None:
     parser.add_argument("-vv", help="Verbose mode (debug)", action="store_true")
     args = parser.parse_args()
 
-    config.set_loggers(base_logger=logger, v=args.v, vv=args.vv)
+    cfg.set_loggers(base_logger=logger, v=args.v, vv=args.vv)
     logger.info("Program started, arguments parsed")
     logger.debug(args)
 

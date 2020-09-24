@@ -1,15 +1,17 @@
 """Collates information to form buy/sell campaigns."""
 import logging
-import pandas as pd
-from scipy.stats import gaussian_kde, norm
+from typing import Any, Dict
 
-from pricer import config as cfg
-from pricer import utils
+import pandas as pd
+from scipy.stats import norm
+
+from pricer import config as cfg, utils
 
 logger = logging.getLogger(__name__)
 
 
-def analyse_buy_policy(MAX_BUY_STD=2):
+def analyse_buy_policy(MAX_BUY_STD: int = 2) -> None:
+    """Create buy policy."""
     logger.debug(f"max buy std {MAX_BUY_STD}")
 
     path = "data/intermediate/item_table.parquet"
@@ -63,8 +65,8 @@ def analyse_buy_policy(MAX_BUY_STD=2):
     buy_policy.to_parquet(path, compression="gzip")
 
 
-def encode_buy_campaign(buy_policy):
-
+def encode_buy_campaign(buy_policy: pd.DataFrame) -> Dict[str, Dict[str, str]]:
+    """Encodes buy campaign dataframe into dictionary."""
     cols = ["item", "buy_price"]
     assert (buy_policy.columns == cols).all(), "Buy policy incorrectly formatted"
     buy_policy = buy_policy.set_index("item")
@@ -85,6 +87,7 @@ def encode_buy_campaign(buy_policy):
 
 
 def write_buy_policy() -> None:
+    """Writes the buy policy to all accounts."""
     path = "data/outputs/buy_policy.parquet"
     logger.debug(f"Reading buy_policy parquet from {path}")
     buy_policy = pd.read_parquet(path)
@@ -93,19 +96,21 @@ def write_buy_policy() -> None:
     new_snatch = encode_buy_campaign(buy_policy[cols])
 
     # Read client lua, replace with
-    path = utils.make_lua_path(account_name="396255466#1", datasource="Auc-Advanced")
-    data = utils.read_lua(path)
-    snatch = data["AucAdvancedData"]["UtilSearchUiData"]["Current"]
-    snatch["snatch.itemsList"] = {}
-    snatch = snatch["snatch.itemsList"]
-    data["AucAdvancedData"]["UtilSearchUiData"]["Current"][
-        "snatch.itemsList"
-    ] = new_snatch
-    utils.write_lua(data, path)
+
+    for account in cfg.us.get("accounts", []):
+        path = utils.make_lua_path(account_name=account, datasource="Auc-Advanced")
+        data = utils.read_lua(path)
+        snatch = data["AucAdvancedData"]["UtilSearchUiData"]["Current"]
+        snatch["snatch.itemsList"] = {}
+        snatch = snatch["snatch.itemsList"]
+        data["AucAdvancedData"]["UtilSearchUiData"]["Current"][
+            "snatch.itemsList"
+        ] = new_snatch
+        utils.write_lua(data, path)
 
 
-def encode_sell_campaign(sell_policy):
-
+def encode_sell_campaign(sell_policy: pd.DataFrame) -> Dict[str, Any]:
+    """Encode sell policy dataframe into dictionary."""
     cols = ["item", "proposed_buy", "proposed_bid", "sell_count", "stack", "duration"]
     assert (sell_policy.columns == cols).all(), "Sell policy incorrectly formatted"
     sell_policy = sell_policy.set_index("item")
@@ -138,6 +143,7 @@ def encode_sell_campaign(sell_policy):
 
 
 def write_sell_policy() -> None:
+    """Writes the sell policy to accounts."""
     path = "data/outputs/sell_policy.parquet"
     logger.debug(f"Reading sell_policy parquet from {path}")
     sell_policy = pd.read_parquet(path)
@@ -146,10 +152,13 @@ def write_sell_policy() -> None:
     new_appraiser = encode_sell_campaign(sell_policy[cols])
 
     # Read client lua, replace with
-    path = utils.make_lua_path(account_name="396255466#1", datasource="Auc-Advanced")
-    data = utils.read_lua(path)
-    data["AucAdvancedConfig"]["profile.Default"]["util"]["appraiser"] = new_appraiser
-    utils.write_lua(data, path)
+    for account in cfg.us.get("accounts", []):
+        path = utils.make_lua_path(account_name=account, datasource="Auc-Advanced")
+        data = utils.read_lua(path)
+        data["AucAdvancedConfig"]["profile.Default"]["util"][
+            "appraiser"
+        ] = new_appraiser
+        utils.write_lua(data, path)
 
 
 def analyse_sell_policy(
@@ -159,7 +168,8 @@ def analyse_sell_policy(
     MAX_STD: int = 5,
     MIN_PROFIT: int = 300,
     MIN_PROFIT_PCT: int = 0.015,
-):
+) -> None:
+    """Creates sell policy based on information."""
     path = "data/intermediate/item_table.parquet"
     logger.debug(f"Reading item_table parquet from {path}")
     item_table = pd.read_parquet(path)

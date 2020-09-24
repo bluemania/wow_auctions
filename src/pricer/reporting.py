@@ -8,7 +8,8 @@ from pricer import config as cfg
 logger = logging.getLogger(__name__)
 
 
-def what_make():
+def what_make() -> None:
+    """Prints what potions to make."""
     path = "data/intermediate/item_table.parquet"
     logger.debug(f"Reading item_table parquet from {path}")
     item_table = pd.read_parquet(path)
@@ -22,7 +23,8 @@ def what_make():
     print(make["make"].sort_values(ascending=False))
 
 
-def have_in_bag():
+def have_in_bag() -> None:
+    """Prints expected profits, make sure its in your bag."""
     path = "data/outputs/sell_policy.parquet"
     sell_policy = pd.read_parquet(path, index="item")
 
