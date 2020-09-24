@@ -287,7 +287,7 @@ def clean_beancounter_data() -> None:
                     for auction in listing:
                         parsed.append(
                             [auction_type]
-                            + [item_names[int(item_id)]]
+                            + [item_names[item_id]]
                             + [character]
                             + auction.split(";")
                         )

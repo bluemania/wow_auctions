@@ -76,11 +76,10 @@ def encode_buy_campaign(buy_policy: pd.DataFrame) -> Dict[str, Dict[str, Any]]:
     new_snatch = {}
     for item, b in buy_policy.iterrows():
         item_id = str(item_ids[item])
-        snatch_item = {}
+        snatch_item: Dict[str, Any] = {}
         snatch_item["price"] = int(b["buy_price"])
-        snatch_item[
-            "link"
-        ] = f"|cffffffff|Hitem:{item_id}::::::::39:::::::|h[{item}]|h|r"
+        link_text = f"|cffffffff|Hitem:{item_id}::::::::39:::::::|h[{item}]|h|r"
+        snatch_item["link"] = link_text
         new_snatch[f"{item_id}:0:0"] = snatch_item
 
     return new_snatch
