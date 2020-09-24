@@ -79,12 +79,12 @@ def get_general_settings() -> Dict[str, Any]:
         return yaml.safe_load(f)
 
 
-def get_item_ids() -> Dict[str, int]:
+def get_item_ids() -> Dict[str, str]:
     """Read item id database."""
     path = "data/static/items.csv"
     logger.debug(f"Reading csv from {path}")
     item_codes = pd.read_csv(path, index_col="name")
-    return item_codes["entry"].to_dict()
+    return item_codes["entry"].astype(str).to_dict()
 
 
 def write_lua(data: dict, path: str) -> None:

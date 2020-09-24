@@ -4,7 +4,7 @@ from datetime import datetime as dt
 import getpass
 import json
 import logging
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 from bs4 import BeautifulSoup
 import pandas as pd
