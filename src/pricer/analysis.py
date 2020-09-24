@@ -44,8 +44,6 @@ def predict_item_prices() -> None:
     logger.debug(f'Reading bb_fortnight parquet from {path}')
     bb_fortnight = pd.read_parquet(path)
 
-
-
     user_items = cfg.ui.copy()
 
     # Work out if an item is auctionable, or get default price

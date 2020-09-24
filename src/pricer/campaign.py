@@ -138,7 +138,7 @@ def write_sell_policy() -> None:
 
 
 def analyse_sell_policy(stack: int = 1, max_sell: int = 10, duration: str = 'm', 
-                MAX_STD: int = 5, MIN_PROFIT: int= 500, MIN_PROFIT_PCT: int = 0.02):
+                MAX_STD: int = 5, MIN_PROFIT: int= 300, MIN_PROFIT_PCT: int = 0.015):
     path = "data/intermediate/item_table.parquet"
     logger.debug(f'Reading item_table parquet from {path}')    
     item_table = pd.read_parquet(path)
