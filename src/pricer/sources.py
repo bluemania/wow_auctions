@@ -43,7 +43,9 @@ def start_driver() -> webdriver:
     try:
         path = "SECRETS.yaml"
         with open(path, "r") as f:
-            password = yaml.safe_load(f).get("password")
+            secrets = yaml.safe_load(f)
+        account = secrets.get("account")
+        password = secrets.get("password")
     except FileNotFoundError:
         password = getpass.getpass("Password:")
     try:
@@ -55,9 +57,7 @@ def start_driver() -> webdriver:
             EC.element_to_be_clickable((By.CLASS_NAME, "battle-net"))
         ).click()
 
-        driver.find_element_by_id("accountName").send_keys(
-            "nickjenkins15051985@gmail.com"
-        )
+        driver.find_element_by_id("accountName").send_keys(account)
         driver.find_element_by_id("password").send_keys(password)
 
         WebDriverWait(driver, 20).until(
@@ -102,11 +102,11 @@ def clean_bb_data() -> None:
     with open(path, "r") as f:
         item_data = json.load(f)
 
-    bb_fortnight = []
-    bb_history = []
-    bb_listings = []
-    bb_alltime = []
-    bb_deposit = {}
+    bb_fortnight: List = []
+    bb_history: List = []
+    bb_listings: List = []
+    bb_alltime: List = []
+    bb_deposit: Dict[str, int] = {}
 
     for item, data in item_data.items():
 
@@ -140,41 +140,41 @@ def clean_bb_data() -> None:
         vendorprice = item_data[item]["stats"][0]["selltovendor"]
         bb_deposit[item] = int(vendorprice / 20 * 12)
 
-    bb_fortnight = pd.concat(bb_fortnight)
-    bb_fortnight["snapshot"] = pd.to_datetime(bb_fortnight["snapshot"])
+    bb_fortnight_df = pd.concat(bb_fortnight)
+    bb_fortnight_df["snapshot"] = pd.to_datetime(bb_fortnight_df["snapshot"])
 
-    bb_history = pd.concat(bb_history)
-    bb_history["date"] = pd.to_datetime(bb_history["date"])
+    bb_history_df = pd.concat(bb_history)
+    bb_history_df["date"] = pd.to_datetime(bb_history_df["date"])
 
-    bb_alltime = pd.concat(bb_alltime)
-    bb_alltime["date"] = pd.to_datetime(bb_alltime["date"])
+    bb_alltime_df = pd.concat(bb_alltime)
+    bb_alltime_df["date"] = pd.to_datetime(bb_alltime_df["date"])
 
-    bb_listings = pd.concat(bb_listings)
-    bb_listings = bb_listings[bb_listings["price_per"] > 0]
+    bb_listings_df = pd.concat(bb_listings)
+    bb_listings_df = bb_listings_df[bb_listings_df["price_per"] > 0]
 
-    bb_deposit = pd.DataFrame.from_dict(bb_deposit, orient="index")
-    bb_deposit.columns = ["deposit"]
-    bb_deposit.index.name = "item"
+    bb_deposit_df = pd.DataFrame.from_dict(bb_deposit, orient="index")
+    bb_deposit_df.columns = ["deposit"]
+    bb_deposit_df.index.name = "item"
 
     path = "data/cleaned/bb_fortnight.parquet"
     logger.debug(f"Writing bb_fortnight parquet to {path}")
-    bb_fortnight.to_parquet(path, compression="gzip")
+    bb_fortnight_df.to_parquet(path, compression="gzip")
 
     path = "data/cleaned/bb_history.parquet"
     logger.debug(f"Writing bb_history parquet to {path}")
-    bb_history.to_parquet(path, compression="gzip")
+    bb_history_df.to_parquet(path, compression="gzip")
 
     path = "data/cleaned/bb_alltime.parquet"
     logger.debug(f"Writing bb_alltime parquet to {path}")
-    bb_alltime.to_parquet(path, compression="gzip")
+    bb_alltime_df.to_parquet(path, compression="gzip")
 
     path = "data/cleaned/bb_listings.parquet"
     logger.debug(f"Writing bb_listings parquet to {path}")
-    bb_listings.to_parquet(path, compression="gzip")
+    bb_listings_df.to_parquet(path, compression="gzip")
 
     path = "data/cleaned/bb_deposit.parquet"
     logger.debug(f"Writing bb_deposit parquet to {path}")
-    bb_deposit.to_parquet(path, compression="gzip")
+    bb_deposit_df.to_parquet(path, compression="gzip")
 
 
 def get_arkinventory_data() -> None:
@@ -471,12 +471,12 @@ def get_auctioneer_data() -> None:
 
         listings.extend(listings_part)
 
-    listings = [x.split("|")[-1].split(",") for x in listings]
+    cleaned_listings = [x.split("|")[-1].split(",") for x in listings]
 
     path = "data/raw/aucscan_data.json"
     logger.debug(f"Writing aucscan json to {path}")
     with open(path, "w") as f:
-        json.dump(listings, f)
+        json.dump(cleaned_listings, f)
 
 
 def clean_auctioneer_data() -> None:

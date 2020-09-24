@@ -222,11 +222,15 @@ def analyse_listings() -> None:
 
     ranges["pred_z"] = (ranges["price_per"] - ranges["pred_price"]) / ranges["pred_std"]
 
-    item: List = sum(ranges.apply(lambda x: [x["item"]] * x["quantity"], axis=1).tolist(), [])
+    item: List = sum(
+        ranges.apply(lambda x: [x["item"]] * x["quantity"], axis=1).tolist(), []
+    )
     price_per: List = sum(
         ranges.apply(lambda x: [x["price_per"]] * x["quantity"], axis=1).tolist(), []
     )
-    z: List = sum(ranges.apply(lambda x: [x["pred_z"]] * x["quantity"], axis=1).tolist(), [])
+    z: List = sum(
+        ranges.apply(lambda x: [x["pred_z"]] * x["quantity"], axis=1).tolist(), []
+    )
 
     listing_each = pd.DataFrame(
         [item, price_per, z], index=["item", "price_per", "pred_z"]
