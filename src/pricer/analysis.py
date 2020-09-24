@@ -39,7 +39,7 @@ def predict_item_prices() -> None:
                 )
             except:
                 logging.exception(
-                    f"""Price prediction problem for {item_name}. 
+                    f"""Price prediction problem for {item_name}.
                     Did you add something and not use booty bay?"""
                 )
 

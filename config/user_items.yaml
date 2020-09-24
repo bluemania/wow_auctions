@@ -4,15 +4,15 @@ Arcane Crystal:
   max_holding: 20
   max_sell: 4
   Buy: True
-  Sell: True    
+  Sell: True
 Essence of Water:
   max_holding: 20
   Sell: True
-  Buy: True  
+  Buy: True
 Arcanite Bar:
   min_holding: 4
   max_holding: 24
-  max_sell: 8  
+  max_sell: 8
   Sell: True
   made_from:
     Arcane Crystal: 1
@@ -21,13 +21,13 @@ Thorium Bar:
   min_holding: 8
   max_holding: 28
   Buy: True
-  Sell: True  
+  Sell: True
 Black Lotus:
   min_holding: 2
   max_holding: 10
-  max_sell: 2  
+  max_sell: 2
   Buy: True
-  Sell: True    
+  Sell: True
 
 # 1255 potions, 251 stacks
 # Roughly 304 stacks of materials
@@ -41,21 +41,21 @@ Flask of the Titans:
     Stonescale Eel: 10
     Leaded Vial: 10
     Black Lotus: 1
-    Crystal Vial: 1 
+    Crystal Vial: 1
 Elixir of Fortitude:
   max_holding: 100
   Sell: True
   made_from:
     Goldthorn: 1
     Leaded Vial: 1
-    Wild Steelbloom: 1 
+    Wild Steelbloom: 1
 Elixir of Giants:
-  max_holding: 100  
+  max_holding: 100
   Sell: True
   made_from:
     Crystal Vial: 1
     Gromsblood: 1
-    Sungrass: 1 
+    Sungrass: 1
 Elixir of Greater Agility:
   max_holding: 60
   Sell: True
@@ -70,14 +70,14 @@ Elixir of Superior Defense:
     Crystal Vial: 1
     Leaded Vial: 2
     Stonescale Eel: 2
-    Sungrass: 1 
+    Sungrass: 1
 Elixir of the Mongoose:
   max_holding: 60
   Sell: True
   made_from:
     Crystal Vial: 1
     Mountain Silversage: 2
-    Plaguebloom: 2   
+    Plaguebloom: 2
 Free Action Potion:
   max_holding: 60
   Sell: True
@@ -85,7 +85,7 @@ Free Action Potion:
     Empty Vial: 2
     Leaded Vial: 1
     Oily Blackmouth: 4
-    Stranglekelp: 1 
+    Stranglekelp: 1
 Greater Stoneshield Potion:
   max_holding: 60
   Sell: True
@@ -93,41 +93,41 @@ Greater Stoneshield Potion:
     Crystal Vial: 1
     Leaded Vial: 3
     Stonescale Eel: 3
-    Thorium Ore: 1 
+    Thorium Ore: 1
 Invisibility Potion:
   max_holding: 60
   Sell: True
   made_from:
     Crystal Vial: 1
     Ghost Mushroom: 1
-    Sungrass: 1 
+    Sungrass: 1
 Limited Invulnerability Potion:
   max_holding: 60
   Sell: True
   made_from:
     Blindweed: 2
     Crystal Vial: 1
-    Ghost Mushroom: 1 
+    Ghost Mushroom: 1
 Mighty Rage Potion:
   max_holding: 100
   Sell: True
   made_from:
     Crystal Vial: 1
-    Gromsblood: 3  
+    Gromsblood: 3
 Swiftness Potion:
   max_holding: 30
   Sell: True
   made_from:
     Briarthorn: 1
     Empty Vial: 1
-    Swiftthistle: 1 
+    Swiftthistle: 1
 Greater Arcane Protection Potion:
   max_holding: 30
   Sell: True
   made_from:
     Crystal Vial: 1
     Dream Dust: 1
-    Dreamfoil: 1 
+    Dreamfoil: 1
 Greater Nature Protection Potion:
   min_holding: 5
   max_holding: 60
@@ -136,18 +136,18 @@ Greater Nature Protection Potion:
     Crystal Vial: 1
     Elemental Earth: 1
     Dreamfoil: 1
-Greater Shadow Protection Potion:    
+Greater Shadow Protection Potion:
   min_holding: 5
   max_holding: 60
   Sell: True
   made_from:
     Crystal Vial: 1
     # Shadow Oil: 1
-    Dreamfoil: 1 
+    Dreamfoil: 1
     Leaded Vial: 1
     Fadeleaf: 4
-    Grave Moss: 4    
-Fire Protection Potion:  
+    Grave Moss: 4
+Fire Protection Potion:
   Sell: True
   made_from:
     Leaded Vial: 1
@@ -171,20 +171,20 @@ Fire Protection Potion:
 
 Oily Blackmouth:
   max_holding: 100
-  Buy: True 
-  Sell: True    
+  Buy: True
+  Sell: True
 Stonescale Eel:
   max_holding: 100
   Buy: True
-  Sell: True    
+  Sell: True
 Blindweed:
   max_holding: 100
   Buy: True
-  Sell: True    
+  Sell: True
 Briarthorn:
   max_holding: 100
   Buy: True
-  Sell: True  
+  Sell: True
 Dream Dust:
   max_holding: 100
   Buy: True
@@ -192,59 +192,59 @@ Dream Dust:
 Dreamfoil:
   max_holding: 100
   Buy: True
-  Sell: True    
+  Sell: True
 Swiftthistle:
   max_holding: 100
   Buy: True
-  Sell: True    
+  Sell: True
 Ghost Mushroom:
   max_holding: 100
   Buy: True
-  Sell: True    
+  Sell: True
 Goldthorn:
   max_holding: 100
   Buy: True
-  Sell: True    
+  Sell: True
 Gromsblood:
   max_holding: 100
   Buy: True
-  Sell: True    
+  Sell: True
 Mountain Silversage:
   max_holding: 100
   Buy: True
-  Sell: True    
+  Sell: True
 Plaguebloom:
   max_holding: 100
   Buy: True
-  Sell: True    
+  Sell: True
 Stranglekelp:
   max_holding: 100
   Buy: True
-  Sell: True    
+  Sell: True
 Sungrass:
   max_holding: 100
   Buy: True
-  Sell: True    
+  Sell: True
 Thorium Ore:
   max_holding: 100
   Buy: True
-  Sell: True    
+  Sell: True
 Wild Steelbloom:
   max_holding: 100
   Buy: True
-  Sell: True    
+  Sell: True
 Fadeleaf:
   max_holding: 60
   Buy: True
-  Sell: True    
+  Sell: True
 Grave Moss:
   max_holding: 60
   Buy: True
-  Sell: True    
+  Sell: True
 Elemental Earth:
   max_holding: 40
   Buy: True
-  Sell: True  
+  Sell: True
 
 Small Flame Sac:
   Sell: True
@@ -257,19 +257,19 @@ Winterfall Firewater:
   max_holding: 30
   max_sell: 5
   Buy: True
-  Sell: True    
+  Sell: True
 Elemental Sharpening Stone:
   max_holding: 30
   max_sell: 5
   Buy: True
-  Sell: True    
+  Sell: True
 Major Healing Potion:
   max_holding: 80
   Buy: True
-  Sell: True    
+  Sell: True
 Heavy Runecloth Bandage:
   max_holding: 100
-  Sell: True    
+  Sell: True
   made_from:
     Runecloth: 2
 Runecloth:
