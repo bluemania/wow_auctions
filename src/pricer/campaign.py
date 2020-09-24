@@ -65,7 +65,7 @@ def analyse_buy_policy(MAX_BUY_STD: int = 2) -> None:
     buy_policy.to_parquet(path, compression="gzip")
 
 
-def encode_buy_campaign(buy_policy: pd.DataFrame) -> Dict[str, Dict[str, str]]:
+def encode_buy_campaign(buy_policy: pd.DataFrame) -> Dict[str, Dict[str, Any]]:
     """Encodes buy campaign dataframe into dictionary."""
     cols = ["item", "buy_price"]
     assert (buy_policy.columns == cols).all(), "Buy policy incorrectly formatted"
@@ -167,7 +167,7 @@ def analyse_sell_policy(
     duration: str = "m",
     MAX_STD: int = 5,
     MIN_PROFIT: int = 300,
-    MIN_PROFIT_PCT: int = 0.015,
+    MIN_PROFIT_PCT: float = 0.015,
 ) -> None:
     """Creates sell policy based on information."""
     path = "data/intermediate/item_table.parquet"

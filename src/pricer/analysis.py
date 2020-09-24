@@ -1,9 +1,11 @@
 """Analyses cleaned data sources to form intermediate tables."""
 import logging
+from typing import List
 
 from numpy import inf
 import pandas as pd
 from scipy.stats import gaussian_kde
+
 from pricer import config as cfg, utils
 
 logger = logging.getLogger(__name__)
@@ -98,10 +100,10 @@ def analyse_material_cost() -> None:
         ["item", "timestamp"]
     )
 
-    item = sum(
+    item: List = sum(
         bean_purchases.apply(lambda x: [x["item"]] * x["qty"], axis=1).tolist(), []
     )
-    price_per = sum(
+    price_per: List = sum(
         bean_purchases.apply(lambda x: [x["buyout_per"]] * x["qty"], axis=1).tolist(),
         [],
     )
@@ -220,11 +222,11 @@ def analyse_listings() -> None:
 
     ranges["pred_z"] = (ranges["price_per"] - ranges["pred_price"]) / ranges["pred_std"]
 
-    item = sum(ranges.apply(lambda x: [x["item"]] * x["quantity"], axis=1).tolist(), [])
-    price_per = sum(
+    item: List = sum(ranges.apply(lambda x: [x["item"]] * x["quantity"], axis=1).tolist(), [])
+    price_per: List = sum(
         ranges.apply(lambda x: [x["price_per"]] * x["quantity"], axis=1).tolist(), []
     )
-    z = sum(ranges.apply(lambda x: [x["pred_z"]] * x["quantity"], axis=1).tolist(), [])
+    z: List = sum(ranges.apply(lambda x: [x["pred_z"]] * x["quantity"], axis=1).tolist(), [])
 
     listing_each = pd.DataFrame(
         [item, price_per, z], index=["item", "price_per", "pred_z"]

@@ -22,7 +22,7 @@ pd.options.mode.chained_assignment = None  # default='warn'
 logger = logging.getLogger(__name__)
 
 
-def get_bb_item_page(driver: webdriver, item_id: str) -> Dict[Any, Any]:
+def get_bb_item_page(driver: webdriver, item_id: int) -> Dict[Any, Any]:
     """Get Booty Bay json info for a given item_id."""
     driver.get(cfg.us["bb_selenium"]["BB_ITEMAPI"] + str(item_id))
     soup = BeautifulSoup(driver.page_source)
@@ -38,7 +38,7 @@ def get_bb_item_page(driver: webdriver, item_id: str) -> Dict[Any, Any]:
     return json.loads(text)
 
 
-def start_driver() -> None:
+def start_driver() -> webdriver:
     """Spin up selenium driver for Booty Bay scraping."""
     try:
         path = "SECRETS.yaml"
@@ -83,7 +83,7 @@ def get_bb_data() -> None:
     items_ids = {k: v for k, v in item_ids.items() if k in user_items}
 
     # Get bb data from API
-    item_data = defaultdict(dict)
+    item_data: Dict[str, Dict[Any, Any]] = defaultdict(dict)
     for item, item_id in items_ids.items():
         item_data[item] = get_bb_item_page(driver, item_id)
 
