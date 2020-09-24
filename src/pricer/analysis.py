@@ -23,23 +23,6 @@ logger = logging.getLogger(__name__)
 
 
 def predict_item_prices() -> None:
-    """It reads auction data and calculates expected item prices.
-
-    Loads all user auction activity (auction sales, buying).
-    * NOTE this method is biased because we tend to buy low and sell high
-    Loads historic minimum price for user specified items of interest.
-    Joins both sources and sorts by date. Calculates the latest expected
-    price using exponential weighted mean. Saves results to parquet.
-
-    Args:
-        full_pricing: Use all item data rather than user specified
-            items of interest. Functionality will be depreciated
-            during upcoming release refactor.
-        test: when True prevents data saving (early return)
-
-    Returns:
-        None
-    """
     path = "data/cleaned/bb_fortnight.parquet"
     logger.debug(f'Reading bb_fortnight parquet from {path}')
     bb_fortnight = pd.read_parquet(path)
@@ -82,7 +65,6 @@ def predict_item_prices() -> None:
 
 
 def analyse_listing_minprice() -> None:
-
     path = "data/cleaned/auc_listings.parquet"
     logger.debug(f"Reading auc_listings parquet from {path}")
     auc_listings = pd.read_parquet(path)
@@ -351,10 +333,6 @@ def create_item_table():
     logger.debug(f'Reading item_inventory parquet from {path}')
     item_inventory = pd.read_parquet(path)
 
-    # path = "data/intermediate/volume_range.parquet"
-    # logger.debug(f'Reading volume_range parquet from {path}')
-    # volume_range = pd.read_parquet(path)
-
     path = "data/intermediate/predicted_prices.parquet"
     logger.debug(f"Reading predicted_prices parquet from {path}")
     predicted_prices = pd.read_parquet(path)
@@ -382,8 +360,7 @@ def create_item_table():
     item_ids = utils.get_item_ids()
 
     item_table['item_id'] = item_table.index
-    # TODO needs to be more generalizable
-    item_table['item_id'] = item_table['item_id'].replace(item_ids).replace('TRANSMUTE_TIME',0)
+    item_table['item_id'] = item_table['item_id'].apply(lambda x: item_ids[x] if x in item_ids else 0)
 
     path = "data/intermediate/item_table.parquet"
     logger.debug(f"Writing item_table parquet to {path}")

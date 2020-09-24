@@ -22,7 +22,8 @@ def what_make():
 
 def have_in_bag():
     path = "data/outputs/sell_policy.parquet"
-    sell_policy = pd.read_parquet(path)
+    sell_policy = pd.read_parquet(path, index='item')
 
-    items = sell_policy[(sell_policy['estimated_profit']>1000)&(sell_policy['inv_ahm_bag']<10)]['item'].tolist()
-    print(f"Put in bag: {items}")
+    sell_policy = sell_policy[sell_policy['estimated_profit']>sell_policy['feasible_profit']]
+
+    print(sell_policy['estimated_profit'])
