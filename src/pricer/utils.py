@@ -1,18 +1,12 @@
-"""It contains small functions to support data pipeline.
-
-* Loads and writes raw and cleaned files, changes data formats
-"""
-from datetime import datetime as dt
+"""Contains helper functions to support data pipeline."""
 import logging
-import os
-import shutil
-from typing import Any
+from typing import Any, Dict
 
 import pandas as pd
 from slpp import slpp as lua  # pip install git+https://github.com/SirAnthony/slpp
 import yaml
 
-from pricer import config
+from pricer import config as cfg
 
 logger = logging.getLogger(__name__)
 
@@ -37,47 +31,13 @@ def get_seconds_played(time_played: str) -> int:
     return total_seconds
 
 
-def deploy_pricer_addon() -> None:
-    """Generates a blank pricer file of items of interest.
-
-    This is used to fill in the latest pricing info from booty bay gazette.
-    This is done in game using a self build addon with the /pricer command
-    """
-    items = load_items()
-
-    pricer_file = ["local addonName, addonTable = ...", "", "addonTable.items = {"]
-
-    for key, value in items.items():
-        if value.get("group") in ["Buy", "Sell"]:
-            pricer_file.append(f"['{key}'] = " + "{},")
-
-    # Replace last ',' with '}'
-    pricer_file[-1] = pricer_file[-1][:-1] + "}"
-
-    wow_addon_path = (
-        f"{config.us.get('warcraft_path').rstrip('/')}/Interface/AddOns/Pricer"
-    )
-    pricer_path = f"{wow_addon_path}/items_of_interest.lua"
-    shutil.copyfile("pricer_addon/Pricer/Pricer.lua", f"{wow_addon_path}/Pricer.lua")
-    shutil.copyfile("pricer_addon/Pricer/Pricer.toc", f"{wow_addon_path}/Pricer.toc")
-    logger.debug(f"Saving pricer addon file to {pricer_path}")
-
-    with open(pricer_path, "w") as f:
-        f.write("\n".join(pricer_file))
+def duration_str_to_mins(dur_char: str = "m") -> int:
+    """Convert duration string to auction minutes."""
+    choices: Dict[str, int] = {"s": 120, "m": 480, "l": 1440}
+    return choices[dur_char]
 
 
-def get_character_pricer_data(account_name: str, character: str) -> dict:
-    """Get pricer data for a character on an account."""
-    warcraft_path = config.us.get("warcraft_path").rstrip("/")
-    path = (
-        f"{warcraft_path}/WTF/Account/{account_name}/Grobbulus/"
-        + f"{character}/SavedVariables/Pricer.lua"
-    )
-    with open(path, "r") as f:
-        return lua.decode("{" + f.read() + "}")["PricerData"]
-
-
-def source_merge(a: dict, b: dict, path: list = None) -> dict:
+def source_merge(a: dict, b: dict, path: list = None) -> Dict[Any, Any]:
     """Merges b into a."""
     if path is None:
         path = []
@@ -94,137 +54,53 @@ def source_merge(a: dict, b: dict, path: list = None) -> dict:
     return a
 
 
-def read_lua(
-    datasource: str,
-    merge_account_sources: bool = True,
-    accounts: tuple = ("BLUEM", "396255466#1", "801032581#1"),
-) -> dict:
-    """Read lua and merge lua from WoW Addon account locations."""
-    warcraft_path = config.us.get("warcraft_path").rstrip("/")
-
-    account_data: dict = {key: None for key in accounts}
-    for account_name in account_data.keys():
-        path_live = (
-            f"{warcraft_path}/WTF/Account/{account_name}/"
-            + f"SavedVariables/{datasource}.lua"
-        )
-        logger.debug(f"Loading Addon lua from {path_live}")
-
-        with open(path_live, "r") as f:
-            account_data[account_name] = lua.decode("{" + f.read() + "}")
-
-    logger.debug(f"read_lua on {datasource} for accounts: {accounts}")
-    if merge_account_sources and len(accounts) > 1:
-
-        merged_account_data: dict = {}
-        for _, data in account_data.items():
-            merged_account_data = source_merge(merged_account_data, data).copy()
-
-        logger.debug(f"read_lua (merged mode) {len(merged_account_data)} keys")
-        return merged_account_data
-    else:
-        logger.debug(f"read_lua (unmerged mode) {len(account_data)} keys")
-        return account_data
-
-
-def load_items() -> dict:
-    """Loads user specified items of interest."""
-    with open("config/items.yaml", "r") as f:
-        return yaml.safe_load(f)
-
-
-def get_general_settings() -> dict:
-    """Gets general program settings such as mappings."""
-    with open("config/general_settings.yaml", "r") as f:
-        return yaml.safe_load(f)
-
-
-def get_and_format_auction_data(account: str = "396255466#1") -> pd.DataFrame:
-    """Read raw scandata dict dump and converts to usable dataframe."""
-    warcraft_path = config.us.get("warcraft_path").rstrip("/")
-    path_live = (
-        f"{warcraft_path}/WTF/Account/{account}/" + "SavedVariables/Auc-ScanData.lua"
+def make_lua_path(account_name: str = "", datasource: str = "") -> str:
+    """Forms a path to a lua file."""
+    warcraft_path = cfg.us.get("warcraft_path").rstrip("/")
+    path = (
+        f"{warcraft_path}/WTF/Account/{account_name}/"
+        + f"SavedVariables/{datasource}.lua"
     )
-    logger.debug(f"Loading Addon auction data from {path_live}")
-
-    ropes = []
-    with open(path_live, "r") as f:
-        on = False
-        rope_count = 0
-        for line in f.readlines():
-            if on and rope_count < 5:
-                ropes.append(line)
-                rope_count += 1
-            elif '["ropes"]' in line:
-                on = True
-
-    listings = []
-    for rope in ropes:
-        if len(rope) < 10:
-            continue
-        listings_part = rope.split("},{")
-        listings_part[0] = listings_part[0].split("{{")[1]
-        listings_part[-1] = listings_part[-1].split("},}")[0]
-
-        listings.extend(listings_part)
-
-    # Contains lots of columns, we ignore ones we likely dont care about
-    # We apply transformations and relabel
-    auction_timing = {1: 30, 2: 60 * 2, 3: 60 * 12, 4: 60 * 24}
-
-    df = pd.DataFrame([x.split("|")[-1].split(",") for x in listings])
-    df["time_remaining"] = df[6].replace(auction_timing)
-    df["item"] = df[8].str.replace('"', "").str[1:-1]
-    df["count"] = df[10].replace("nil", 0).astype(int)
-    df["price"] = df[16].astype(int)
-    df["agent"] = df[19].str.replace('"', "").str[1:-1]
-    df["timestamp"] = df[7].apply(lambda x: dt.fromtimestamp(int(x)))
-
-    # There is some timing difference in the timestamp
-    # we dont really care we just need time of pull
-    df["timestamp"] = df["timestamp"].max()
-
-    df = df[df["count"] > 0]
-    df["price_per"] = df["price"] / df["count"]
-
-    cols = [
-        "timestamp",
-        "item",
-        "count",
-        "price",
-        "agent",
-        "price_per",
-        "time_remaining",
-    ]
-    df = df[cols]
-
-    return df
+    return path
 
 
-def get_item_codes() -> dict:
-    """Read BeanCounter data to create code: item mapping."""
-    data = read_lua("BeanCounter")
-    item_code = {}
-    for keypart, itempart in data["BeanCounterDBNames"].items():
-        key = keypart.split(":")[0]
-        item = itempart.split(";")[1]
-        item_code[item] = key
-    return item_code
+def read_lua(path: str) -> Dict[Any, Any]:
+    """Reads and decodes a lua path."""
+    logger.debug(f"Loading lua from {path}")
+    with open(path, "r") as f:
+        return lua.decode("{" + f.read() + "}")
 
 
-def write_lua(
-    data: dict, account: str = "396255466#1", name: str = "Auc-Advanced"
-) -> None:
+def get_general_settings() -> Dict[str, Any]:
+    """Gets general program settings such as mappings."""
+    path = "config/general_settings.yaml"
+    logger.debug(f"Reading yaml from {path}")
+    with open(path, "r") as f:
+        return yaml.safe_load(f)
+
+
+def get_item_ids() -> Dict[str, int]:
+    """Read item id database."""
+    path = "data/static/items.csv"
+    logger.debug(f"Reading csv from {path}")
+    item_codes = pd.read_csv(path, index_col="name")
+    return item_codes["entry"].to_dict()
+
+
+def write_lua(data: dict, path: str) -> None:
     """Write python dict as lua object."""
+    lua_print = dict_to_lua(data)
+    logger.debug(f"Writing lua to {path}")
+    with open(path, "w") as f:
+        f.write(lua_print)
+
+
+def dict_to_lua(data: dict) -> str:
+    """Converts python dict into long str."""
     lua_print = "\n"
     for key in data.keys():
         lua_print += f"{key} = " + dump_lua(data[key]) + "\n"
-
-    warcraft_path = config.us.get("warcraft_path").rstrip("/")
-    location = f"{warcraft_path}/WTF/Account/{account}/SavedVariables/{name}.lua"
-    logger.debug(f"Saving Addon lua to {location}")
-    with open(location, "w") as f:
-        f.write(lua_print)
+    return lua_print
 
 
 def dump_lua(data: Any) -> Any:
@@ -246,15 +122,3 @@ def dump_lua(data: Any) -> Any:
         dict_work += "}"
         return dict_work
     logger.warning(f"Lua parsing error; unknown type {type(data)}")
-
-
-def read_multiple_parquet(loc: str) -> pd.DataFrame:
-    """Scan directory path for parquet files, concatenate and return."""
-    files = os.listdir(loc)
-    logger.debug(f"Loading multiple ({len(files)}) parquet files from {loc}")
-    df_list = []
-    for file in files:
-        df = pd.read_parquet(f"{loc}{file}")
-        df_list.append(df)
-    df_total = pd.concat(df_list)
-    return df_total
