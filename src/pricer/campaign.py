@@ -242,7 +242,7 @@ def analyse_sell_policy(
         sell_policy["feasible_profit"] > sell_policy["estimated_profit"]
     )
     sell_policy["proposed_bid"] = (
-        sell_policy["proposed_buy"] + sell_policy["infeasible"]
+        sell_policy["proposed_buy"] - sell_policy["estimated_profit"] +  sell_policy["feasible_profit"]
     )
 
     sell_policy["duration"] = utils.duration_str_to_mins(duration)
