@@ -1,13 +1,4 @@
-"""Main entry point for pricer program.
-
-Accepts command line arguments to alter program function. Users can:
- * Initialize the program to perform setup tasks
- * Perform test runs (no data saving)
- * Perform AH analysis
- * Apply selling policies
-Declares the session datetime variable (run_dt)
-Pre-release; functionality likely to change significantly.
-"""
+"""Main entry point for pricer program."""
 import argparse
 from datetime import datetime as dt
 import logging
@@ -24,13 +15,11 @@ def main() -> None:
     run_dt = dt.now().replace(microsecond=0)
 
     parser = argparse.ArgumentParser(description="WoW Auctions")
-    parser.add_argument("-a", help="Run primary analysis", action="store_true")
-    parser.add_argument("-b", help="Run booty bay analysis", action="store_true")    
-
+    parser.add_argument("-b", help="Update web booty bay analysis", action="store_true")
 
     parser.add_argument("-s", type=int, default=5, help="Stack size")
     parser.add_argument("-m", type=int, default=20, help="Max sell")
-    parser.add_argument("-d", type=str, default='m', help="duration")
+    parser.add_argument("-d", type=str, default="m", help="Duration")
 
     parser.add_argument("-v", help="Verbose mode (info)", action="store_true")
     parser.add_argument("-vv", help="Verbose mode (debug)", action="store_true")
@@ -56,7 +45,7 @@ def main() -> None:
     analysis.analyse_listing_minprice()
     analysis.analyse_material_cost()
     analysis.create_item_inventory()
-    analysis.analyse_listings()   
+    analysis.analyse_listings()
     analysis.analyse_undercut_leads()
     analysis.analyse_replenishment()
 

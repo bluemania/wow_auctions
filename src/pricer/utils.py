@@ -1,7 +1,4 @@
-"""It contains small functions to support data pipeline.
-
-* Loads and writes raw and cleaned files, changes data formats
-"""
+"""Contains helper functions to support data pipeline."""
 from datetime import datetime as dt
 import logging
 import os
@@ -37,7 +34,7 @@ def get_seconds_played(time_played: str) -> int:
     return total_seconds
 
 
-def duration_str_to_mins(dur_char: str = 'm') -> int:
+def duration_str_to_mins(dur_char: str = "m") -> int:
     choices: Dict[str, int] = {"s": 120, "m": 480, "l": 1440}
     return choices[dur_char]
 
@@ -71,7 +68,7 @@ def make_lua_path(account_name="", datasource=""):
 def read_lua(path):
     logger.debug(f"Loading lua from {path}")
     with open(path, "r") as f:
-        return lua.decode("{" + f.read() + "}")    
+        return lua.decode("{" + f.read() + "}")
 
 
 def get_general_settings() -> Dict[str, Any]:

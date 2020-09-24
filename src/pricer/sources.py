@@ -1,10 +1,4 @@
-"""It is responsible for managing input data sources.
-
-It reads data from WoW interface addons and user specified sources.
-Performs basic validation and data cleaning before
-converting into normalized data tables in parquet format.
-When functions are run in test mode, no data is saved.
-"""
+"""Responsible for reading and cleaning input data sources."""
 from collections import defaultdict
 from datetime import datetime as dt
 import logging
@@ -31,7 +25,7 @@ logger = logging.getLogger(__name__)
 
 
 def get_bb_item_page(driver, item_id):
-    driver.get(cfg.us['bb_selenium']['BB_ITEMAPI'] + str(item_id))
+    driver.get(cfg.us["bb_selenium"]["BB_ITEMAPI"] + str(item_id))
     soup = BeautifulSoup(driver.page_source)
     text = soup.find("body").text
     if "captcha" in text:
@@ -39,7 +33,7 @@ def get_bb_item_page(driver, item_id):
         input("User action required")
 
         # Redo
-        driver.get(cfg.us['bb_selenium']['BB_ITEMAPI'] + str(item_id))
+        driver.get(cfg.us["bb_selenium"]["BB_ITEMAPI"] + str(item_id))
         soup = BeautifulSoup(driver.page_source)
         text = soup.find("body").text
     return json.loads(text)
@@ -47,22 +41,28 @@ def get_bb_item_page(driver, item_id):
 
 def start_driver():
     try:
-        path = 'SECRETS.yaml'
+        path = "SECRETS.yaml"
         with open(path, "r") as f:
-            password = yaml.safe_load(f).get('password')
+            password = yaml.safe_load(f).get("password")
     except:
-        password = getpass.getpass('Password:')
+        password = getpass.getpass("Password:")
     try:
-        driver = webdriver.Chrome(cfg.us['bb_selenium']['CHROMEDRIVER_PATH'])
-        driver.implicitly_wait(cfg.us['bb_selenium']['PAGE_WAIT'])
-        driver.get(cfg.us['bb_selenium']['BB_BASEURL'])
+        driver = webdriver.Chrome(cfg.us["bb_selenium"]["CHROMEDRIVER_PATH"])
+        driver.implicitly_wait(cfg.us["bb_selenium"]["PAGE_WAIT"])
+        driver.get(cfg.us["bb_selenium"]["BB_BASEURL"])
 
-        WebDriverWait(driver, 20).until(EC.element_to_be_clickable((By.CLASS_NAME, "battle-net"))).click()
+        WebDriverWait(driver, 20).until(
+            EC.element_to_be_clickable((By.CLASS_NAME, "battle-net"))
+        ).click()
 
-        driver.find_element_by_id("accountName").send_keys('nickjenkins15051985@gmail.com')
+        driver.find_element_by_id("accountName").send_keys(
+            "nickjenkins15051985@gmail.com"
+        )
         driver.find_element_by_id("password").send_keys(password)
 
-        WebDriverWait(driver, 20).until(EC.element_to_be_clickable((By.ID, "submit"))).click()
+        WebDriverWait(driver, 20).until(
+            EC.element_to_be_clickable((By.ID, "submit"))
+        ).click()
     except:
         raise SystemError("Error connecting to bb")
 
@@ -76,12 +76,12 @@ def get_bb_data() -> None:
     driver = start_driver()
     # Get item_ids for user specified items of interest
     user_items = cfg.ui.copy()
-    user_items.pop('Empty Vial')
-    user_items.pop('Leaded Vial')
-    user_items.pop('Crystal Vial')
+    user_items.pop("Empty Vial")
+    user_items.pop("Leaded Vial")
+    user_items.pop("Crystal Vial")
 
     item_ids = utils.get_item_ids()
-    items_ids = {k:v for k, v in item_ids.items() if k in user_items}
+    items_ids = {k: v for k, v in item_ids.items() if k in user_items}
 
     # Get bb data from API
     item_data = defaultdict(dict)
@@ -92,7 +92,7 @@ def get_bb_data() -> None:
 
     path = "data/raw/bb_data.json"
     logger.debug(f"Writing bb_data json to {path}")
-    with open(path, 'w') as f:
+    with open(path, "w") as f:
         json.dump(item_data, f)
 
 
@@ -100,7 +100,7 @@ def clean_bb_data() -> None:
 
     path = "data/raw/bb_data.json"
     logger.debug(f"Reading bb_data json from {path}")
-    with open(path, 'r') as f:
+    with open(path, "r") as f:
         item_data = json.load(f)
 
     bb_fortnight = []
@@ -111,45 +111,51 @@ def clean_bb_data() -> None:
 
     for item, data in item_data.items():
 
-        bb_fortnight_data = pd.DataFrame(data['history'][0])
-        bb_fortnight_data['snapshot'] = pd.to_datetime(bb_fortnight_data['snapshot'], unit='s')
-        bb_fortnight_data['item'] = item
+        bb_fortnight_data = pd.DataFrame(data["history"][0])
+        bb_fortnight_data["snapshot"] = pd.to_datetime(
+            bb_fortnight_data["snapshot"], unit="s"
+        )
+        bb_fortnight_data["item"] = item
         bb_fortnight.append(bb_fortnight_data)
 
-        bb_history_data = pd.DataFrame(data['daily'])
-        bb_history_data['item'] = item
+        bb_history_data = pd.DataFrame(data["daily"])
+        bb_history_data["item"] = item
         bb_history.append(bb_history_data)
 
-        if data['auctions']['data']:
-            bb_listings_data = pd.DataFrame(data['auctions']['data'])
-            bb_listings_data = bb_listings_data[['quantity', 'buy', 'sellerrealm', 'sellername']]
-            bb_listings_data['price_per'] = (bb_listings_data['buy'] / bb_listings_data['quantity']).astype(int)
-            bb_listings_data = bb_listings_data.drop('sellerrealm', axis=1)
-            bb_listings_data['item'] = item
+        if data["auctions"]["data"]:
+            bb_listings_data = pd.DataFrame(data["auctions"]["data"])
+            bb_listings_data = bb_listings_data[
+                ["quantity", "buy", "sellerrealm", "sellername"]
+            ]
+            bb_listings_data["price_per"] = (
+                bb_listings_data["buy"] / bb_listings_data["quantity"]
+            ).astype(int)
+            bb_listings_data = bb_listings_data.drop("sellerrealm", axis=1)
+            bb_listings_data["item"] = item
             bb_listings.append(bb_listings_data)
 
-        bb_alltime_data = pd.DataFrame(data['monthly'][0])
-        bb_alltime_data['item'] = item
+        bb_alltime_data = pd.DataFrame(data["monthly"][0])
+        bb_alltime_data["item"] = item
         bb_alltime.append(bb_alltime_data)
-        
-        vendorprice = item_data[item]['stats'][0]['selltovendor']
+
+        vendorprice = item_data[item]["stats"][0]["selltovendor"]
         bb_deposit[item] = int(vendorprice / 20 * 12)
 
     bb_fortnight = pd.concat(bb_fortnight)
-    bb_fortnight['snapshot'] = pd.to_datetime(bb_fortnight['snapshot'])
+    bb_fortnight["snapshot"] = pd.to_datetime(bb_fortnight["snapshot"])
 
     bb_history = pd.concat(bb_history)
-    bb_history['date'] = pd.to_datetime(bb_history['date'])
+    bb_history["date"] = pd.to_datetime(bb_history["date"])
 
-    bb_alltime = pd.concat(bb_alltime)    
-    bb_alltime['date'] = pd.to_datetime(bb_alltime['date'])    
+    bb_alltime = pd.concat(bb_alltime)
+    bb_alltime["date"] = pd.to_datetime(bb_alltime["date"])
 
     bb_listings = pd.concat(bb_listings)
-    bb_listings = bb_listings[bb_listings['price_per']>0]
+    bb_listings = bb_listings[bb_listings["price_per"] > 0]
 
-    bb_deposit = pd.DataFrame.from_dict(bb_deposit, orient='index')
-    bb_deposit.columns = ['deposit']
-    bb_deposit.index.name = 'item'
+    bb_deposit = pd.DataFrame.from_dict(bb_deposit, orient="index")
+    bb_deposit.columns = ["deposit"]
+    bb_deposit.index.name = "item"
 
     path = "data/cleaned/bb_fortnight.parquet"
     logger.debug(f"Writing bb_fortnight parquet to {path}")
@@ -174,7 +180,7 @@ def clean_bb_data() -> None:
 
 def get_arkinventory_data() -> None:
     acc_inv: dict = {}
-    for account_name in cfg.us.get('accounts'):
+    for account_name in cfg.us.get("accounts"):
         path = utils.make_lua_path(account_name, "ArkInventory")
         data = utils.read_lua(path)
         acc_inv = utils.source_merge(acc_inv, data).copy()
@@ -183,7 +189,7 @@ def get_arkinventory_data() -> None:
 
     path = "data/raw/arkinventory_data.json"
     logger.debug(f"Writing arkinventory json to {path}")
-    with open(path, 'w') as f:
+    with open(path, "w") as f:
         json.dump(inventory_data, f)
 
 
@@ -192,13 +198,13 @@ def clean_arkinventory_data(run_dt) -> None:
     # Also counts total monies
     path = "data/raw/arkinventory_data.json"
     logger.debug(f"Reading arkinventory json from {path}")
-    with open(path, 'r') as f:
+    with open(path, "r") as f:
         inventory_data = json.load(f)
 
-    settings = utils.get_general_settings()    
+    settings = utils.get_general_settings()
 
     raw_data: list = []
-    monies: Dict[str, int] = {}    
+    monies: Dict[str, int] = {}
     for character, character_data in inventory_data.items():
         character_name = character.split(" ")[0]
 
@@ -252,14 +258,14 @@ def clean_arkinventory_data(run_dt) -> None:
 def get_beancounter_data() -> None:
 
     data: dict = {}
-    for account_name in cfg.us.get('accounts'):
+    for account_name in cfg.us.get("accounts"):
         path = utils.make_lua_path(account_name, "BeanCounter")
         bean = utils.read_lua(path)
         data = utils.source_merge(data, bean).copy()
 
     path = "data/raw/beancounter_data.json"
     logger.debug(f"Writing beancounter json to {path}")
-    with open(path, 'w') as f:
+    with open(path, "w") as f:
         json.dump(data, f)
 
 
@@ -278,10 +284,10 @@ def clean_beancounter_data() -> None:
     """
     path = "data/raw/beancounter_data.json"
     logger.debug(f"Reading beancounter json from {path}")
-    with open(path, 'r') as f:
+    with open(path, "r") as f:
         data = json.load(f)
 
-    item_names = {v:k for k, v in utils.get_item_ids().items()}
+    item_names = {v: k for k, v in utils.get_item_ids().items()}
 
     # Parses all listings into flat python list
     parsed = []
@@ -309,92 +315,148 @@ def clean_beancounter_data() -> None:
     success = clean_beancounter_success(df)
 
     bean_results = success.append(failed)
-    bean_results['success'] = bean_results['auction_type'].replace({"completedAuctions": 1, "failedAuctions": 0})
-    
+    bean_results["success"] = bean_results["auction_type"].replace(
+        {"completedAuctions": 1, "failedAuctions": 0}
+    )
+
     path = "data/cleaned/bean_results.parquet"
     logger.debug(f"Writing bean_results parquet to {path}")
     bean_results.to_parquet(path, compression="gzip")
 
 
 def clean_beancounter_purchases(df) -> pd.DataFrame:
-    purchases = df[df[0]=='completedBidsBuyouts']
+    purchases = df[df[0] == "completedBidsBuyouts"]
 
-    columns = ["auction_type", "item", "buyer", "qty", "drop_4", "drop_5", "drop_6", 
-               "buyout", "bid", "seller", "timestamp", "drop_11", "drop_12"]
+    columns = [
+        "auction_type",
+        "item",
+        "buyer",
+        "qty",
+        "drop_4",
+        "drop_5",
+        "drop_6",
+        "buyout",
+        "bid",
+        "seller",
+        "timestamp",
+        "drop_11",
+        "drop_12",
+    ]
     purchases.columns = columns
-    purchases = purchases.drop([col for col in columns if 'drop_' in col], axis=1)
+    purchases = purchases.drop([col for col in columns if "drop_" in col], axis=1)
 
-    purchases['qty'] = purchases['qty'].astype(int)
-    purchases['buyout'] = purchases['buyout'].astype(float)
-    purchases['bid'] = purchases['bid'].astype(int)
+    purchases["qty"] = purchases["qty"].astype(int)
+    purchases["buyout"] = purchases["buyout"].astype(float)
+    purchases["bid"] = purchases["bid"].astype(int)
 
-    purchases['buyout_per'] = purchases['buyout'] / purchases['qty']
-    purchases['bid_per'] = purchases['bid'] / purchases['qty']
+    purchases["buyout_per"] = purchases["buyout"] / purchases["qty"]
+    purchases["bid_per"] = purchases["bid"] / purchases["qty"]
 
-    purchases['timestamp'] = pd.to_datetime(purchases['timestamp'], unit='s')
+    purchases["timestamp"] = pd.to_datetime(purchases["timestamp"], unit="s")
     return purchases
 
 
 def clean_beancounter_posted(df) -> pd.DataFrame:
-    posted = df[df[0]=='postedAuctions']
+    posted = df[df[0] == "postedAuctions"]
 
-    columns = ["auction_type", "item", "seller", "qty", "buyout", "bid", "duration", 
-               "deposit", "timestamp", "drop_9", "drop_10", "drop_11", "drop_12"]
+    columns = [
+        "auction_type",
+        "item",
+        "seller",
+        "qty",
+        "buyout",
+        "bid",
+        "duration",
+        "deposit",
+        "timestamp",
+        "drop_9",
+        "drop_10",
+        "drop_11",
+        "drop_12",
+    ]
     posted.columns = columns
-    posted = posted.drop([col for col in columns if 'drop_' in col], axis=1)
+    posted = posted.drop([col for col in columns if "drop_" in col], axis=1)
 
-    posted['qty'] = posted['qty'].astype(int)
-    posted['buyout'] = posted['buyout'].astype(float)
-    posted['bid'] = posted['bid'].astype(int)
-    posted['duration'] = posted['duration'].astype(int)
-    posted['deposit'] = posted['deposit'].astype(int)
+    posted["qty"] = posted["qty"].astype(int)
+    posted["buyout"] = posted["buyout"].astype(float)
+    posted["bid"] = posted["bid"].astype(int)
+    posted["duration"] = posted["duration"].astype(int)
+    posted["deposit"] = posted["deposit"].astype(int)
 
-    posted['buyout_per'] = posted['buyout'] / posted['qty']
-    posted['bid_per'] = posted['bid'] / posted['qty']
+    posted["buyout_per"] = posted["buyout"] / posted["qty"]
+    posted["bid_per"] = posted["bid"] / posted["qty"]
 
-    posted['timestamp'] = pd.to_datetime(posted['timestamp'], unit='s')
+    posted["timestamp"] = pd.to_datetime(posted["timestamp"], unit="s")
     return posted
 
 
 def clean_beancounter_failed(df) -> pd.DataFrame:
-    failed = df[df[0]=='failedAuctions']
+    failed = df[df[0] == "failedAuctions"]
 
-    columns = ["auction_type", "item", "seller", "qty", "drop_4", "deposit", "drop_6", 
-               "buyout", "bid", "drop_9", "timestamp", "drop_11", "drop_12"]
+    columns = [
+        "auction_type",
+        "item",
+        "seller",
+        "qty",
+        "drop_4",
+        "deposit",
+        "drop_6",
+        "buyout",
+        "bid",
+        "drop_9",
+        "timestamp",
+        "drop_11",
+        "drop_12",
+    ]
     failed.columns = columns
-    failed = failed.drop([col for col in columns if 'drop_' in col], axis=1)
+    failed = failed.drop([col for col in columns if "drop_" in col], axis=1)
 
-    col = ['qty', 'deposit', 'buyout', 'bid']
-    failed[col] = failed[col].replace('',0).astype(int)
+    col = ["qty", "deposit", "buyout", "bid"]
+    failed[col] = failed[col].replace("", 0).astype(int)
 
-    failed['buyout_per'] = failed['buyout'] / failed['qty']
-    failed['bid_per'] = failed['bid'] / failed['qty']
+    failed["buyout_per"] = failed["buyout"] / failed["qty"]
+    failed["bid_per"] = failed["bid"] / failed["qty"]
 
-    failed['timestamp'] = pd.to_datetime(failed['timestamp'], unit='s')
+    failed["timestamp"] = pd.to_datetime(failed["timestamp"], unit="s")
     return failed
 
 
 def clean_beancounter_success(df) -> pd.DataFrame:
-    success = df[df[0]=='completedAuctions']
+    success = df[df[0] == "completedAuctions"]
 
-    columns = ["auction_type", "item", "seller", "qty", "received", "deposit", "ah_cut", 
-               "buyout", "bid", "buyer", "timestamp", "drop_11", "drop_12"]
+    columns = [
+        "auction_type",
+        "item",
+        "seller",
+        "qty",
+        "received",
+        "deposit",
+        "ah_cut",
+        "buyout",
+        "bid",
+        "buyer",
+        "timestamp",
+        "drop_11",
+        "drop_12",
+    ]
     success.columns = columns
-    success = success.drop([col for col in columns if 'drop_' in col], axis=1)
+    success = success.drop([col for col in columns if "drop_" in col], axis=1)
 
-    col = ['qty', 'received', 'deposit', 'ah_cut', 'buyout', 'bid']
-    success[col] = success[col].replace('',0).astype(int)
+    col = ["qty", "received", "deposit", "ah_cut", "buyout", "bid"]
+    success[col] = success[col].replace("", 0).astype(int)
 
-    success['received_per'] = success['received'] / success['qty']
-    success['buyout_per'] = success['buyout'] / success['qty']
-    success['bid_per'] = success['bid'] / success['qty']
+    success["received_per"] = success["received"] / success["qty"]
+    success["buyout_per"] = success["buyout"] / success["qty"]
+    success["bid_per"] = success["bid"] / success["qty"]
 
-    success['timestamp'] = pd.to_datetime(success['timestamp'], unit='s')
+    success["timestamp"] = pd.to_datetime(success["timestamp"], unit="s")
     return success
 
 
 def get_auctioneer_data():
-    ahm_account = [r['account'] for r in cfg.us.get('roles') if r.get('role')=='ahm'][0]
+    ahm_account = [r["account"] for r in cfg.us.get("roles") if r.get("role") == "ahm"][
+        0
+    ]
     path = utils.make_lua_path(ahm_account, "Auc-ScanData")
 
     logger.debug(f"Reading auctioneer lua from {path}")
@@ -421,14 +483,14 @@ def get_auctioneer_data():
 
     path = "data/raw/aucscan_data.json"
     logger.debug(f"Writing aucscan json to {path}")
-    with open(path, 'w') as f:
+    with open(path, "w") as f:
         json.dump(listings, f)
 
 
 def clean_auctioneer_data() -> None:
     path = "data/raw/aucscan_data.json"
     logger.debug(f"Reading aucscan json from {path}")
-    with open(path, 'r') as f:
+    with open(path, "r") as f:
         aucscan_data = json.load(f)
 
     auction_timing = {1: 30, 2: 60 * 2, 3: 60 * 12, 4: 60 * 24}
@@ -442,7 +504,9 @@ def clean_auctioneer_data() -> None:
 
     auc_listings = auc_listings[auc_listings["quantity"] > 0]
 
-    auc_listings["price_per"] = (auc_listings["buy"] / auc_listings["quantity"]).astype(int)
+    auc_listings["price_per"] = (auc_listings["buy"] / auc_listings["quantity"]).astype(
+        int
+    )
     auc_listings = auc_listings[auc_listings["price_per"] > 0]
 
     cols = ["item", "quantity", "buy", "sellername", "price_per", "time_remaining"]
@@ -459,19 +523,23 @@ def create_item_skeleton():
     user_items = cfg.ui.copy()
     item_table = pd.DataFrame(user_items).T
 
-    item_table = item_table.drop('made_from', axis=1)
-    int_cols = ['min_holding', 'max_holding', 'vendor_price']
+    item_table = item_table.drop("made_from", axis=1)
+    int_cols = ["min_holding", "max_holding", "vendor_price"]
     item_table[int_cols] = item_table[int_cols].fillna(0).astype(int)
 
-    item_table['std_holding'] = (item_table['max_holding'] - item_table['min_holding'])/4
-    item_table['mean_holding'] = item_table[['min_holding', 'max_holding']].mean(axis=1).astype(int)
+    item_table["std_holding"] = (
+        item_table["max_holding"] - item_table["min_holding"]
+    ) / 4
+    item_table["mean_holding"] = (
+        item_table[["min_holding", "max_holding"]].mean(axis=1).astype(int)
+    )
 
-    bool_cols = ['Buy', 'Sell']
+    bool_cols = ["Buy", "Sell"]
     item_table[bool_cols] = item_table[bool_cols].fillna(False).astype(int)
 
     path = "data/intermediate/item_skeleton.parquet"
     logger.debug(f"Writing item_skeleton parquet to {path}")
-    item_table.to_parquet(path, compression="gzip")  
+    item_table.to_parquet(path, compression="gzip")
 
 
 # def create_playtime_record(
@@ -536,4 +604,3 @@ def create_item_skeleton():
 #     played_repo.to_parquet("data/full/time_played.parquet", compression="gzip")
 
 #     logger.info(f"Time played recorded, marked as clean_session: {clean_session}")
-
