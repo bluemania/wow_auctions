@@ -6,9 +6,11 @@ Arcane Crystal:
   Buy: True
   Sell: True
 Essence of Water:
-  max_holding: 20
+  max_holding: 40
   Sell: True
-  Buy: True
+  made_from:
+    TRANSMUTE_TIME: 120000
+    Essence of Undead: 1
 Arcanite Bar:
   min_holding: 4
   max_holding: 24
@@ -16,7 +18,7 @@ Arcanite Bar:
   Sell: True
   made_from:
     Arcane Crystal: 1
-    TRANSMUTE_TIME: 1
+    TRANSMUTE_TIME: 100000
 Thorium Bar:
   min_holding: 8
   max_holding: 28
@@ -250,7 +252,9 @@ Small Flame Sac:
   Sell: True
 Fire Oil:
   Sell: True
-
+Essence of Undead:
+  Buy: True
+  max_holding: 10
 
 # Gear for characters
 Winterfall Firewater:
@@ -291,4 +295,4 @@ Leaded Vial:
 Empty Vial:
   vendor_price: 3
 TRANSMUTE_TIME:
-  vendor_price: 100000
+  vendor_price: 1
