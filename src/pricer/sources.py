@@ -522,7 +522,7 @@ def create_item_skeleton() -> None:
 
     item_table["std_holding"] = (
         item_table["max_holding"] - item_table["min_holding"]
-    ) / 4
+    ) / 7
     item_table["mean_holding"] = (
         item_table[["min_holding", "max_holding"]].mean(axis=1).astype(int)
     )

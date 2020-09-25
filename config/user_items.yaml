@@ -1,7 +1,7 @@
 
 Arcane Crystal:
   min_holding: 8
-  max_holding: 20
+  max_holding: 28
   max_sell: 4
   Buy: True
   Sell: True
@@ -24,7 +24,7 @@ Thorium Bar:
   Sell: True
 Black Lotus:
   min_holding: 2
-  max_holding: 10
+  max_holding: 12
   max_sell: 2
   Buy: True
   Sell: True
@@ -33,7 +33,7 @@ Black Lotus:
 # Roughly 304 stacks of materials
 Flask of the Titans:
   min_holding: 2
-  max_holding: 10
+  max_holding: 12
   max_sell: 3
   Sell: True
   made_from:
@@ -281,7 +281,7 @@ Spider Sausage:
 White Spider Meat:
   Buy: True
 Dense Sharpening Stone:
-  max_holding: 80
+  max_holding: 120
   Buy: True
 
 Crystal Vial:
