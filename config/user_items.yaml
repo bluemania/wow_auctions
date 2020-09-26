@@ -10,7 +10,7 @@ Essence of Water:
   Sell: True
   made_from:
     TRANSMUTE_TIME: 120000
-    Essence of Undead: 1
+    Essence of Undeath: 1
 Arcanite Bar:
   min_holding: 4
   max_holding: 24
@@ -252,7 +252,7 @@ Small Flame Sac:
   Sell: True
 Fire Oil:
   Sell: True
-Essence of Undead:
+Essence of Undeath:
   Buy: True
   max_holding: 10
 
