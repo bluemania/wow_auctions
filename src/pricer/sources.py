@@ -516,7 +516,8 @@ def create_item_skeleton() -> None:
     user_items = cfg.ui.copy()
     item_table = pd.DataFrame(user_items).T
 
-    item_table = item_table.drop("made_from", axis=1)
+    #item_table = item_table.drop("made_from", axis=1)
+    item_table['made_from'] = (item_table['made_from'] == item_table['made_from'])
     int_cols = ["min_holding", "max_holding", "vendor_price"]
     item_table[int_cols] = item_table[int_cols].fillna(0).astype(int)
 
@@ -527,7 +528,7 @@ def create_item_skeleton() -> None:
         item_table[["min_holding", "max_holding"]].mean(axis=1).astype(int)
     )
 
-    bool_cols = ["Buy", "Sell"]
+    bool_cols = ["Buy", "Sell", "make_pass"]
     item_table[bool_cols] = item_table[bool_cols].fillna(False).astype(int)
 
     path = "data/intermediate/item_skeleton.parquet"

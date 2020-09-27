@@ -11,6 +11,7 @@ Essence of Water:
   made_from:
     TRANSMUTE_TIME: 120000
     Essence of Undeath: 1
+  make_pass: True
 Arcanite Bar:
   min_holding: 4
   max_holding: 24
@@ -19,6 +20,7 @@ Arcanite Bar:
   made_from:
     Arcane Crystal: 1
     TRANSMUTE_TIME: 100000
+  make_pass: True
 Thorium Bar:
   min_holding: 8
   max_holding: 28
@@ -44,6 +46,7 @@ Flask of the Titans:
     Leaded Vial: 10
     Black Lotus: 1
     Crystal Vial: 1
+  make_pass: True
 Elixir of Fortitude:
   max_holding: 100
   Sell: True
@@ -130,6 +133,7 @@ Greater Arcane Protection Potion:
     Crystal Vial: 1
     Dream Dust: 1
     Dreamfoil: 1
+  make_pass: True
 Greater Nature Protection Potion:
   min_holding: 5
   max_holding: 60
@@ -138,6 +142,7 @@ Greater Nature Protection Potion:
     Crystal Vial: 1
     Elemental Earth: 1
     Dreamfoil: 1
+  make_pass: True
 Greater Shadow Protection Potion:
   min_holding: 5
   max_holding: 60
@@ -149,6 +154,7 @@ Greater Shadow Protection Potion:
     Leaded Vial: 1
     Fadeleaf: 4
     Grave Moss: 4
+  make_pass: True
 Fire Protection Potion:
   Sell: True
   made_from:
@@ -255,6 +261,7 @@ Fire Oil:
 Essence of Undeath:
   Buy: True
   max_holding: 10
+  make_pass: True
 
 # Gear for characters
 Winterfall Firewater:
@@ -276,14 +283,17 @@ Heavy Runecloth Bandage:
   Sell: True
   made_from:
     Runecloth: 2
+  make_pass: True
 Runecloth:
   Buy: True
 Spider Sausage:
   max_holding: 100
   made_from:
     White Spider Meat: 2
+  make_pass: True    
 White Spider Meat:
   Buy: True
+  make_pass: True
 Dense Sharpening Stone:
   max_holding: 120
   Buy: True
@@ -296,3 +306,4 @@ Empty Vial:
   vendor_price: 3
 TRANSMUTE_TIME:
   vendor_price: 1
+  make_pass: True
