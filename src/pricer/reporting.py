@@ -44,7 +44,8 @@ def what_make() -> None:
             if made_from and under_counter and not(make_pass):
                 item_increment = True
                 for material, qty in made_from.items():
-                    item_increment = (make.loc[material, 'make_mat_available'] >= qty) & item_increment
+                    if 'Vial' not in material:
+                        item_increment = (make.loc[material, 'make_mat_available'] >= qty) & item_increment
 
                 if item_increment:
                     for material, qty in user_items[item].get('made_from', {}).items():
