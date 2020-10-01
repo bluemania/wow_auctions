@@ -254,7 +254,6 @@ def clean_arkinventory_data(run_dt: dt) -> None:
     df_monies.to_parquet(path, compression="gzip")
 
 
-
 def get_beancounter_data() -> None:
     """Reads WoW Addon Beancounter lua and saves to local json."""
     """Reads Ark Inventory json and parses into tabular format."""
@@ -292,7 +291,6 @@ def clean_beancounter_data() -> None:
                             + [character]
                             + auction.split(";")
                         )
-
 
     # Setup as pandas dataframe, remove irrelevant columns
     df = pd.DataFrame(parsed)

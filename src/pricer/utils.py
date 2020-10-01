@@ -86,7 +86,7 @@ def get_item_ids() -> Dict[str, int]:
     item_codes = pd.read_csv(path, index_col="name")
     return item_codes["entry"].to_dict()
 
-  
+
 def write_lua(data: dict, path: str) -> None:
     """Write python dict as lua object."""
     lua_print = dict_to_lua(data)
