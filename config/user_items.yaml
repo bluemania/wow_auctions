@@ -258,11 +258,11 @@ Small Flame Sac:
   Sell: True
 Fire Oil:
   Sell: True
+
 Essence of Undeath:
   Buy: True
   max_holding: 10
   make_pass: True
-
 # Gear for characters
 Winterfall Firewater:
   max_holding: 30

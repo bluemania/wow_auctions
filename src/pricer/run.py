@@ -13,6 +13,7 @@ logger = logging.getLogger(__name__)
 def main() -> None:
     """Main program runner."""
     run_dt = dt.now().replace(microsecond=0)
+    print(type(run_dt))
 
     parser = argparse.ArgumentParser(description="WoW Auctions")
     parser.add_argument("-b", help="Update web booty bay analysis", action="store_true")
