@@ -8,15 +8,15 @@ from typing import Any, Dict, List
 
 from bs4 import BeautifulSoup
 import pandas as pd
+from pandera import check_input, check_output
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 import yaml
 
-
 from pricer import config as cfg
-from pricer import utils
+from pricer import schema, utils
 
 pd.options.mode.chained_assignment = None  # default='warn'
 logger = logging.getLogger(__name__)
@@ -511,26 +511,29 @@ def clean_auctioneer_data() -> None:
     auc_listings.to_parquet(path, compression="gzip")
 
 
+@check_output(schema.item_skeleton_schema)
+def transform_item_skeleton(df: pd.DataFrame) -> pd.DataFrame:
+    df["made_from"] = df["made_from"] == df["made_from"]
+
+    int_cols = ["min_holding", "max_holding", "vendor_price"]
+    df[int_cols] = df[int_cols].fillna(0).astype(int)
+    df["max_sell"] = df["max_sell"].fillna(df["max_holding"]).astype(int)
+
+    df["std_holding"] = (df["max_holding"] - df["min_holding"]) / 7
+    df["mean_holding"] = df[["min_holding", "max_holding"]].mean(axis=1).astype(int)
+
+    bool_cols = ["Buy", "Sell", "make_pass"]
+    df[bool_cols] = df[bool_cols].fillna(False).astype(int)
+    return df
+
+
 def create_item_skeleton() -> None:
     """Creates basic dataframe from user items information."""
     user_items = cfg.ui.copy()
-    item_table = pd.DataFrame(user_items).T
+    item_skeleton_raw = pd.DataFrame(user_items).T
 
-    # item_table = item_table.drop("made_from", axis=1)
-    item_table["made_from"] = item_table["made_from"] == item_table["made_from"]
-    int_cols = ["min_holding", "max_holding", "vendor_price"]
-    item_table[int_cols] = item_table[int_cols].fillna(0).astype(int)
-
-    item_table["std_holding"] = (
-        item_table["max_holding"] - item_table["min_holding"]
-    ) / 7
-    item_table["mean_holding"] = (
-        item_table[["min_holding", "max_holding"]].mean(axis=1).astype(int)
-    )
-
-    bool_cols = ["Buy", "Sell", "make_pass"]
-    item_table[bool_cols] = item_table[bool_cols].fillna(False).astype(int)
+    item_skeleton = transform_item_skeleton(item_skeleton_raw)
 
     path = "data/intermediate/item_skeleton.parquet"
     logger.debug(f"Writing item_skeleton parquet to {path}")
-    item_table.to_parquet(path, compression="gzip")
+    item_skeleton.to_parquet(path, compression="gzip")
