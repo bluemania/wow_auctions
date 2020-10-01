@@ -510,7 +510,7 @@ def clean_auctioneer_data() -> None:
     logger.debug(f"Writing auc_listings parquet to {path}")
     auc_listings.to_parquet(path, compression="gzip")
 
-@check_input(schema.item_skeleton_raw_schema)
+# @check_input(schema.item_skeleton_raw_schema)
 @check_output(schema.item_skeleton_schema)
 def transform_item_skeleton(df: pd.DataFrame) -> pd.DataFrame:
     df["made_from"] = df["made_from"] == df["made_from"]
