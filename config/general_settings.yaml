@@ -8,7 +8,7 @@ stack_sizes:
 location_info:
   '0': Inventory
   '2': Bank
-  '4': Mailbox
+  '5': Mailbox
   '10': Auctions
 auction_type_labels:
   completedAuctions: "sell_price"

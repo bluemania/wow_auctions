@@ -3,7 +3,7 @@ import logging
 from typing import Any, Dict
 
 import pandas as pd
-from slpp import slpp as lua  # pip install git+https://github.com/SirAnthony/slpp
+from slpp import slpp as lua
 import yaml
 
 from pricer import config as cfg
@@ -118,7 +118,27 @@ def dump_lua(data: Any) -> Any:
         return list_work
     if type(data) is dict:
         dict_work = "{"
-        dict_work += ", ".join([f'["{k}"]={dump_lua(v)}' for k, v in data.items()])
+        dict_work += ", ".join([f'[{k}]={dump_lua(v)}' if type(k) is int else f'["{k}"]={dump_lua(v)}' for k, v in data.items()])
         dict_work += "}"
         return dict_work
     logger.warning(f"Lua parsing error; unknown type {type(data)}")
+
+
+def find_attribute_location(content, initial_key):
+    """Search binary lua for an attribute start and end location."""
+    start = content.index(initial_key)
+
+    brack = 0
+    bracked = False
+    for end, char in enumerate(content[start:].decode('ascii')):
+        if char == '{':
+            brack += 1
+            bracked = True
+        if char == '}':
+            brack -= 1
+            bracked = True
+
+        if brack==0 and bracked:
+            break
+    end += start + 1
+    return start, end
