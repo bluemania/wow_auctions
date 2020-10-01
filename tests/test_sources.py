@@ -1,6 +1,6 @@
 """Tests for source.py."""
-import pandas as pd
 from numpy import nan
+import pandas as pd
 
 from pricer import sources
 
@@ -34,4 +34,4 @@ def test_item_skeleton() -> None:
         },
     }
     example_df = pd.DataFrame.from_dict(example, orient="index")
-    example_cleaned = sources.transform_item_skeleton(example_df)
+    sources.transform_item_skeleton(example_df)

@@ -1,6 +1,6 @@
 """Schema enforcement for project."""
 import pandera as pa
-from pandera import Column, DataFrameSchema, Check, Index
+from pandera import Column, Index
 
 item_skeleton_raw_schema = pa.DataFrameSchema(
     columns={

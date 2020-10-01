@@ -8,7 +8,7 @@ from typing import Any, Dict, List
 
 from bs4 import BeautifulSoup
 import pandas as pd
-from pandera import check_input, check_output
+from pandera import check_output
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
@@ -510,9 +510,11 @@ def clean_auctioneer_data() -> None:
     logger.debug(f"Writing auc_listings parquet to {path}")
     auc_listings.to_parquet(path, compression="gzip")
 
+
 # @check_input(schema.item_skeleton_raw_schema)
 @check_output(schema.item_skeleton_schema)
 def transform_item_skeleton(df: pd.DataFrame) -> pd.DataFrame:
+    """Make transformation to item skeleton."""
     df["made_from"] = df["made_from"] == df["made_from"]
 
     int_cols = ["min_holding", "max_holding", "vendor_price"]
