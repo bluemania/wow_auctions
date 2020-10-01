@@ -12,6 +12,9 @@ Essence of Water:
     TRANSMUTE_TIME: 120000
     Essence of Undeath: 1
   make_pass: True
+  max_holding: 20
+  Sell: True
+  Buy: True
 Arcanite Bar:
   min_holding: 4
   max_holding: 24
@@ -296,6 +299,10 @@ White Spider Meat:
   make_pass: True
 Dense Sharpening Stone:
   max_holding: 120
+White Spider Meat:
+  Buy: True
+Dense Sharpening Stone:
+  max_holding: 80
   Buy: True
 
 Crystal Vial:

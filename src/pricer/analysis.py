@@ -305,7 +305,6 @@ def analyse_undercut_leads() -> None:
 #     undercuts_leads.to_parquet(path, compression="gzip")
 
 
-
 def analyse_replenishment() -> None:
     """Determine the demand for item replenishment."""
     path = "data/intermediate/item_skeleton.parquet"
