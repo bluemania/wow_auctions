@@ -510,14 +510,15 @@ def clean_auctioneer_data() -> None:
     logger.debug(f"Writing auc_listings parquet to {path}")
     auc_listings.to_parquet(path, compression="gzip")
 
-
+@check_input(schema.item_skeleton_raw_schema)
 @check_output(schema.item_skeleton_schema)
 def transform_item_skeleton(df: pd.DataFrame) -> pd.DataFrame:
     df["made_from"] = df["made_from"] == df["made_from"]
 
     int_cols = ["min_holding", "max_holding", "vendor_price"]
     df[int_cols] = df[int_cols].fillna(0).astype(int)
-    df["max_sell"] = df["max_sell"].fillna(df["max_holding"]).astype(int)
+
+    # df["max_sell"] = df["max_sell"].fillna(df["max_holding"]).astype(int)
 
     df["std_holding"] = (df["max_holding"] - df["min_holding"]) / 7
     df["mean_holding"] = df[["min_holding", "max_holding"]].mean(axis=1).astype(int)
