@@ -242,68 +242,8 @@ def analyse_listings() -> None:
 
 
 def analyse_undercut_leads() -> None:
+    """Not used currently."""
     pass
-#     """Determine how many auctions i'm currently leading."""
-#     path = "data/intermediate/item_skeleton.parquet"
-#     logger.debug(f"Reading item_skeleton parquet from {path}")
-#     item_skeleton = pd.read_parquet(path)
-#     item_skeleton.index.name = "item"
-
-#     path = "data/intermediate/listings_minprice.parquet"
-#     logger.debug(f"Reading listings_minprice parquet from {path}")
-#     listings_minprice = pd.read_parquet(path)
-
-#     path = "data/cleaned/auc_listings.parquet"
-#     logger.debug(f"Reading auc_listings parquet from {path}")
-#     auc_listings = pd.read_parquet(path)
-
-#     auc_listings = auc_listings[auc_listings["item"].isin(item_skeleton.index)]
-#     auc_listings = auc_listings[auc_listings["price_per"] > 0]
-#     listings = pd.merge(
-#         auc_listings, listings_minprice, how="left", on="item", validate="m:1"
-#     )
-
-#     # Find my minimum price per item, join back (if exists)
-#     my_auction_mins = (
-#         listings[listings["sellername"] == "Amazona"].groupby("item").min()
-#     )
-#     my_auction_mins = my_auction_mins["price_per"]
-#     my_auction_mins.name = "my_min"
-#     listings = pd.merge(
-#         listings, my_auction_mins, how="left", left_on="item", right_index=True
-#     )
-#     listings = listings.dropna()  # Ignores items I'm not selling
-
-#     # Find items below my min price (i.e. competition); get count of items undercutting
-#     undercut_count = listings[listings["price_per"] < listings["my_min"]]
-#     undercut_count = undercut_count.groupby("item").sum()["quantity"]
-#     undercut_count.name = "undercut_count"
-
-#     undercuts_leads = item_skeleton.join(undercut_count)
-#     undercuts_leads["undercut_count"] = (
-#         undercuts_leads["undercut_count"].fillna(0).astype(int)
-#     )
-
-#     # If my min price is the same as the current min price and the
-#     # same as the listing price, i'm winning
-#     my_min_is_market = listings["my_min"] == listings["listing_minprice"]
-#     my_min_is_list = listings["my_min"] == listings["price_per"]
-#     auction_leads = (
-#         listings[my_min_is_market & my_min_is_list].groupby("item").sum()["quantity"]
-#     )
-#     auction_leads.name = "auction_leads"
-
-#     undercuts_leads = undercuts_leads.join(auction_leads)
-#     undercuts_leads["auction_leads"] = (
-#         undercuts_leads["auction_leads"].fillna(0).astype(int)
-#     )
-
-#     undercuts_leads = undercuts_leads[["undercut_count", "auction_leads"]].reset_index()
-
-#     path = "data/intermediate/undercuts_leads.parquet"
-#     logger.debug(f"Writing undercuts_leads parquet to {path}")
-#     undercuts_leads.to_parquet(path, compression="gzip")
-
 
 
 def analyse_replenishment() -> None:
