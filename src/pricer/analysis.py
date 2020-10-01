@@ -245,7 +245,6 @@ def analyse_undercut_leads() -> None:
     """Not used currently."""
     pass
 
-
 def analyse_replenishment() -> None:
     """Determine the demand for item replenishment."""
     path = "data/intermediate/item_skeleton.parquet"
