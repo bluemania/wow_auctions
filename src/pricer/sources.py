@@ -516,8 +516,8 @@ def create_item_skeleton() -> None:
     user_items = cfg.ui.copy()
     item_table = pd.DataFrame(user_items).T
 
-    #item_table = item_table.drop("made_from", axis=1)
-    item_table['made_from'] = (item_table['made_from'] == item_table['made_from'])
+    # item_table = item_table.drop("made_from", axis=1)
+    item_table["made_from"] = item_table["made_from"] == item_table["made_from"]
     int_cols = ["min_holding", "max_holding", "vendor_price"]
     item_table[int_cols] = item_table[int_cols].fillna(0).astype(int)
 

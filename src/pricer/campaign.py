@@ -245,7 +245,7 @@ def analyse_sell_policy(
     # Shows the amount required to be profitable
     sell_policy["proposed_bid"] = (
         sell_policy["proposed_buy"]
-        - sell_policy["estimated_profit"] 
+        - sell_policy["estimated_profit"]
         + sell_policy["feasible_profit"]
     )
 
