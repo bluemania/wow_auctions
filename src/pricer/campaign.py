@@ -241,9 +241,16 @@ def analyse_sell_policy(
     sell_policy["infeasible"] = (
         sell_policy["feasible_profit"] > sell_policy["estimated_profit"]
     )
+
+    # Shows the amount required to be profitable
     sell_policy["proposed_bid"] = (
-        sell_policy["proposed_buy"] + sell_policy["infeasible"]
+        sell_policy["proposed_buy"]
+        - sell_policy["estimated_profit"]
+        + sell_policy["feasible_profit"]
     )
+
+    low_bid_ind = sell_policy[sell_policy["proposed_bid"] < sell_policy["proposed_buy"]]
+    sell_policy["proposed_bid"] = sell_policy.loc[low_bid_ind, "proposed_buy"]
 
     sell_policy["duration"] = utils.duration_str_to_mins(duration)
     sell_policy = sell_policy.sort_values("estimated_profit", ascending=False)
