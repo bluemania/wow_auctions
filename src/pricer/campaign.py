@@ -128,7 +128,11 @@ def encode_sell_campaign(sell_policy: pd.DataFrame) -> Dict[str, Any]:
     for item, d in sell_policy.iterrows():
         code = item_ids[item]
 
-        new_appraiser[f"item.{code}.fixed.bid"] = int(d["proposed_bid"])
+        try:
+            new_appraiser[f"item.{code}.fixed.bid"] = int(d["proposed_bid"])
+        except ValueError:
+            raise ValueError(f"{code} for {item} not present")
+
         new_appraiser[f"item.{code}.fixed.buy"] = int(d["proposed_buy"])
         new_appraiser[f"item.{code}.duration"] = int(d["duration"])
         new_appraiser[f"item.{code}.number"] = int(d["sell_count"])
@@ -249,8 +253,12 @@ def analyse_sell_policy(
         + sell_policy["feasible_profit"]
     )
 
-    low_bid_ind = sell_policy[sell_policy["proposed_bid"] < sell_policy["proposed_buy"]]
-    sell_policy["proposed_bid"] = sell_policy.loc[low_bid_ind, "proposed_buy"]
+    low_bid_ind = sell_policy[
+        sell_policy["proposed_bid"] < sell_policy["proposed_buy"]
+    ].index
+    sell_policy.loc[low_bid_ind, "proposed_bid"] = sell_policy.loc[
+        low_bid_ind, "proposed_buy"
+    ]
 
     sell_policy["duration"] = utils.duration_str_to_mins(duration)
     sell_policy = sell_policy.sort_values("estimated_profit", ascending=False)

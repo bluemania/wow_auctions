@@ -35,7 +35,7 @@ def predict_item_prices() -> None:
                 item_prices[item_name] = int(
                     df["silver"].ewm(alpha=0.2).mean().iloc[-1]
                 )
-            except KeyError:
+            except IndexError:
                 logging.exception(
                     f"""Price prediction problem for {item_name}.
                     Did you add something and not use booty bay?"""
