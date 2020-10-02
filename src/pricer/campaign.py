@@ -96,7 +96,7 @@ def write_buy_policy() -> None:
         data["AucAdvancedData"]["UtilSearchUiData"]["Current"][
             "snatch.itemsList"
         ] = new_snatch
-        utils.write_lua(data, path)
+        io.writer(data, name=path, ftype="lua")
 
 
 def encode_sell_campaign(sell_policy: pd.DataFrame) -> Dict[str, Any]:
@@ -150,7 +150,7 @@ def write_sell_policy() -> None:
         data["AucAdvancedConfig"]["profile.Default"]["util"][
             "appraiser"
         ] = new_appraiser
-        utils.write_lua(data, path)
+        io.writer(data, name=path, ftype="lua")
 
 
 def analyse_sell_policy(
@@ -345,13 +345,10 @@ def analyse_make_policy() -> None:
     materials_list = make[make["make_mat_flag"] == 1]["item_id"].to_dict()
     sell_items = make[make["Sell"] == 1]["item_id"]
 
-    path = (
-        utils.make_lua_path(account_name="396255466#1", datasource="TradeSkillMaster")
-        + ".lua"
+    path = utils.make_lua_path(
+        account_name="396255466#1", datasource="TradeSkillMaster"
     )
-
-    with open(path, "rb") as input_file:
-        content = input_file.read()
+    content = io.reader(name=path, ftype="lua", custom="rb")
 
     start, end = utils.find_attribute_location(
         content, b'["f@Alliance - Grobbulus@internalData@crafts"]'
@@ -389,8 +386,5 @@ def analyse_make_policy() -> None:
     item_text += "}"
 
     content = content[:start] + item_text.encode("ascii") + content[end:]
-
-    with open(path, "wb") as f:
-        f.write(content)
-
+    io.writer(content, name=path, ftype="lua", custom="wb")
     io.writer(make, "outputs", "make", "parquet")

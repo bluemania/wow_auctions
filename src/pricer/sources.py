@@ -13,12 +13,10 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
-import yaml
 
 from pricer import config as cfg
 from pricer import io, schema, utils
 
-pd.options.mode.chained_assignment = None  # default='warn'
 logger = logging.getLogger(__name__)
 
 
@@ -41,11 +39,8 @@ def get_bb_item_page(driver: webdriver, item_id: int) -> Dict[Any, Any]:
 def start_driver() -> webdriver:
     """Spin up selenium driver for Booty Bay scraping."""
     try:
-        path = "SECRETS.yaml"
-        with open(path, "r") as f:
-            secrets = yaml.safe_load(f)
-        account = secrets.get("account")
-        password = secrets.get("password")
+        account = cfg.secrets.get("account")
+        password = cfg.secrets.get("password")
     except FileNotFoundError:
         password = getpass.getpass("Password:")
     try:
@@ -411,17 +406,8 @@ def clean_beancounter_success(df: pd.DataFrame) -> pd.DataFrame:
 def get_auctioneer_data() -> None:
     """Reads WoW Addon Auctioneer lua and parses text file into json."""
     ahm_account = [r["account"] for r in cfg.us.get("roles") if r.get("role") == "ahm"]
-    path = utils.make_lua_path(ahm_account[0], "Auc-ScanData") + ".lua"
-
-    logger.debug(f"Reading auctioneer lua from {path}")
-    ropes = []
-    with open(path, "r") as f:
-        on = False
-        for line in f.readlines():
-            if on and "return" in line:
-                ropes.append(line)
-            elif '["ropes"]' in line:
-                on = True
+    path = utils.make_lua_path(ahm_account[0], "Auc-ScanData")
+    ropes = io.reader(name=path, ftype="lua", custom="Auc-ScanData")
 
     listings = []
     for rope in ropes:
@@ -430,9 +416,7 @@ def get_auctioneer_data() -> None:
         listings_part = rope.split("},{")
         listings_part[0] = listings_part[0].split("{{")[1]
         listings_part[-1] = listings_part[-1].split("},}")[0]
-
         listings.extend(listings_part)
-
     aucscan_data = [x.split("|")[-1].split(",") for x in listings]
 
     io.writer(aucscan_data, "raw", "aucscan_data", "json")

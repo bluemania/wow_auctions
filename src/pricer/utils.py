@@ -65,14 +65,6 @@ def get_item_ids() -> Dict[str, int]:
     return item_codes.set_index("name")["entry"].to_dict()
 
 
-def write_lua(data: dict, path: str) -> None:
-    """Write python dict as lua object."""
-    lua_print = dict_to_lua(data)
-    logger.debug(f"Writing lua to {path}")
-    with open(path, "w") as f:
-        f.write(lua_print)
-
-
 def dict_to_lua(data: dict) -> str:
     """Converts python dict into long str."""
     lua_print = "\n"

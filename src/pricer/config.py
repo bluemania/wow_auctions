@@ -52,4 +52,6 @@ def set_loggers(
 
 us = io.reader("config", "user_settings", "yaml")
 ui = io.reader("config", "user_items", "yaml")
+secrets = io.reader(name="SECRETS", ftype="yaml")
+
 env: Dict[str, str] = {"basepath": "data"}
