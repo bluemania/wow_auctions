@@ -33,3 +33,47 @@ item_skeleton_schema = pa.DataFrameSchema(
     strict=True,
     index=Index(pa.String),
 )
+
+auc_listings_raw_schema = pa.DataFrameSchema(
+    columns={
+        0: Column(pa.String),
+        1: Column(pa.String),
+        2: Column(pa.String),
+        3: Column(pa.String),
+        4: Column(pa.String),
+        5: Column(pa.String),
+        6: Column(pa.String),
+        7: Column(pa.String),
+        8: Column(pa.String),
+        9: Column(pa.String),
+        10: Column(pa.String),
+        11: Column(pa.String),
+        12: Column(pa.String),
+        13: Column(pa.String),
+        14: Column(pa.String),
+        15: Column(pa.String),
+        16: Column(pa.String),
+        17: Column(pa.String),
+        18: Column(pa.String),
+        19: Column(pa.String),
+        20: Column(pa.String),
+        21: Column(pa.String),
+        22: Column(pa.String),
+        23: Column(pa.String),
+        24: Column(pa.String),
+        25: Column(pa.String),
+        26: Column(pa.String),
+        27: Column(pa.String),
+    }
+)
+
+auc_listings_schema = pa.DataFrameSchema(
+    columns={
+        "item": Column(pa.String),
+        "quantity": Column(pa.Int),
+        "buy": Column(pa.Int),
+        "sellername": Column(pa.String),
+        "price_per": Column(pa.Int),
+        "time_remaining": Column(pa.Int),
+    }
+)

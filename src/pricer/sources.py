@@ -8,7 +8,7 @@ from typing import Any, Dict, List
 
 from bs4 import BeautifulSoup
 import pandas as pd
-from pandera import check_output
+from pandera import check_input, check_output
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
@@ -479,6 +479,28 @@ def get_auctioneer_data() -> None:
         json.dump(cleaned_listings, f)
 
 
+@check_input(schema.auc_listings_raw_schema)
+@check_output(schema.auc_listings_schema)
+def process_auctioneer_data(df: pd.DataFrame) -> pd.DataFrame:
+    """Performs processing of auctioneer data."""
+    auction_timing: Dict[int, int] = {1: 30, 2: 60 * 2, 3: 60 * 12, 4: 60 * 24}
+
+    df["time_remaining"] = df[6].astype(int).replace(auction_timing)
+    df["item"] = df[8].str.replace('"', "").str[1:-1]
+    df["quantity"] = df[10].replace("nil", 0).astype(int)
+    df["buy"] = df[16].astype(int)
+    df["sellername"] = df[19].str.replace('"', "").str[1:-1]
+
+    df = df[df["quantity"] > 0]
+
+    df["price_per"] = (df["buy"] / df["quantity"]).astype(int)
+    df = df[df["price_per"] > 0]
+
+    cols = ["item", "quantity", "buy", "sellername", "price_per", "time_remaining"]
+    df = df[cols]
+    return df
+
+
 def clean_auctioneer_data() -> None:
     """Cleans Auctioneer json data into tablular format."""
     path = "data/raw/aucscan_data.json"
@@ -486,24 +508,8 @@ def clean_auctioneer_data() -> None:
     with open(path, "r") as f:
         aucscan_data = json.load(f)
 
-    auction_timing: Dict[int, int] = {1: 30, 2: 60 * 2, 3: 60 * 12, 4: 60 * 24}
-
-    auc_listings = pd.DataFrame(aucscan_data)
-    auc_listings["time_remaining"] = auc_listings[6].astype(int).replace(auction_timing)
-    auc_listings["item"] = auc_listings[8].str.replace('"', "").str[1:-1]
-    auc_listings["quantity"] = auc_listings[10].replace("nil", 0).astype(int)
-    auc_listings["buy"] = auc_listings[16].astype(int)
-    auc_listings["sellername"] = auc_listings[19].str.replace('"', "").str[1:-1]
-
-    auc_listings = auc_listings[auc_listings["quantity"] > 0]
-
-    auc_listings["price_per"] = (auc_listings["buy"] / auc_listings["quantity"]).astype(
-        int
-    )
-    auc_listings = auc_listings[auc_listings["price_per"] > 0]
-
-    cols = ["item", "quantity", "buy", "sellername", "price_per", "time_remaining"]
-    auc_listings = auc_listings[cols]
+    auc_listings_raw = pd.DataFrame(aucscan_data)
+    auc_listings = process_auctioneer_data(auc_listings_raw)
 
     # Saves latest scan to intermediate (immediate)
     path = "data/cleaned/auc_listings.parquet"
@@ -511,9 +517,9 @@ def clean_auctioneer_data() -> None:
     auc_listings.to_parquet(path, compression="gzip")
 
 
-# @check_input(schema.item_skeleton_raw_schema)
+@check_input(schema.item_skeleton_raw_schema)
 @check_output(schema.item_skeleton_schema)
-def transform_item_skeleton(df: pd.DataFrame) -> pd.DataFrame:
+def process_item_skeleton(df: pd.DataFrame) -> pd.DataFrame:
     """Make transformation to item skeleton."""
     df["made_from"] = df["made_from"] == df["made_from"]
 
@@ -535,7 +541,7 @@ def create_item_skeleton() -> None:
     user_items = cfg.ui.copy()
     item_skeleton_raw = pd.DataFrame(user_items).T
 
-    item_skeleton = transform_item_skeleton(item_skeleton_raw)
+    item_skeleton = process_item_skeleton(item_skeleton_raw)
 
     path = "data/intermediate/item_skeleton.parquet"
     logger.debug(f"Writing item_skeleton parquet to {path}")
