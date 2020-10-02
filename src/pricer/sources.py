@@ -83,16 +83,12 @@ def get_bb_data() -> None:
     items_ids = {k: v for k, v in item_ids.items() if k in user_items}
 
     # Get bb data from API
-    item_data: Dict[str, Dict[Any, Any]] = defaultdict(dict)
+    bb_data: Dict[str, Dict[Any, Any]] = defaultdict(dict)
     for item, item_id in items_ids.items():
-        item_data[item] = get_bb_item_page(driver, item_id)
+        bb_data[item] = get_bb_item_page(driver, item_id)
 
     driver.close()
-
-    path = "data/raw/bb_data.json"
-    logger.debug(f"Writing bb_data json to {path}")
-    with open(path, "w") as f:
-        json.dump(item_data, f)
+    cfg.writer(bb_data, 'raw', 'bb_data', 'json')
 
 
 def clean_bb_data() -> None:
@@ -156,25 +152,11 @@ def clean_bb_data() -> None:
     bb_deposit_df.columns = ["deposit"]
     bb_deposit_df.index.name = "item"
 
-    path = "data/cleaned/bb_fortnight.parquet"
-    logger.debug(f"Writing bb_fortnight parquet to {path}")
-    bb_fortnight_df.to_parquet(path, compression="gzip")
-
-    path = "data/cleaned/bb_history.parquet"
-    logger.debug(f"Writing bb_history parquet to {path}")
-    bb_history_df.to_parquet(path, compression="gzip")
-
-    path = "data/cleaned/bb_alltime.parquet"
-    logger.debug(f"Writing bb_alltime parquet to {path}")
-    bb_alltime_df.to_parquet(path, compression="gzip")
-
-    path = "data/cleaned/bb_listings.parquet"
-    logger.debug(f"Writing bb_listings parquet to {path}")
-    bb_listings_df.to_parquet(path, compression="gzip")
-
-    path = "data/cleaned/bb_deposit.parquet"
-    logger.debug(f"Writing bb_deposit parquet to {path}")
-    bb_deposit_df.to_parquet(path, compression="gzip")
+    cfg.writer(bb_fortnight_df, 'cleaned', 'bb_fortnight', 'parquet')
+    cfg.writer(bb_history_df, 'cleaned', 'bb_history', 'parquet')
+    cfg.writer(bb_alltime_df, 'cleaned', 'bb_alltime', 'parquet')
+    cfg.writer(bb_listings_df, 'cleaned', 'bb_listings', 'parquet')
+    cfg.writer(bb_deposit_df, 'cleaned', 'bb_deposit', 'parquet')
 
 
 def get_arkinventory_data() -> None:
@@ -185,12 +167,8 @@ def get_arkinventory_data() -> None:
         data = utils.read_lua(path)
         acc_inv = utils.source_merge(acc_inv, data).copy()
 
-    inventory_data = acc_inv["ARKINVDB"]["global"]["player"]["data"]
-
-    path = "data/raw/arkinventory_data.json"
-    logger.debug(f"Writing arkinventory json to {path}")
-    with open(path, "w") as f:
-        json.dump(inventory_data, f)
+    arkinventory_data = acc_inv["ARKINVDB"]["global"]["player"]["data"]
+    cfg.writer(arkinventory_data, 'raw', 'arkinventory_data', 'json')
 
 
 def clean_arkinventory_data(run_dt: dt) -> None:
@@ -236,37 +214,27 @@ def clean_arkinventory_data(run_dt: dt) -> None:
 
     # Convert information to dataframe
     cols = ["character", "location", "item", "count"]
-    df_inventory = pd.DataFrame(raw_data)
-    df_inventory.columns = cols
-    df_inventory["timestamp"] = run_dt
+    ark_inventory = pd.DataFrame(raw_data)
+    ark_inventory.columns = cols
+    ark_inventory["timestamp"] = run_dt
+    cfg.writer(ark_inventory, 'cleaned', 'ark_inventory', 'parquet')    
 
-    path = "data/cleaned/ark_inventory.parquet"
-    logger.debug(f"Writing ark_inventory parquet to {path}")
-    df_inventory.to_parquet(path, compression="gzip")
-
-    df_monies = pd.Series(monies)
-    df_monies.name = "monies"
-    df_monies = pd.DataFrame(df_monies)
-    df_monies["timestamp"] = run_dt
-
-    path = "data/cleaned/ark_monies.parquet"
-    logger.debug(f"Writing ark_monies parquet to {path}")
-    df_monies.to_parquet(path, compression="gzip")
+    ark_monies = pd.Series(monies)
+    ark_monies.name = "monies"
+    ark_monies = pd.DataFrame(ark_monies)
+    ark_monies["timestamp"] = run_dt
+    cfg.writer(ark_monies, 'cleaned', 'ark_monies', 'parquet')
 
 
 def get_beancounter_data() -> None:
     """Reads WoW Addon Beancounter lua and saves to local json."""
     """Reads Ark Inventory json and parses into tabular format."""
-    data: dict = {}
+    beancounter_data: dict = {}
     for account_name in cfg.us.get("accounts"):
         path = utils.make_lua_path(account_name, "BeanCounter")
         bean = utils.read_lua(path)
-        data = utils.source_merge(data, bean).copy()
-
-    path = "data/raw/beancounter_data.json"
-    logger.debug(f"Writing beancounter json to {path}")
-    with open(path, "w") as f:
-        json.dump(data, f)
+        beancounter_data = utils.source_merge(beancounter_data, bean).copy()
+    cfg.writer(beancounter_data, 'raw', 'beancounter_data', 'json')
 
 
 def clean_beancounter_data() -> None:
@@ -296,9 +264,7 @@ def clean_beancounter_data() -> None:
     df = pd.DataFrame(parsed)
 
     bean_purchases = clean_beancounter_purchases(df)
-    path = "data/cleaned/bean_purchases.parquet"
-    logger.debug(f"Writing bean_purchases parquet to {path}")
-    bean_purchases.to_parquet(path, compression="gzip")
+    cfg.writer(bean_purchases, 'cleaned', 'bean_purchases', 'parquet')
 
     failed = clean_beancounter_failed(df)
     success = clean_beancounter_success(df)
@@ -307,10 +273,7 @@ def clean_beancounter_data() -> None:
     bean_results["success"] = bean_results["auction_type"].replace(
         {"completedAuctions": 1, "failedAuctions": 0}
     )
-
-    path = "data/cleaned/bean_results.parquet"
-    logger.debug(f"Writing bean_results parquet to {path}")
-    bean_results.to_parquet(path, compression="gzip")
+    cfg.writer(bean_results, 'cleaned', 'bean_results', 'parquet')
 
 
 @check_input(schema.beancounter_data_raw_schema)
@@ -479,12 +442,9 @@ def get_auctioneer_data() -> None:
 
         listings.extend(listings_part)
 
-    cleaned_listings = [x.split("|")[-1].split(",") for x in listings]
+    aucscan_data = [x.split("|")[-1].split(",") for x in listings]
 
-    path = "data/raw/aucscan_data.json"
-    logger.debug(f"Writing aucscan json to {path}")
-    with open(path, "w") as f:
-        json.dump(cleaned_listings, f)
+    cfg.writer(aucscan_data, 'raw', 'aucscan_data', 'json')
 
 
 @check_input(schema.auc_listings_raw_schema)
@@ -520,9 +480,7 @@ def clean_auctioneer_data() -> None:
     auc_listings = process_auctioneer_data(auc_listings_raw)
 
     # Saves latest scan to intermediate (immediate)
-    path = "data/cleaned/auc_listings.parquet"
-    logger.debug(f"Writing auc_listings parquet to {path}")
-    auc_listings.to_parquet(path, compression="gzip")
+    cfg.writer(auc_listings, 'cleaned', 'auc_listings', 'parquet')
 
 
 @check_input(schema.item_skeleton_raw_schema)
@@ -551,6 +509,4 @@ def create_item_skeleton() -> None:
 
     item_skeleton = process_item_skeleton(item_skeleton_raw)
 
-    path = "data/intermediate/item_skeleton.parquet"
-    logger.debug(f"Writing item_skeleton parquet to {path}")
-    item_skeleton.to_parquet(path, compression="gzip")
+    cfg.writer(item_skeleton, 'intermediate', 'item_skeleton', 'parquet')
