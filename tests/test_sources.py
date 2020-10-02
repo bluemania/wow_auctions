@@ -133,3 +133,215 @@ def test_auctioneer_data() -> None:
     }
     example_df = pd.DataFrame.from_dict(example, orient="index")
     sources.process_auctioneer_data(example_df)
+
+
+def test_clean_beancounter_purchases() -> None:
+    """It tests nothing useful."""
+    example = {
+        516: {
+            0: "failedAuctions",
+            1: "Free Action Potion",
+            2: "Amazona",
+            3: "5",
+            4: "",
+            5: "72",
+            6: "",
+            7: "111865",
+            8: "111865",
+            9: "",
+            10: "1600979248",
+            11: "",
+            12: "A",
+        },
+        5356: {
+            0: "completedAuctions",
+            1: "Elixir of Giants",
+            2: "Amazona",
+            3: "5",
+            4: "95178",
+            5: "700",
+            6: "4972",
+            7: "99450",
+            8: "92555",
+            9: "Arelina",
+            10: "1601252068",
+            11: "",
+            12: "A",
+        },
+        2577: {
+            0: "completedBidsBuyouts",
+            1: "Elemental Earth",
+            2: "Amazona",
+            3: "2",
+            4: "",
+            5: "",
+            6: "",
+            7: "90798",
+            8: "90798",
+            9: "Roddyricch",
+            10: "1600923378",
+            11: "Snatch",
+            12: "A",
+        },
+    }
+    example_df = pd.DataFrame.from_dict(example, orient="index")
+    sources.clean_beancounter_purchases(example_df)
+
+
+def test_clean_beancounter_posted() -> None:
+    """It tests nothing useful."""
+    example = {
+        516: {
+            0: "failedAuctions",
+            1: "Free Action Potion",
+            2: "Amazona",
+            3: "5",
+            4: "",
+            5: "72",
+            6: "",
+            7: "111865",
+            8: "111865",
+            9: "",
+            10: "1600979248",
+            11: "",
+            12: "A",
+        },
+        5356: {
+            0: "completedAuctions",
+            1: "Elixir of Giants",
+            2: "Amazona",
+            3: "5",
+            4: "95178",
+            5: "700",
+            6: "4972",
+            7: "99450",
+            8: "92555",
+            9: "Arelina",
+            10: "1601252068",
+            11: "",
+            12: "A",
+        },
+        2577: {
+            0: "completedBidsBuyouts",
+            1: "Elemental Earth",
+            2: "Amazona",
+            3: "2",
+            4: "",
+            5: "",
+            6: "",
+            7: "90798",
+            8: "90798",
+            9: "Roddyricch",
+            10: "1600923378",
+            11: "Snatch",
+            12: "A",
+        },
+    }
+    example_df = pd.DataFrame.from_dict(example, orient="index")
+    sources.clean_beancounter_purchases(example_df)
+
+
+def test_clean_beancounter_failed() -> None:
+    """It tests nothing useful."""
+    example = {
+        516: {
+            0: "failedAuctions",
+            1: "Free Action Potion",
+            2: "Amazona",
+            3: "5",
+            4: "",
+            5: "72",
+            6: "",
+            7: "111865",
+            8: "111865",
+            9: "",
+            10: "1600979248",
+            11: "",
+            12: "A",
+        },
+        5356: {
+            0: "completedAuctions",
+            1: "Elixir of Giants",
+            2: "Amazona",
+            3: "5",
+            4: "95178",
+            5: "700",
+            6: "4972",
+            7: "99450",
+            8: "92555",
+            9: "Arelina",
+            10: "1601252068",
+            11: "",
+            12: "A",
+        },
+        2577: {
+            0: "completedBidsBuyouts",
+            1: "Elemental Earth",
+            2: "Amazona",
+            3: "2",
+            4: "",
+            5: "",
+            6: "",
+            7: "90798",
+            8: "90798",
+            9: "Roddyricch",
+            10: "1600923378",
+            11: "Snatch",
+            12: "A",
+        },
+    }
+    example_df = pd.DataFrame.from_dict(example, orient="index")
+    sources.clean_beancounter_purchases(example_df)
+
+
+def test_clean_beancounter_success() -> None:
+    """It tests nothing useful."""
+    example = {
+        516: {
+            0: "failedAuctions",
+            1: "Free Action Potion",
+            2: "Amazona",
+            3: "5",
+            4: "",
+            5: "72",
+            6: "",
+            7: "111865",
+            8: "111865",
+            9: "",
+            10: "1600979248",
+            11: "",
+            12: "A",
+        },
+        5356: {
+            0: "completedAuctions",
+            1: "Elixir of Giants",
+            2: "Amazona",
+            3: "5",
+            4: "95178",
+            5: "700",
+            6: "4972",
+            7: "99450",
+            8: "92555",
+            9: "Arelina",
+            10: "1601252068",
+            11: "",
+            12: "A",
+        },
+        2577: {
+            0: "completedBidsBuyouts",
+            1: "Elemental Earth",
+            2: "Amazona",
+            3: "2",
+            4: "",
+            5: "",
+            6: "",
+            7: "90798",
+            8: "90798",
+            9: "Roddyricch",
+            10: "1600923378",
+            11: "Snatch",
+            12: "A",
+        },
+    }
+    example_df = pd.DataFrame.from_dict(example, orient="index")
+    sources.clean_beancounter_purchases(example_df)

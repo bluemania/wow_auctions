@@ -77,3 +77,85 @@ auc_listings_schema = pa.DataFrameSchema(
         "time_remaining": Column(pa.Int),
     }
 )
+
+beancounter_data_raw_schema = pa.DataFrameSchema(
+    columns={
+        0: Column(pa.String),
+        1: Column(pa.String),
+        2: Column(pa.String),
+        3: Column(pa.String),
+        4: Column(pa.String),
+        5: Column(pa.String),
+        6: Column(pa.String),
+        7: Column(pa.String),
+        8: Column(pa.String),
+        9: Column(pa.String),
+        10: Column(pa.String),
+        11: Column(pa.String),
+        12: Column(pa.String),
+    }
+)
+
+beancounter_purchases_schema = pa.DataFrameSchema(
+    columns={
+        "auction_type": Column(pa.String),
+        "item": Column(pa.String),
+        "buyer": Column(pa.String),
+        "qty": Column(pa.Int),
+        "buyout": Column(pa.Int, nullable=True),
+        "bid": Column(pa.Int),
+        "seller": Column(pa.String),
+        "timestamp": Column(pa.DateTime),
+        "buyout_per": Column(pa.Float),
+        "bid_per": Column(pa.Float),
+    }
+)
+
+beancounter_posted_schema = pa.DataFrameSchema(
+    columns={
+        "auction_type": Column(pa.String),
+        "item": Column(pa.String),
+        "seller": Column(pa.String),
+        "qty": Column(pa.Int),
+        "deposit": Column(pa.Int),
+        "buyout": Column(pa.Int, nullable=True),
+        "bid": Column(pa.Int),
+        "timestamp": Column(pa.DateTime),
+        "buyout_per": Column(pa.Float),
+        "bid_per": Column(pa.Float),
+    }
+)
+
+beancounter_failed_schema = pa.DataFrameSchema(
+    columns={
+        "auction_type": Column(pa.String),
+        "item": Column(pa.String),
+        "seller": Column(pa.String),
+        "qty": Column(pa.Int),
+        "deposit": Column(pa.Int),
+        "buyout": Column(pa.Int, nullable=True),
+        "bid": Column(pa.Int),
+        "timestamp": Column(pa.DateTime),
+        "buyout_per": Column(pa.Float),
+        "bid_per": Column(pa.Float),
+    }
+)
+
+beancounter_success_schema = pa.DataFrameSchema(
+    columns={
+        "auction_type": Column(pa.String),
+        "item": Column(pa.String),
+        "seller": Column(pa.String),
+        "qty": Column(pa.Int),
+        "received": Column(pa.Int),
+        "deposit": Column(pa.Int),
+        "ah_cut": Column(pa.Int),
+        "buyout": Column(pa.Int, nullable=True),
+        "bid": Column(pa.Int),
+        "buyer": Column(pa.String),
+        "timestamp": Column(pa.DateTime),
+        "received_per": Column(pa.Float),
+        "buyout_per": Column(pa.Float),
+        "bid_per": Column(pa.Float),
+    }
+)

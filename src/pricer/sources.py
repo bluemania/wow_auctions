@@ -313,6 +313,8 @@ def clean_beancounter_data() -> None:
     bean_results.to_parquet(path, compression="gzip")
 
 
+@check_input(schema.beancounter_data_raw_schema)
+@check_output(schema.beancounter_purchases_schema)
 def clean_beancounter_purchases(df: pd.DataFrame) -> pd.DataFrame:
     """Further processing of purchase beancounter data."""
     purchases = df[df[0] == "completedBidsBuyouts"]
@@ -346,6 +348,8 @@ def clean_beancounter_purchases(df: pd.DataFrame) -> pd.DataFrame:
     return purchases
 
 
+@check_input(schema.beancounter_data_raw_schema)
+@check_output(schema.beancounter_posted_schema)
 def clean_beancounter_posted(df: pd.DataFrame) -> pd.DataFrame:
     """Further processing of posted auction beancounter data."""
     posted = df[df[0] == "postedAuctions"]
@@ -372,7 +376,7 @@ def clean_beancounter_posted(df: pd.DataFrame) -> pd.DataFrame:
     posted["buyout"] = posted["buyout"].astype(float)
     posted["bid"] = posted["bid"].astype(int)
     posted["duration"] = posted["duration"].astype(int)
-    posted["deposit"] = posted["deposit"].astype(int)
+    posted["deposit"] = posted["deposit"].replace("", 0).astype(int)
 
     posted["buyout_per"] = posted["buyout"] / posted["qty"]
     posted["bid_per"] = posted["bid"] / posted["qty"]
@@ -381,6 +385,8 @@ def clean_beancounter_posted(df: pd.DataFrame) -> pd.DataFrame:
     return posted
 
 
+@check_input(schema.beancounter_data_raw_schema)
+@check_output(schema.beancounter_failed_schema)
 def clean_beancounter_failed(df: pd.DataFrame) -> pd.DataFrame:
     """Further processing of failed auction beancounter data."""
     failed = df[df[0] == "failedAuctions"]
@@ -413,6 +419,8 @@ def clean_beancounter_failed(df: pd.DataFrame) -> pd.DataFrame:
     return failed
 
 
+@check_input(schema.beancounter_data_raw_schema)
+@check_output(schema.beancounter_success_schema)
 def clean_beancounter_success(df: pd.DataFrame) -> pd.DataFrame:
     """Further processing of successful auction beancounter data."""
     success = df[df[0] == "completedAuctions"]
