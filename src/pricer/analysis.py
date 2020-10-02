@@ -13,9 +13,7 @@ logger = logging.getLogger(__name__)
 
 def predict_item_prices() -> None:
     """Analyse exponential average mean and std of items given 14 day, 2 hour history."""
-    path = "data/cleaned/bb_fortnight.parquet"
-    logger.debug(f"Reading bb_fortnight parquet from {path}")
-    bb_fortnight = pd.read_parquet(path)
+    bb_fortnight = cfg.reader("cleaned", "bb_fortnight", "parquet")
 
     user_items = cfg.ui.copy()
 
@@ -57,9 +55,7 @@ def predict_item_prices() -> None:
 
 def analyse_listing_minprice() -> None:
     """Determine current Auctions minimum price. TODO Is this needed?"""
-    path = "data/cleaned/auc_listings.parquet"
-    logger.debug(f"Reading auc_listings parquet from {path}")
-    auc_listings = pd.read_parquet(path)
+    auc_listings = cfg.reader("cleaned", "auc_listings", "parquet")
 
     # Note this SHOULD be a simple groupby min, but getting 0's for some strange reason!
     item_mins = {}
@@ -74,18 +70,9 @@ def analyse_listing_minprice() -> None:
 
 def analyse_material_cost() -> None:
     """Analyse cost of materials for items, using purchase history or BB predicted price."""
-    path = "data/cleaned/bean_purchases.parquet"
-    logger.debug(f"Reading bean_purchases parquet from {path}")
-    bean_purchases = pd.read_parquet(path)
-
-    path = "data/intermediate/item_skeleton.parquet"
-    logger.debug(f"Reading item_skeleton parquet from {path}")
-    item_skeleton = pd.read_parquet(path)
-    item_skeleton.index.name = "item"
-
-    path = "data/intermediate/predicted_prices.parquet"
-    logger.debug(f"Reading predicted_prices parquet from {path}")
-    item_prices = pd.read_parquet(path)
+    bean_purchases = cfg.reader("cleaned", "bean_purchases", "parquet")
+    item_skeleton = cfg.reader("intermediate", "item_skeleton", "parquet")
+    item_prices = cfg.reader("intermediate", "predicted_prices", "parquet")
 
     user_items = cfg.ui.copy()
     user_buys = [k for k, v in user_items.items() if v.get("Buy")]
@@ -114,6 +101,7 @@ def analyse_material_cost() -> None:
         int
     )
 
+    item_skeleton.index.name = "item"
     mat_prices = item_skeleton.join(purchase_rolling).join(item_prices)
 
     mat_prices["material_price"] = (
@@ -141,9 +129,7 @@ def analyse_material_cost() -> None:
 
 def create_item_inventory() -> None:
     """Convert Arkinventory tabular data into dataframe of counts for user items."""
-    path = "data/cleaned/ark_inventory.parquet"
-    logger.debug(f"Reading ark_inventory parquet from {path}")
-    item_inventory = pd.read_parquet(path)
+    item_inventory = cfg.reader("cleaned", "ark_inventory", "parquet")
 
     roles = {char["name"]: char["role"] for char in cfg.us.get("roles", {})}
 
@@ -189,13 +175,8 @@ def create_item_inventory() -> None:
 
 def analyse_listings() -> None:
     """Convert live listings into single items."""
-    path = "data/cleaned/auc_listings.parquet"
-    logger.debug(f"Reading auc_listings parquet from {path}")
-    auc_listings = pd.read_parquet(path)
-
-    path = "data/intermediate/predicted_prices.parquet"
-    logger.debug(f"Reading predicted_prices parquet from {path}")
-    predicted_prices = pd.read_parquet(path)
+    auc_listings = cfg.reader("cleaned", "auc_listings", "parquet")
+    predicted_prices = cfg.reader("intermediate", "predicted_prices", "parquet")
 
     user_items = cfg.ui.copy()
     auc_listings = auc_listings[auc_listings["item"].isin(user_items)]
@@ -230,15 +211,10 @@ def analyse_listings() -> None:
 
 def analyse_replenishment() -> None:
     """Determine the demand for item replenishment."""
-    path = "data/intermediate/item_skeleton.parquet"
-    logger.debug(f"Reading item_skeleton parquet from {path}")
-    item_skeleton = pd.read_parquet(path)
+    item_skeleton = cfg.reader("intermediate", "item_skeleton", "parquet")
+    item_inventory = cfg.reader("intermediate", "item_inventory", "parquet")
+
     item_skeleton.index.name = "item"
-
-    path = "data/intermediate/item_inventory.parquet"
-    logger.debug(f"Reading item_inventory parquet from {path}")
-    item_inventory = pd.read_parquet(path)
-
     replenish = item_skeleton.join(item_inventory).fillna(0).astype(int)
 
     user_items = cfg.ui.copy()
@@ -264,33 +240,13 @@ def analyse_replenishment() -> None:
 
 def create_item_table() -> None:
     """Combine item information into single master table."""
-    path = "data/intermediate/item_skeleton.parquet"
-    logger.debug(f"Reading item_skeleton parquet from {path}")
-    item_skeleton = pd.read_parquet(path)
-
-    path = "data/intermediate/material_costs.parquet"
-    logger.debug(f"Reading material_costs parquet from {path}")
-    material_costs = pd.read_parquet(path)
-
-    path = "data/cleaned/bb_deposit.parquet"
-    logger.debug(f"Reading bb_deposit parquet from {path}")
-    bb_deposit = pd.read_parquet(path)
-
-    path = "data/intermediate/listings_minprice.parquet"
-    logger.debug(f"Reading listings_minprice parquet from {path}")
-    listings_minprice = pd.read_parquet(path)
-
-    path = "data/intermediate/item_inventory.parquet"
-    logger.debug(f"Reading item_inventory parquet from {path}")
-    item_inventory = pd.read_parquet(path)
-
-    path = "data/intermediate/predicted_prices.parquet"
-    logger.debug(f"Reading predicted_prices parquet from {path}")
-    predicted_prices = pd.read_parquet(path)
-
-    path = "data/intermediate/replenish.parquet"
-    logger.debug(f"Reading replenish parquet from {path}")
-    replenish = pd.read_parquet(path)
+    item_skeleton = cfg.reader("intermediate", "item_skeleton", "parquet")
+    material_costs = cfg.reader("intermediate", "material_costs", "parquet")
+    bb_deposit = cfg.reader("cleaned", "bb_deposit", "parquet")
+    listings_minprice = cfg.reader("intermediate", "listings_minprice", "parquet")
+    item_inventory = cfg.reader("intermediate", "item_inventory", "parquet")
+    predicted_prices = cfg.reader("intermediate", "predicted_prices", "parquet")
+    replenish = cfg.reader("intermediate", "replenish", "parquet")
 
     item_table = (
         item_skeleton.join(material_costs.set_index("item"))
@@ -317,9 +273,7 @@ def predict_volume_sell_probability(
     dur_char: str = "m", MAX_LISTINGS: int = 1000
 ) -> None:
     """Expected volume changes as a probability of sale given BB recent history."""
-    path = "data/cleaned/bb_fortnight.parquet"
-    logger.debug(f"Reading bb_fortnight parquet from {path}")
-    bb_fortnight = pd.read_parquet(path)
+    bb_fortnight = cfg.reader("cleaned", "bb_fortnight", "parquet")
 
     user_sells = [k for k, v in cfg.ui.items() if v.get("Sell")]
 

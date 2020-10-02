@@ -93,10 +93,7 @@ def get_bb_data() -> None:
 
 def clean_bb_data() -> None:
     """Parses all Booty Bay item json into tabular formats."""
-    path = "data/raw/bb_data.json"
-    logger.debug(f"Reading bb_data json from {path}")
-    with open(path, "r") as f:
-        item_data = json.load(f)
+    item_data = cfg.reader("raw", "bb_data", "json")
 
     bb_fortnight: List = []
     bb_history: List = []
@@ -173,10 +170,7 @@ def get_arkinventory_data() -> None:
 
 def clean_arkinventory_data(run_dt: dt) -> None:
     """Reads Ark Inventory json and parses into tabular format."""
-    path = "data/raw/arkinventory_data.json"
-    logger.debug(f"Reading arkinventory json from {path}")
-    with open(path, "r") as f:
-        inventory_data = json.load(f)
+    inventory_data = cfg.reader("raw", "arkinventory_data", "json")
 
     settings = utils.get_general_settings()
 
@@ -239,10 +233,7 @@ def get_beancounter_data() -> None:
 
 def clean_beancounter_data() -> None:
     """Reads Beancounter json and parses into tabular format."""
-    path = "data/raw/beancounter_data.json"
-    logger.debug(f"Reading beancounter json from {path}")
-    with open(path, "r") as f:
-        data = json.load(f)
+    data = cfg.reader("raw", "beancounter_data", "json")
 
     item_names = {v: k for k, v in utils.get_item_ids().items()}
 
@@ -471,10 +462,7 @@ def process_auctioneer_data(df: pd.DataFrame) -> pd.DataFrame:
 
 def clean_auctioneer_data() -> None:
     """Cleans Auctioneer json data into tablular format."""
-    path = "data/raw/aucscan_data.json"
-    logger.debug(f"Reading aucscan json from {path}")
-    with open(path, "r") as f:
-        aucscan_data = json.load(f)
+    aucscan_data = cfg.reader("raw", "aucscan_data", "json")
 
     auc_listings_raw = pd.DataFrame(aucscan_data)
     auc_listings = process_auctioneer_data(auc_listings_raw)

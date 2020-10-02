@@ -15,9 +15,7 @@ def analyse_buy_policy(MAX_BUY_STD: int = 2) -> None:
     """Create buy policy."""
     logger.debug(f"max buy std {MAX_BUY_STD}")
 
-    path = "data/intermediate/item_table.parquet"
-    logger.debug(f"Reading item_table parquet from {path}")
-    item_table = pd.read_parquet(path)
+    item_table = cfg.reader("intermediate", "item_table", "parquet")
 
     buy_policy = item_table[item_table["Buy"] == True]
     subset_cols = [
@@ -30,9 +28,8 @@ def analyse_buy_policy(MAX_BUY_STD: int = 2) -> None:
     ]
     buy_policy = buy_policy[subset_cols]
 
-    path = "data/intermediate/listing_each.parquet"
-    logger.debug(f"Reading listing_each parquet from {path}")
-    listing_each = pd.read_parquet(path)
+    listing_each = cfg.reader("intermediate", "listing_each", "parquet")
+
     listing_each = listing_each.sort_values("price_per")
 
     rank_list = listing_each.join(buy_policy, on="item").dropna()
@@ -83,9 +80,7 @@ def encode_buy_campaign(buy_policy: pd.DataFrame) -> Dict[str, Dict[str, Any]]:
 
 def write_buy_policy() -> None:
     """Writes the buy policy to all accounts."""
-    path = "data/outputs/buy_policy.parquet"
-    logger.debug(f"Reading buy_policy parquet from {path}")
-    buy_policy = pd.read_parquet(path)
+    buy_policy = cfg.reader("outputs", "buy_policy", "parquet")
 
     cols = ["item", "buy_price"]
     new_snatch = encode_buy_campaign(buy_policy[cols])
@@ -143,9 +138,7 @@ def encode_sell_campaign(sell_policy: pd.DataFrame) -> Dict[str, Any]:
 
 def write_sell_policy() -> None:
     """Writes the sell policy to accounts."""
-    path = "data/outputs/sell_policy.parquet"
-    logger.debug(f"Reading sell_policy parquet from {path}")
-    sell_policy = pd.read_parquet(path)
+    sell_policy = cfg.reader("outputs", "sell_policy", "parquet")
 
     cols = ["item", "proposed_buy", "proposed_bid", "sell_count", "stack", "duration"]
     new_appraiser = encode_sell_campaign(sell_policy[cols])
@@ -169,17 +162,11 @@ def analyse_sell_policy(
     MIN_PROFIT_PCT: float = 0.015,
 ) -> None:
     """Creates sell policy based on information."""
-    path = "data/intermediate/item_table.parquet"
-    logger.debug(f"Reading item_table parquet from {path}")
-    item_table = pd.read_parquet(path)
-
-    path = "data/intermediate/listing_each.parquet"
-    logger.debug(f"Reading listing_each parquet from {path}")
-    listing_each = pd.read_parquet(path)
-
-    path = "data/intermediate/item_volume_change_probability.parquet"
-    logger.debug(f"Reading item_volume_change_probability parquet from {path}")
-    item_volume_change_probability = pd.read_parquet(path)
+    item_table = cfg.reader("intermediate", "item_table", "parquet")
+    listing_each = cfg.reader("intermediate", "listing_each", "parquet")
+    item_volume_change_probability = cfg.reader(
+        "intermediate", "item_volume_change_probability", "parquet"
+    )
 
     cols = [
         "deposit",
@@ -283,9 +270,7 @@ def analyse_sell_policy(
 
 def analyse_make_policy() -> None:
     """Prints what potions to make."""
-    path = "data/intermediate/item_table.parquet"
-    logger.debug(f"Reading item_table parquet from {path}")
-    item_table = pd.read_parquet(path)
+    item_table = cfg.reader("intermediate", "item_table", "parquet")
     item_table.index.name = "item"
 
     cols = [
