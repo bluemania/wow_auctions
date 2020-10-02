@@ -52,10 +52,7 @@ def predict_item_prices() -> None:
     qty_df.name = "pred_quantity"
 
     predicted_prices = predicted_prices.join(std_df).join(qty_df).fillna(0).astype(int)
-
-    path = "data/intermediate/predicted_prices.parquet"
-    logger.debug(f"Writing predicted_prices parquet to {path}")
-    predicted_prices.to_parquet(path, compression="gzip")
+    cfg.writer(predicted_prices, "intermediate", "predicted_prices", "parquet")
 
 
 def analyse_listing_minprice() -> None:
@@ -70,12 +67,9 @@ def analyse_listing_minprice() -> None:
         x = auc_listings[(auc_listings["item"] == item)]
         item_mins[item] = int(x["price_per"].min())
 
-    price_df = pd.DataFrame(pd.Series(item_mins)).reset_index()
-    price_df.columns = ["item", "listing_minprice"]
-
-    path = "data/intermediate/listings_minprice.parquet"
-    logger.debug(f"Writing price parquet to {path}")
-    price_df.to_parquet(path, compression="gzip")
+    listings_minprice = pd.DataFrame(pd.Series(item_mins)).reset_index()
+    listings_minprice.columns = ["item", "listing_minprice"]
+    cfg.writer(listings_minprice, "intermediate", "listings_minprice", "parquet")
 
 
 def analyse_material_cost() -> None:
@@ -142,10 +136,7 @@ def analyse_material_cost() -> None:
 
     material_costs = pd.DataFrame.from_dict(item_costs, orient="index").reset_index()
     material_costs.columns = ["item", "material_costs"]
-
-    path = "data/intermediate/material_costs.parquet"
-    logger.debug(f"Writing material_costs parquet to {path}")
-    material_costs.to_parquet(path, compression="gzip")
+    cfg.writer(material_costs, "intermediate", "material_costs", "parquet")
 
 
 def create_item_inventory() -> None:
@@ -193,9 +184,7 @@ def create_item_inventory() -> None:
     cols = [x for x in item_inventory.columns if "ahm" in x]
     item_inventory["inv_total_ahm"] = item_inventory[cols].sum(axis=1)
 
-    path = "data/intermediate/item_inventory.parquet"
-    logger.debug(f"Writing item_inventory parquet from {path}")
-    item_inventory.to_parquet(path, compression="gzip")
+    cfg.writer(item_inventory, "intermediate", "item_inventory", "parquet")
 
 
 def analyse_listings() -> None:
@@ -236,14 +225,7 @@ def analyse_listings() -> None:
         [item, price_per, z], index=["item", "price_per", "pred_z"]
     ).T
 
-    path = "data/intermediate/listing_each.parquet"
-    logger.debug(f"Writing listing_each parquet to {path}")
-    listing_each.to_parquet(path, compression="gzip")
-
-
-def analyse_undercut_leads() -> None:
-    """Not used currently."""
-    pass
+    cfg.writer(listing_each, "intermediate", "listing_each", "parquet")
 
 
 def analyse_replenishment() -> None:
@@ -277,10 +259,7 @@ def analyse_replenishment() -> None:
     )
 
     replenish = replenish[["replenish_qty", "replenish_z"]].reset_index()
-
-    path = "data/intermediate/replenish.parquet"
-    logger.debug(f"Writing replenish parquet to {path}")
-    replenish.to_parquet(path, compression="gzip")
+    cfg.writer(replenish, "intermediate", "replenish", "parquet")
 
 
 def create_item_table() -> None:
@@ -309,10 +288,6 @@ def create_item_table() -> None:
     logger.debug(f"Reading predicted_prices parquet from {path}")
     predicted_prices = pd.read_parquet(path)
 
-    path = "data/intermediate/undercuts_leads.parquet"
-    logger.debug(f"Reading undercuts_leads parquet from {path}")
-    undercuts_leads = pd.read_parquet(path)
-
     path = "data/intermediate/replenish.parquet"
     logger.debug(f"Reading replenish parquet from {path}")
     replenish = pd.read_parquet(path)
@@ -323,7 +298,6 @@ def create_item_table() -> None:
         .join(predicted_prices)
         .join(item_inventory)
         .join(bb_deposit)
-        .join(undercuts_leads.set_index("item"))
         .fillna(0)
         .astype(int)
         .join(replenish.set_index("item"))
@@ -336,9 +310,7 @@ def create_item_table() -> None:
         lambda x: item_ids[x] if x in item_ids else 0
     )
 
-    path = "data/intermediate/item_table.parquet"
-    logger.debug(f"Writing item_table parquet to {path}")
-    item_table.to_parquet(path, compression="gzip")
+    cfg.writer(item_table, "intermediate", "item_table", "parquet")
 
 
 def predict_volume_sell_probability(
@@ -386,6 +358,9 @@ def predict_volume_sell_probability(
     item_volume_change_probability.name = "probability"
     item_volume_change_probability = item_volume_change_probability.reset_index()
 
-    path = "data/intermediate/item_volume_change_probability.parquet"
-    logger.debug(f"Writing item_volume_change_probability parquet to {path}")
-    item_volume_change_probability.to_parquet(path, compression="gzip")
+    cfg.writer(
+        item_volume_change_probability,
+        "intermediate",
+        "item_volume_change_probability",
+        "parquet",
+    )

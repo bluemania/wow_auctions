@@ -47,7 +47,6 @@ def main() -> None:
     analysis.analyse_material_cost()
     analysis.create_item_inventory()
     analysis.analyse_listings()
-    analysis.analyse_undercut_leads()
     analysis.analyse_replenishment()
 
     analysis.create_item_table()
@@ -60,7 +59,8 @@ def main() -> None:
     campaign.analyse_sell_policy(stack=args.s, max_sell=args.m, duration=args.d)
     campaign.write_sell_policy()
 
-    reporting.what_make()
+    campaign.analyse_make_policy()
+
     reporting.have_in_bag()
 
     logger.info(f"Program end, seconds {(dt.now() - run_dt).total_seconds()}")

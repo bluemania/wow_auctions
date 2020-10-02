@@ -88,7 +88,7 @@ def get_bb_data() -> None:
         bb_data[item] = get_bb_item_page(driver, item_id)
 
     driver.close()
-    cfg.writer(bb_data, 'raw', 'bb_data', 'json')
+    cfg.writer(bb_data, "raw", "bb_data", "json")
 
 
 def clean_bb_data() -> None:
@@ -152,11 +152,11 @@ def clean_bb_data() -> None:
     bb_deposit_df.columns = ["deposit"]
     bb_deposit_df.index.name = "item"
 
-    cfg.writer(bb_fortnight_df, 'cleaned', 'bb_fortnight', 'parquet')
-    cfg.writer(bb_history_df, 'cleaned', 'bb_history', 'parquet')
-    cfg.writer(bb_alltime_df, 'cleaned', 'bb_alltime', 'parquet')
-    cfg.writer(bb_listings_df, 'cleaned', 'bb_listings', 'parquet')
-    cfg.writer(bb_deposit_df, 'cleaned', 'bb_deposit', 'parquet')
+    cfg.writer(bb_fortnight_df, "cleaned", "bb_fortnight", "parquet")
+    cfg.writer(bb_history_df, "cleaned", "bb_history", "parquet")
+    cfg.writer(bb_alltime_df, "cleaned", "bb_alltime", "parquet")
+    cfg.writer(bb_listings_df, "cleaned", "bb_listings", "parquet")
+    cfg.writer(bb_deposit_df, "cleaned", "bb_deposit", "parquet")
 
 
 def get_arkinventory_data() -> None:
@@ -168,7 +168,7 @@ def get_arkinventory_data() -> None:
         acc_inv = utils.source_merge(acc_inv, data).copy()
 
     arkinventory_data = acc_inv["ARKINVDB"]["global"]["player"]["data"]
-    cfg.writer(arkinventory_data, 'raw', 'arkinventory_data', 'json')
+    cfg.writer(arkinventory_data, "raw", "arkinventory_data", "json")
 
 
 def clean_arkinventory_data(run_dt: dt) -> None:
@@ -217,13 +217,13 @@ def clean_arkinventory_data(run_dt: dt) -> None:
     ark_inventory = pd.DataFrame(raw_data)
     ark_inventory.columns = cols
     ark_inventory["timestamp"] = run_dt
-    cfg.writer(ark_inventory, 'cleaned', 'ark_inventory', 'parquet')    
+    cfg.writer(ark_inventory, "cleaned", "ark_inventory", "parquet")
 
     ark_monies = pd.Series(monies)
     ark_monies.name = "monies"
     ark_monies = pd.DataFrame(ark_monies)
     ark_monies["timestamp"] = run_dt
-    cfg.writer(ark_monies, 'cleaned', 'ark_monies', 'parquet')
+    cfg.writer(ark_monies, "cleaned", "ark_monies", "parquet")
 
 
 def get_beancounter_data() -> None:
@@ -234,7 +234,7 @@ def get_beancounter_data() -> None:
         path = utils.make_lua_path(account_name, "BeanCounter")
         bean = utils.read_lua(path)
         beancounter_data = utils.source_merge(beancounter_data, bean).copy()
-    cfg.writer(beancounter_data, 'raw', 'beancounter_data', 'json')
+    cfg.writer(beancounter_data, "raw", "beancounter_data", "json")
 
 
 def clean_beancounter_data() -> None:
@@ -264,7 +264,7 @@ def clean_beancounter_data() -> None:
     df = pd.DataFrame(parsed)
 
     bean_purchases = clean_beancounter_purchases(df)
-    cfg.writer(bean_purchases, 'cleaned', 'bean_purchases', 'parquet')
+    cfg.writer(bean_purchases, "cleaned", "bean_purchases", "parquet")
 
     failed = clean_beancounter_failed(df)
     success = clean_beancounter_success(df)
@@ -273,7 +273,7 @@ def clean_beancounter_data() -> None:
     bean_results["success"] = bean_results["auction_type"].replace(
         {"completedAuctions": 1, "failedAuctions": 0}
     )
-    cfg.writer(bean_results, 'cleaned', 'bean_results', 'parquet')
+    cfg.writer(bean_results, "cleaned", "bean_results", "parquet")
 
 
 @check_input(schema.beancounter_data_raw_schema)
@@ -444,7 +444,7 @@ def get_auctioneer_data() -> None:
 
     aucscan_data = [x.split("|")[-1].split(",") for x in listings]
 
-    cfg.writer(aucscan_data, 'raw', 'aucscan_data', 'json')
+    cfg.writer(aucscan_data, "raw", "aucscan_data", "json")
 
 
 @check_input(schema.auc_listings_raw_schema)
@@ -480,7 +480,7 @@ def clean_auctioneer_data() -> None:
     auc_listings = process_auctioneer_data(auc_listings_raw)
 
     # Saves latest scan to intermediate (immediate)
-    cfg.writer(auc_listings, 'cleaned', 'auc_listings', 'parquet')
+    cfg.writer(auc_listings, "cleaned", "auc_listings", "parquet")
 
 
 @check_input(schema.item_skeleton_raw_schema)
@@ -509,4 +509,4 @@ def create_item_skeleton() -> None:
 
     item_skeleton = process_item_skeleton(item_skeleton_raw)
 
-    cfg.writer(item_skeleton, 'intermediate', 'item_skeleton', 'parquet')
+    cfg.writer(item_skeleton, "intermediate", "item_skeleton", "parquet")
