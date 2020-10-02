@@ -161,7 +161,7 @@ def get_arkinventory_data() -> None:
     acc_inv: dict = {}
     for account_name in cfg.us.get("accounts"):
         path = utils.make_lua_path(account_name, "ArkInventory")
-        data = utils.read_lua(path)
+        data = io.reader(name=path, ftype="lua")
         acc_inv = utils.source_merge(acc_inv, data).copy()
 
     arkinventory_data = acc_inv["ARKINVDB"]["global"]["player"]["data"]
@@ -172,7 +172,7 @@ def clean_arkinventory_data(run_dt: dt) -> None:
     """Reads Ark Inventory json and parses into tabular format."""
     inventory_data = io.reader("raw", "arkinventory_data", "json")
 
-    settings = utils.get_general_settings()
+    settings = io.reader("config", "general_settings", "yaml")
 
     raw_data: list = []
     monies: Dict[str, int] = {}
@@ -226,7 +226,7 @@ def get_beancounter_data() -> None:
     beancounter_data: dict = {}
     for account_name in cfg.us.get("accounts"):
         path = utils.make_lua_path(account_name, "BeanCounter")
-        bean = utils.read_lua(path)
+        bean = io.reader(name=path, ftype="lua")
         beancounter_data = utils.source_merge(beancounter_data, bean).copy()
     io.writer(beancounter_data, "raw", "beancounter_data", "json")
 
@@ -411,7 +411,7 @@ def clean_beancounter_success(df: pd.DataFrame) -> pd.DataFrame:
 def get_auctioneer_data() -> None:
     """Reads WoW Addon Auctioneer lua and parses text file into json."""
     ahm_account = [r["account"] for r in cfg.us.get("roles") if r.get("role") == "ahm"]
-    path = utils.make_lua_path(ahm_account[0], "Auc-ScanData")
+    path = utils.make_lua_path(ahm_account[0], "Auc-ScanData") + ".lua"
 
     logger.debug(f"Reading auctioneer lua from {path}")
     ropes = []

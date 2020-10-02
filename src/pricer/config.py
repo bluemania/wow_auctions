@@ -2,7 +2,7 @@
 import logging
 from typing import Any, Dict
 
-import yaml
+from pricer import io
 
 logger = logging.getLogger(__name__)
 
@@ -50,13 +50,6 @@ def set_loggers(
         logger.addHandler(stream_handler)  # type: ignore
 
 
-# Load global user settings such as paths
-# This should handle any rstrips
-# This should add account information (automatically)
-with open("config/user_settings.yaml", "r") as f:
-    us = yaml.safe_load(f)
-
-with open("config/user_items.yaml", "r") as f:
-    ui = yaml.safe_load(f)
-
+us = io.reader("config", "user_settings", "yaml")
+ui = io.reader("config", "user_items", "yaml")
 env: Dict[str, str] = {"basepath": "data"}

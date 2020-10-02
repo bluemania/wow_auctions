@@ -89,7 +89,7 @@ def write_buy_policy() -> None:
 
     for account in cfg.us.get("accounts", []):
         path = utils.make_lua_path(account_name=account, datasource="Auc-Advanced")
-        data = utils.read_lua(path)
+        data = io.reader(name=path, ftype="lua")
         snatch = data["AucAdvancedData"]["UtilSearchUiData"]["Current"]
         snatch["snatch.itemsList"] = {}
         snatch = snatch["snatch.itemsList"]
@@ -146,7 +146,7 @@ def write_sell_policy() -> None:
     # Read client lua, replace with
     for account in cfg.us.get("accounts", []):
         path = utils.make_lua_path(account_name=account, datasource="Auc-Advanced")
-        data = utils.read_lua(path)
+        data = io.reader(name=path, ftype="lua")
         data["AucAdvancedConfig"]["profile.Default"]["util"][
             "appraiser"
         ] = new_appraiser
@@ -345,8 +345,9 @@ def analyse_make_policy() -> None:
     materials_list = make[make["make_mat_flag"] == 1]["item_id"].to_dict()
     sell_items = make[make["Sell"] == 1]["item_id"]
 
-    path = utils.make_lua_path(
-        account_name="396255466#1", datasource="TradeSkillMaster"
+    path = (
+        utils.make_lua_path(account_name="396255466#1", datasource="TradeSkillMaster")
+        + ".lua"
     )
 
     with open(path, "rb") as input_file:
