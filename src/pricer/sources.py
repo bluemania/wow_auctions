@@ -8,15 +8,15 @@ from typing import Any, Dict, List
 
 from bs4 import BeautifulSoup
 import pandas as pd
+from pandera import check_input, check_output
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 import yaml
 
-
 from pricer import config as cfg
-from pricer import utils
+from pricer import schema, utils
 
 pd.options.mode.chained_assignment = None  # default='warn'
 logger = logging.getLogger(__name__)
@@ -313,6 +313,8 @@ def clean_beancounter_data() -> None:
     bean_results.to_parquet(path, compression="gzip")
 
 
+@check_input(schema.beancounter_data_raw_schema)
+@check_output(schema.beancounter_purchases_schema)
 def clean_beancounter_purchases(df: pd.DataFrame) -> pd.DataFrame:
     """Further processing of purchase beancounter data."""
     purchases = df[df[0] == "completedBidsBuyouts"]
@@ -346,6 +348,8 @@ def clean_beancounter_purchases(df: pd.DataFrame) -> pd.DataFrame:
     return purchases
 
 
+@check_input(schema.beancounter_data_raw_schema)
+@check_output(schema.beancounter_posted_schema)
 def clean_beancounter_posted(df: pd.DataFrame) -> pd.DataFrame:
     """Further processing of posted auction beancounter data."""
     posted = df[df[0] == "postedAuctions"]
@@ -372,7 +376,7 @@ def clean_beancounter_posted(df: pd.DataFrame) -> pd.DataFrame:
     posted["buyout"] = posted["buyout"].astype(float)
     posted["bid"] = posted["bid"].astype(int)
     posted["duration"] = posted["duration"].astype(int)
-    posted["deposit"] = posted["deposit"].astype(int)
+    posted["deposit"] = posted["deposit"].replace("", 0).astype(int)
 
     posted["buyout_per"] = posted["buyout"] / posted["qty"]
     posted["bid_per"] = posted["bid"] / posted["qty"]
@@ -381,6 +385,8 @@ def clean_beancounter_posted(df: pd.DataFrame) -> pd.DataFrame:
     return posted
 
 
+@check_input(schema.beancounter_data_raw_schema)
+@check_output(schema.beancounter_failed_schema)
 def clean_beancounter_failed(df: pd.DataFrame) -> pd.DataFrame:
     """Further processing of failed auction beancounter data."""
     failed = df[df[0] == "failedAuctions"]
@@ -413,6 +419,8 @@ def clean_beancounter_failed(df: pd.DataFrame) -> pd.DataFrame:
     return failed
 
 
+@check_input(schema.beancounter_data_raw_schema)
+@check_output(schema.beancounter_success_schema)
 def clean_beancounter_success(df: pd.DataFrame) -> pd.DataFrame:
     """Further processing of successful auction beancounter data."""
     success = df[df[0] == "completedAuctions"]
@@ -479,6 +487,28 @@ def get_auctioneer_data() -> None:
         json.dump(cleaned_listings, f)
 
 
+@check_input(schema.auc_listings_raw_schema)
+@check_output(schema.auc_listings_schema)
+def process_auctioneer_data(df: pd.DataFrame) -> pd.DataFrame:
+    """Performs processing of auctioneer data."""
+    auction_timing: Dict[int, int] = {1: 30, 2: 60 * 2, 3: 60 * 12, 4: 60 * 24}
+
+    df["time_remaining"] = df[6].astype(int).replace(auction_timing)
+    df["item"] = df[8].str.replace('"', "").str[1:-1]
+    df["quantity"] = df[10].replace("nil", 0).astype(int)
+    df["buy"] = df[16].astype(int)
+    df["sellername"] = df[19].str.replace('"', "").str[1:-1]
+
+    df = df[df["quantity"] > 0]
+
+    df["price_per"] = (df["buy"] / df["quantity"]).astype(int)
+    df = df[df["price_per"] > 0]
+
+    cols = ["item", "quantity", "buy", "sellername", "price_per", "time_remaining"]
+    df = df[cols]
+    return df
+
+
 def clean_auctioneer_data() -> None:
     """Cleans Auctioneer json data into tablular format."""
     path = "data/raw/aucscan_data.json"
@@ -486,24 +516,8 @@ def clean_auctioneer_data() -> None:
     with open(path, "r") as f:
         aucscan_data = json.load(f)
 
-    auction_timing: Dict[int, int] = {1: 30, 2: 60 * 2, 3: 60 * 12, 4: 60 * 24}
-
-    auc_listings = pd.DataFrame(aucscan_data)
-    auc_listings["time_remaining"] = auc_listings[6].astype(int).replace(auction_timing)
-    auc_listings["item"] = auc_listings[8].str.replace('"', "").str[1:-1]
-    auc_listings["quantity"] = auc_listings[10].replace("nil", 0).astype(int)
-    auc_listings["buy"] = auc_listings[16].astype(int)
-    auc_listings["sellername"] = auc_listings[19].str.replace('"', "").str[1:-1]
-
-    auc_listings = auc_listings[auc_listings["quantity"] > 0]
-
-    auc_listings["price_per"] = (auc_listings["buy"] / auc_listings["quantity"]).astype(
-        int
-    )
-    auc_listings = auc_listings[auc_listings["price_per"] > 0]
-
-    cols = ["item", "quantity", "buy", "sellername", "price_per", "time_remaining"]
-    auc_listings = auc_listings[cols]
+    auc_listings_raw = pd.DataFrame(aucscan_data)
+    auc_listings = process_auctioneer_data(auc_listings_raw)
 
     # Saves latest scan to intermediate (immediate)
     path = "data/cleaned/auc_listings.parquet"
@@ -511,26 +525,32 @@ def clean_auctioneer_data() -> None:
     auc_listings.to_parquet(path, compression="gzip")
 
 
+@check_input(schema.item_skeleton_raw_schema)
+@check_output(schema.item_skeleton_schema)
+def process_item_skeleton(df: pd.DataFrame) -> pd.DataFrame:
+    """Make transformation to item skeleton."""
+    df["made_from"] = df["made_from"] == df["made_from"]
+
+    int_cols = ["min_holding", "max_holding", "vendor_price"]
+    df[int_cols] = df[int_cols].fillna(0).astype(int)
+
+    # df["max_sell"] = df["max_sell"].fillna(df["max_holding"]).astype(int)
+
+    df["std_holding"] = (df["max_holding"] - df["min_holding"]) / 7
+    df["mean_holding"] = df[["min_holding", "max_holding"]].mean(axis=1).astype(int)
+
+    bool_cols = ["Buy", "Sell", "make_pass"]
+    df[bool_cols] = df[bool_cols].fillna(False).astype(int)
+    return df
+
+
 def create_item_skeleton() -> None:
     """Creates basic dataframe from user items information."""
     user_items = cfg.ui.copy()
-    item_table = pd.DataFrame(user_items).T
+    item_skeleton_raw = pd.DataFrame(user_items).T
 
-    # item_table = item_table.drop("made_from", axis=1)
-    item_table["made_from"] = item_table["made_from"] == item_table["made_from"]
-    int_cols = ["min_holding", "max_holding", "vendor_price"]
-    item_table[int_cols] = item_table[int_cols].fillna(0).astype(int)
-
-    item_table["std_holding"] = (
-        item_table["max_holding"] - item_table["min_holding"]
-    ) / 7
-    item_table["mean_holding"] = (
-        item_table[["min_holding", "max_holding"]].mean(axis=1).astype(int)
-    )
-
-    bool_cols = ["Buy", "Sell", "make_pass"]
-    item_table[bool_cols] = item_table[bool_cols].fillna(False).astype(int)
+    item_skeleton = process_item_skeleton(item_skeleton_raw)
 
     path = "data/intermediate/item_skeleton.parquet"
     logger.debug(f"Writing item_skeleton parquet to {path}")
-    item_table.to_parquet(path, compression="gzip")
+    item_skeleton.to_parquet(path, compression="gzip")
