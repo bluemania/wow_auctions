@@ -6,14 +6,14 @@ from numpy import inf
 import pandas as pd
 from scipy.stats import gaussian_kde
 
-from pricer import config as cfg, utils
+from pricer import config as cfg, io, utils
 
 logger = logging.getLogger(__name__)
 
 
 def predict_item_prices() -> None:
     """Analyse exponential average mean and std of items given 14 day, 2 hour history."""
-    bb_fortnight = cfg.reader("cleaned", "bb_fortnight", "parquet")
+    bb_fortnight = io.reader("cleaned", "bb_fortnight", "parquet")
 
     user_items = cfg.ui.copy()
 
@@ -50,12 +50,12 @@ def predict_item_prices() -> None:
     qty_df.name = "pred_quantity"
 
     predicted_prices = predicted_prices.join(std_df).join(qty_df).fillna(0).astype(int)
-    cfg.writer(predicted_prices, "intermediate", "predicted_prices", "parquet")
+    io.writer(predicted_prices, "intermediate", "predicted_prices", "parquet")
 
 
 def analyse_listing_minprice() -> None:
     """Determine current Auctions minimum price. TODO Is this needed?"""
-    auc_listings = cfg.reader("cleaned", "auc_listings", "parquet")
+    auc_listings = io.reader("cleaned", "auc_listings", "parquet")
 
     # Note this SHOULD be a simple groupby min, but getting 0's for some strange reason!
     item_mins = {}
@@ -65,14 +65,14 @@ def analyse_listing_minprice() -> None:
 
     listings_minprice = pd.DataFrame(pd.Series(item_mins)).reset_index()
     listings_minprice.columns = ["item", "listing_minprice"]
-    cfg.writer(listings_minprice, "intermediate", "listings_minprice", "parquet")
+    io.writer(listings_minprice, "intermediate", "listings_minprice", "parquet")
 
 
 def analyse_material_cost() -> None:
     """Analyse cost of materials for items, using purchase history or BB predicted price."""
-    bean_purchases = cfg.reader("cleaned", "bean_purchases", "parquet")
-    item_skeleton = cfg.reader("intermediate", "item_skeleton", "parquet")
-    item_prices = cfg.reader("intermediate", "predicted_prices", "parquet")
+    bean_purchases = io.reader("cleaned", "bean_purchases", "parquet")
+    item_skeleton = io.reader("intermediate", "item_skeleton", "parquet")
+    item_prices = io.reader("intermediate", "predicted_prices", "parquet")
 
     user_items = cfg.ui.copy()
     user_buys = [k for k, v in user_items.items() if v.get("Buy")]
@@ -124,12 +124,12 @@ def analyse_material_cost() -> None:
 
     material_costs = pd.DataFrame.from_dict(item_costs, orient="index").reset_index()
     material_costs.columns = ["item", "material_costs"]
-    cfg.writer(material_costs, "intermediate", "material_costs", "parquet")
+    io.writer(material_costs, "intermediate", "material_costs", "parquet")
 
 
 def create_item_inventory() -> None:
     """Convert Arkinventory tabular data into dataframe of counts for user items."""
-    item_inventory = cfg.reader("cleaned", "ark_inventory", "parquet")
+    item_inventory = io.reader("cleaned", "ark_inventory", "parquet")
 
     roles = {char["name"]: char["role"] for char in cfg.us.get("roles", {})}
 
@@ -170,13 +170,13 @@ def create_item_inventory() -> None:
     cols = [x for x in item_inventory.columns if "ahm" in x]
     item_inventory["inv_total_ahm"] = item_inventory[cols].sum(axis=1)
 
-    cfg.writer(item_inventory, "intermediate", "item_inventory", "parquet")
+    io.writer(item_inventory, "intermediate", "item_inventory", "parquet")
 
 
 def analyse_listings() -> None:
     """Convert live listings into single items."""
-    auc_listings = cfg.reader("cleaned", "auc_listings", "parquet")
-    predicted_prices = cfg.reader("intermediate", "predicted_prices", "parquet")
+    auc_listings = io.reader("cleaned", "auc_listings", "parquet")
+    predicted_prices = io.reader("intermediate", "predicted_prices", "parquet")
 
     user_items = cfg.ui.copy()
     auc_listings = auc_listings[auc_listings["item"].isin(user_items)]
@@ -206,13 +206,13 @@ def analyse_listings() -> None:
         [item, price_per, z], index=["item", "price_per", "pred_z"]
     ).T
 
-    cfg.writer(listing_each, "intermediate", "listing_each", "parquet")
+    io.writer(listing_each, "intermediate", "listing_each", "parquet")
 
 
 def analyse_replenishment() -> None:
     """Determine the demand for item replenishment."""
-    item_skeleton = cfg.reader("intermediate", "item_skeleton", "parquet")
-    item_inventory = cfg.reader("intermediate", "item_inventory", "parquet")
+    item_skeleton = io.reader("intermediate", "item_skeleton", "parquet")
+    item_inventory = io.reader("intermediate", "item_inventory", "parquet")
 
     item_skeleton.index.name = "item"
     replenish = item_skeleton.join(item_inventory).fillna(0).astype(int)
@@ -235,18 +235,18 @@ def analyse_replenishment() -> None:
     )
 
     replenish = replenish[["replenish_qty", "replenish_z"]].reset_index()
-    cfg.writer(replenish, "intermediate", "replenish", "parquet")
+    io.writer(replenish, "intermediate", "replenish", "parquet")
 
 
 def create_item_table() -> None:
     """Combine item information into single master table."""
-    item_skeleton = cfg.reader("intermediate", "item_skeleton", "parquet")
-    material_costs = cfg.reader("intermediate", "material_costs", "parquet")
-    bb_deposit = cfg.reader("cleaned", "bb_deposit", "parquet")
-    listings_minprice = cfg.reader("intermediate", "listings_minprice", "parquet")
-    item_inventory = cfg.reader("intermediate", "item_inventory", "parquet")
-    predicted_prices = cfg.reader("intermediate", "predicted_prices", "parquet")
-    replenish = cfg.reader("intermediate", "replenish", "parquet")
+    item_skeleton = io.reader("intermediate", "item_skeleton", "parquet")
+    material_costs = io.reader("intermediate", "material_costs", "parquet")
+    bb_deposit = io.reader("cleaned", "bb_deposit", "parquet")
+    listings_minprice = io.reader("intermediate", "listings_minprice", "parquet")
+    item_inventory = io.reader("intermediate", "item_inventory", "parquet")
+    predicted_prices = io.reader("intermediate", "predicted_prices", "parquet")
+    replenish = io.reader("intermediate", "replenish", "parquet")
 
     item_table = (
         item_skeleton.join(material_costs.set_index("item"))
@@ -266,14 +266,14 @@ def create_item_table() -> None:
         lambda x: item_ids[x] if x in item_ids else 0
     )
 
-    cfg.writer(item_table, "intermediate", "item_table", "parquet")
+    io.writer(item_table, "intermediate", "item_table", "parquet")
 
 
 def predict_volume_sell_probability(
     dur_char: str = "m", MAX_LISTINGS: int = 1000
 ) -> None:
     """Expected volume changes as a probability of sale given BB recent history."""
-    bb_fortnight = cfg.reader("cleaned", "bb_fortnight", "parquet")
+    bb_fortnight = io.reader("cleaned", "bb_fortnight", "parquet")
 
     user_sells = [k for k, v in cfg.ui.items() if v.get("Sell")]
 
@@ -312,7 +312,7 @@ def predict_volume_sell_probability(
     item_volume_change_probability.name = "probability"
     item_volume_change_probability = item_volume_change_probability.reset_index()
 
-    cfg.writer(
+    io.writer(
         item_volume_change_probability,
         "intermediate",
         "item_volume_change_probability",

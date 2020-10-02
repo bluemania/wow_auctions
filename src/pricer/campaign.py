@@ -6,7 +6,7 @@ import pandas as pd
 from scipy.stats import norm
 from slpp import slpp as lua
 
-from pricer import config as cfg, utils
+from pricer import config as cfg, io, utils
 
 logger = logging.getLogger(__name__)
 
@@ -15,7 +15,7 @@ def analyse_buy_policy(MAX_BUY_STD: int = 2) -> None:
     """Create buy policy."""
     logger.debug(f"max buy std {MAX_BUY_STD}")
 
-    item_table = cfg.reader("intermediate", "item_table", "parquet")
+    item_table = io.reader("intermediate", "item_table", "parquet")
 
     buy_policy = item_table[item_table["Buy"] == True]
     subset_cols = [
@@ -28,7 +28,7 @@ def analyse_buy_policy(MAX_BUY_STD: int = 2) -> None:
     ]
     buy_policy = buy_policy[subset_cols]
 
-    listing_each = cfg.reader("intermediate", "listing_each", "parquet")
+    listing_each = io.reader("intermediate", "listing_each", "parquet")
 
     listing_each = listing_each.sort_values("price_per")
 
@@ -47,14 +47,14 @@ def analyse_buy_policy(MAX_BUY_STD: int = 2) -> None:
     )
 
     rank_list = rank_list[rank_list["updated_replenish_z"] > rank_list["pred_z"]]
-    cfg.writer(rank_list, "reporting", "buy_rank", "parquet")
+    io.writer(rank_list, "reporting", "buy_rank", "parquet")
 
     buy_policy["buy_price"] = rank_list.groupby("item")["price_per"].max()
     buy_policy["buy_price"] = buy_policy["buy_price"].fillna(1).astype(int)
 
     buy_policy.index.name = "item"
     buy_policy = buy_policy.reset_index()
-    cfg.writer(buy_policy, "outputs", "buy_policy", "parquet")
+    io.writer(buy_policy, "outputs", "buy_policy", "parquet")
 
 
 def encode_buy_campaign(buy_policy: pd.DataFrame) -> Dict[str, Dict[str, Any]]:
@@ -80,7 +80,7 @@ def encode_buy_campaign(buy_policy: pd.DataFrame) -> Dict[str, Dict[str, Any]]:
 
 def write_buy_policy() -> None:
     """Writes the buy policy to all accounts."""
-    buy_policy = cfg.reader("outputs", "buy_policy", "parquet")
+    buy_policy = io.reader("outputs", "buy_policy", "parquet")
 
     cols = ["item", "buy_price"]
     new_snatch = encode_buy_campaign(buy_policy[cols])
@@ -138,7 +138,7 @@ def encode_sell_campaign(sell_policy: pd.DataFrame) -> Dict[str, Any]:
 
 def write_sell_policy() -> None:
     """Writes the sell policy to accounts."""
-    sell_policy = cfg.reader("outputs", "sell_policy", "parquet")
+    sell_policy = io.reader("outputs", "sell_policy", "parquet")
 
     cols = ["item", "proposed_buy", "proposed_bid", "sell_count", "stack", "duration"]
     new_appraiser = encode_sell_campaign(sell_policy[cols])
@@ -162,9 +162,9 @@ def analyse_sell_policy(
     MIN_PROFIT_PCT: float = 0.015,
 ) -> None:
     """Creates sell policy based on information."""
-    item_table = cfg.reader("intermediate", "item_table", "parquet")
-    listing_each = cfg.reader("intermediate", "listing_each", "parquet")
-    item_volume_change_probability = cfg.reader(
+    item_table = io.reader("intermediate", "item_table", "parquet")
+    listing_each = io.reader("intermediate", "listing_each", "parquet")
+    item_volume_change_probability = io.reader(
         "intermediate", "item_volume_change_probability", "parquet"
     )
 
@@ -260,17 +260,17 @@ def analyse_sell_policy(
         adjust_stack, "min_sell"
     ]
 
-    cfg.writer(sell_policy, "outputs", "sell_policy", "parquet")
+    io.writer(sell_policy, "outputs", "sell_policy", "parquet")
 
     listing_profits = listing_profits.set_index(["rank", "item"])[
         "estimated_profit"
     ].unstack()
-    cfg.writer(listing_profits, "reporting", "listing_profits", "parquet")
+    io.writer(listing_profits, "reporting", "listing_profits", "parquet")
 
 
 def analyse_make_policy() -> None:
     """Prints what potions to make."""
-    item_table = cfg.reader("intermediate", "item_table", "parquet")
+    item_table = io.reader("intermediate", "item_table", "parquet")
     item_table.index.name = "item"
 
     cols = [
@@ -392,4 +392,4 @@ def analyse_make_policy() -> None:
     with open(path, "wb") as f:
         f.write(content)
 
-    cfg.writer(make, "outputs", "make", "parquet")
+    io.writer(make, "outputs", "make", "parquet")
