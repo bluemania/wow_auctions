@@ -11,7 +11,7 @@ from pricer import config as cfg, io, utils
 logger = logging.getLogger(__name__)
 
 
-def predict_item_prices() -> None:
+def predict_item_prices(quantile: float = 0.025) -> None:
     """Analyse exponential average mean and std of items given 14 day, 2 hour history."""
     bb_fortnight = io.reader("cleaned", "bb_fortnight", "parquet")
 
@@ -27,7 +27,8 @@ def predict_item_prices() -> None:
         else:
             df = bb_fortnight[bb_fortnight["item"] == item_name]
             df["silver"] = df["silver"].clip(
-                lower=df["silver"].quantile(0.01), upper=df["silver"].quantile(0.99)
+                lower=df["silver"].quantile(quantile),
+                upper=df["silver"].quantile(1 - quantile),
             )
             try:
                 item_prices[item_name] = int(
