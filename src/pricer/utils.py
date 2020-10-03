@@ -2,11 +2,7 @@
 import logging
 from typing import Any, Dict, Tuple
 
-import pandas as pd
-from slpp import slpp as lua
-import yaml
-
-from pricer import config as cfg
+from pricer import config as cfg, io
 
 logger = logging.getLogger(__name__)
 
@@ -58,41 +54,15 @@ def make_lua_path(account_name: str = "", datasource: str = "") -> str:
     """Forms a path to a lua file."""
     warcraft_path = cfg.us.get("warcraft_path").rstrip("/")
     path = (
-        f"{warcraft_path}/WTF/Account/{account_name}/"
-        + f"SavedVariables/{datasource}.lua"
+        f"{warcraft_path}/WTF/Account/{account_name}/" + f"SavedVariables/{datasource}"
     )
     return path
 
 
-def read_lua(path: str) -> Dict[Any, Any]:
-    """Reads and decodes a lua path."""
-    logger.debug(f"Loading lua from {path}")
-    with open(path, "r") as f:
-        return lua.decode("{" + f.read() + "}")
-
-
-def get_general_settings() -> Dict[str, Any]:
-    """Gets general program settings such as mappings."""
-    path = "config/general_settings.yaml"
-    logger.debug(f"Reading yaml from {path}")
-    with open(path, "r") as f:
-        return yaml.safe_load(f)
-
-
 def get_item_ids() -> Dict[str, int]:
     """Read item id database."""
-    path = "data/static/items.csv"
-    logger.debug(f"Reading csv from {path}")
-    item_codes = pd.read_csv(path, index_col="name")
-    return item_codes["entry"].to_dict()
-
-
-def write_lua(data: dict, path: str) -> None:
-    """Write python dict as lua object."""
-    lua_print = dict_to_lua(data)
-    logger.debug(f"Writing lua to {path}")
-    with open(path, "w") as f:
-        f.write(lua_print)
+    item_codes = io.reader("static", "items", "csv")
+    return item_codes.set_index("name")["entry"].to_dict()
 
 
 def dict_to_lua(data: dict) -> str:
