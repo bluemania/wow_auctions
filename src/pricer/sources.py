@@ -38,10 +38,9 @@ def get_bb_item_page(driver: webdriver, item_id: int) -> Dict[Any, Any]:
 
 def start_driver() -> webdriver:
     """Spin up selenium driver for Booty Bay scraping."""
-    try:
-        account = cfg.secrets.get("account")
-        password = cfg.secrets.get("password")
-    except FileNotFoundError:
+    account = cfg.secrets.get("account")
+    password = cfg.secrets.get("password")
+    if not password:
         password = getpass.getpass("Password:")
     try:
         driver = webdriver.Chrome(cfg.us["bb_selenium"]["CHROMEDRIVER_PATH"])
