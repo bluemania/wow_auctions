@@ -22,7 +22,6 @@ from typing import Any
 import nox
 from nox.sessions import Session
 
-
 locations = "src", "tests", "noxfile.py", "docs/conf.py"
 nox.options.sessions = "mypy", "lint", "tests"  # "pytype",
 package = "pricer"

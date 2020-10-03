@@ -1,7 +1,7 @@
 
 Arcane Crystal:
   min_holding: 8
-  max_holding: 28
+  max_holding: 40
   max_sell: 4
   Buy: True
   Sell: True
@@ -13,8 +13,6 @@ Essence of Water:
     Essence of Undeath: 1
   make_pass: True
   max_holding: 20
-  Sell: True
-  Buy: True
 Arcanite Bar:
   min_holding: 4
   max_holding: 24

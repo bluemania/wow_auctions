@@ -13,7 +13,6 @@ logger = logging.getLogger(__name__)
 def main() -> None:
     """Main program runner."""
     run_dt = dt.now().replace(microsecond=0)
-    print(type(run_dt))
 
     parser = argparse.ArgumentParser(description="WoW Auctions")
     parser.add_argument("-b", help="Update web booty bay analysis", action="store_true")
@@ -47,7 +46,6 @@ def main() -> None:
     analysis.analyse_material_cost()
     analysis.create_item_inventory()
     analysis.analyse_listings()
-    analysis.analyse_undercut_leads()
     analysis.analyse_replenishment()
 
     analysis.create_item_table()
@@ -60,7 +58,8 @@ def main() -> None:
     campaign.analyse_sell_policy(stack=args.s, max_sell=args.m, duration=args.d)
     campaign.write_sell_policy()
 
-    reporting.what_make()
+    campaign.analyse_make_policy()
+
     reporting.have_in_bag()
 
     logger.info(f"Program end, seconds {(dt.now() - run_dt).total_seconds()}")

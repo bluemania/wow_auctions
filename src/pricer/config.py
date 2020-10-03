@@ -1,9 +1,10 @@
 """It collates and loads user specified configuration for data pipeline."""
-
 import logging
-from typing import Any
+from typing import Any, Dict
 
-import yaml
+from pricer import io
+
+logger = logging.getLogger(__name__)
 
 
 def set_loggers(
@@ -49,11 +50,11 @@ def set_loggers(
         logger.addHandler(stream_handler)  # type: ignore
 
 
-# Load global user settings such as paths
-# This should handle any rstrips
-# This should add account information (automatically)
-with open("config/user_settings.yaml", "r") as f:
-    us = yaml.safe_load(f)
+us = io.reader("config", "user_settings", "yaml")
+ui = io.reader("config", "user_items", "yaml")
+try:
+    secrets = io.reader(name="SECRETS", ftype="yaml")
+except FileNotFoundError:
+    secrets = {"username": None, "password": None}
 
-with open("config/user_items.yaml", "r") as f:
-    ui = yaml.safe_load(f)
+env: Dict[str, str] = {"basepath": "data"}
