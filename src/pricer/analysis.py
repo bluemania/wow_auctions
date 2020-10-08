@@ -299,7 +299,7 @@ def predict_volume_sell_probability(
 
         volume_df = volume_df.dropna().mean(axis=1)
         price_df = price_df.dropna().mean(axis=1)
-        volume_df = volume_df[price_df<=0]
+        volume_df = volume_df[price_df <= 0]
         gkde = gaussian_kde(volume_df)
 
         listing_range = range(-MAX_LISTINGS + 1, 1)
