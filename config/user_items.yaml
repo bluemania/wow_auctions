@@ -38,7 +38,7 @@ Black Lotus:
 # Roughly 304 stacks of materials
 Flask of the Titans:
   min_holding: 2
-  max_holding: 12
+  max_holding: 16
   max_sell: 3
   Sell: True
   made_from:
@@ -49,14 +49,16 @@ Flask of the Titans:
     Crystal Vial: 1
   make_pass: True
 Elixir of Fortitude:
-  max_holding: 100
+  min_holding: 20
+  max_holding: 120
   Sell: True
   made_from:
     Goldthorn: 1
     Leaded Vial: 1
     Wild Steelbloom: 1
 Elixir of Giants:
-  max_holding: 100
+  min_holding: 20
+  max_holding: 120
   Sell: True
   made_from:
     Crystal Vial: 1
@@ -78,7 +80,8 @@ Elixir of Superior Defense:
     Stonescale Eel: 2
     Sungrass: 1
 Elixir of the Mongoose:
-  max_holding: 60
+  min_holding: 20
+  max_holding: 80
   Sell: True
   made_from:
     Crystal Vial: 1
