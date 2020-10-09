@@ -43,8 +43,7 @@ Flask of the Titans:
   Sell: True
   made_from:
     Gromsblood: 30
-    Stonescale Eel: 10
-    Leaded Vial: 10
+    Stonescale Oil: 10
     Black Lotus: 1
     Crystal Vial: 1
   make_pass: True
@@ -76,8 +75,7 @@ Elixir of Superior Defense:
   Sell: True
   made_from:
     Crystal Vial: 1
-    Leaded Vial: 2
-    Stonescale Eel: 2
+    Stonescale Oil: 2
     Sungrass: 1
 Elixir of the Mongoose:
   min_holding: 20
@@ -91,17 +89,15 @@ Free Action Potion:
   max_holding: 60
   Sell: True
   made_from:
-    Empty Vial: 2
     Leaded Vial: 1
-    Oily Blackmouth: 4
+    Blackmouth Oil: 2
     Stranglekelp: 1
 Greater Stoneshield Potion:
   max_holding: 60
   Sell: True
   made_from:
     Crystal Vial: 1
-    Leaded Vial: 3
-    Stonescale Eel: 3
+    Stonescale Oil: 3
     Thorium Ore: 1
 Invisibility Potion:
   max_holding: 60
@@ -131,7 +127,7 @@ Swiftness Potion:
     Empty Vial: 1
     Swiftthistle: 1
 Greater Arcane Protection Potion:
-  max_holding: 30
+  max_holding: 40
   Sell: True
   made_from:
     Crystal Vial: 1
@@ -153,11 +149,8 @@ Greater Shadow Protection Potion:
   Sell: True
   made_from:
     Crystal Vial: 1
-    # Shadow Oil: 1
+    Shadow Oil: 1
     Dreamfoil: 1
-    Leaded Vial: 1
-    Fadeleaf: 4
-    Grave Moss: 4
   make_pass: True
 Fire Protection Potion:
   Sell: True
@@ -167,26 +160,33 @@ Fire Protection Potion:
     Fire Oil: 1
 
 
-# Blackmouth Oil:
-#   made_from:
-#     Empty Vial: 1
-#     Oily Blackmouth: 2
-# Stonescale Oil:
-#   made_from:
-#     Leaded Vial: 1
-#     Stonescale Eel: 1
-# Shadow Oil:
-#   made_from:
-#     Leaded Vial: 1
-#     Fadeleaf: 4
-#     Grave Moss: 4
+Blackmouth Oil:
+  make_order: 1
+  max_holding: 80
+  made_from:
+    Empty Vial: 1
+    Oily Blackmouth: 2
+Stonescale Oil:
+  make_order: 1
+  max_holding: 80
+  made_from:
+    Leaded Vial: 1
+    Stonescale Eel: 1
+Shadow Oil:
+  make_order: 1
+  min_holding: 5
+  max_holding: 60
+  made_from:
+    Leaded Vial: 1
+    Fadeleaf: 4
+    Grave Moss: 4
 
 Oily Blackmouth:
-  max_holding: 100
+  max_holding: 80
   Buy: True
   Sell: True
 Stonescale Eel:
-  max_holding: 100
+  max_holding: 80
   Buy: True
   Sell: True
 Blindweed:
