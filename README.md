@@ -8,7 +8,7 @@
 
 ## About the project
 
-This project helps users automate the decision making required to make profit on the World of Warcraft classic auction house.
+Pricer for WoW Auction is a command line tool to helps users automate the decision making required to make profit on the World of Warcraft classic auction house.
 It does so by reading addon data, using historical pricing information from [booty bay](bootybaygazette.com), and user specified preference, to calculate policies.
 These policies take all available information to produce optimal actions for items, i.e. buying volume, selling low, selling high and crafting.
 The policies overwrite the addon data, so that upon re-entering the game, the interface is ready to enact the optimal actions.
@@ -80,6 +80,9 @@ password: yourpassword
 
 ## Running the program
 
+It is recommended to perform a auction scan immediately prior to running the program.
+You will need to be logged out while the program is running, as this is the only way the latest addon data can be loaded, and modified.
+
 Run the program using the following command from command line:
 
 ```bash
@@ -91,6 +94,11 @@ Additional flags can, and should be entered:
 * `-v` or `-vv` is useful for debugging purposes
 * `-b` is used to seek a refresh of Booty Bay data; it is recommended to seek an update at least once every day or so.
 * `-h` for help on additional flags and functionality that may be available
+
+If the run has been successful, you should see some tabular information printed in the console.
+This will include information about what items to make and expected profits for feasible selling items.
+
+You should see Auctioneer data has been changed, so that (feasible) sell prices and thresholds for buying using snatch have been set.
 
 ## Tests and tooling
 
@@ -115,7 +123,7 @@ Follow this link for instructions on managing [releases](RELEASE.md).
 # License
 
 All assets and code are under the MIT LICENSE and in the public domain unless specified otherwise.
-See the [license](LICENSE.md) for more info.
+See the [license](LICENSE) for more info.
 
 # Contact
 
