@@ -1,15 +1,13 @@
 categories:
   - title: ':rocket: Features'
-    labels:
-      - 'feature'
+    label: 'feature'
   - title: ':beetle: Bug Fixes'
     labels:
       - 'hotfix'
       - 'bugfix'
       - 'invalid'
   - title: ':construction_worker: Maintenance'
-    labels: 
-      - 'infra'
+    label: 'infra'
   - title: ':books: Documentation'
     labels: 
       - 'docs'
