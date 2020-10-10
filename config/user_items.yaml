@@ -161,19 +161,16 @@ Fire Protection Potion:
 
 
 Blackmouth Oil:
-  make_order: 1
   max_holding: 80
   made_from:
     Empty Vial: 1
     Oily Blackmouth: 2
 Stonescale Oil:
-  make_order: 1
   max_holding: 80
   made_from:
     Leaded Vial: 1
     Stonescale Eel: 1
 Shadow Oil:
-  make_order: 1
   min_holding: 5
   max_holding: 60
   made_from:

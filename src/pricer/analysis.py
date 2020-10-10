@@ -303,7 +303,9 @@ def predict_volume_sell_probability(
         try:
             gkde = gaussian_kde(volume_df)
         except ValueError as e:
-          raise ValueError(f'Could not analyse {item}, is this new and needs bb?') from e
+            raise ValueError(
+                f"Could not analyse {item}, is this new and needs bb?"
+            ) from e
 
         listing_range = range(-MAX_LISTINGS + 1, 1)
         probability = pd.Series(gkde(listing_range), index=listing_range)

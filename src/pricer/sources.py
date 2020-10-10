@@ -460,7 +460,7 @@ def process_item_skeleton(df: pd.DataFrame) -> pd.DataFrame:
     """Make transformation to item skeleton."""
     df["made_from"] = df["made_from"] == df["made_from"]
 
-    int_cols = ["min_holding", "max_holding", "vendor_price", "make_order"]
+    int_cols = ["min_holding", "max_holding", "vendor_price"]
     df[int_cols] = df[int_cols].fillna(0).astype(int)
 
     # df["max_sell"] = df["max_sell"].fillna(df["max_holding"]).astype(int)

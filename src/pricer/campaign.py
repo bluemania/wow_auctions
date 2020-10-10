@@ -277,7 +277,6 @@ def analyse_make_policy() -> None:
         "item_id",
         "made_from",
         "make_pass",
-        "make_order",
         "inv_total_all",
         "mean_holding",
         "inv_ahm_bag",
@@ -293,8 +292,6 @@ def analyse_make_policy() -> None:
     make["make_mat_available"] = make["inv_ahm_bag"] + make["inv_ahm_bank"]
     make["make_actual"] = 0
     make["make_mat_flag"] = 0
-
-    make = make.sort_values('make_order', ascending=False)
 
     # Iterates through the table one at a time, to ensure fair distribution of mat usage
     # Tests if reached counter and is made from stuff
