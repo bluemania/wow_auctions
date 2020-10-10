@@ -38,6 +38,10 @@ poetry run python run.py -a
 
 There are many command line options; -a will run primary analysis (except for sell policies). Please refer to the scripts for further information.
 
+# Contributing
+
+
+
 ### License
 All assets and code are under the MIT LICENSE and in the public domain unless specified otherwise.
 

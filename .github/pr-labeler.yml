@@ -1,0 +1,5 @@
+feature: feature/*
+bug: bugfix/*, hotfix/*
+docs: docs/*
+infra: infra/*
+analysis: experiment/*
