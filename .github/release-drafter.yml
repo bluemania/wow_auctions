@@ -8,14 +8,14 @@ categories:
       - 'bugfix'
       - 'invalid'
   - title: ':construction_worker: Maintenance'
-    label: 
+    labels: 
       - 'infra'
   - title: ':books: Documentation'
-    label: 
+    labels: 
       - 'docs'
       - 'question'
   - title: ':books: Analysis'
-    label: 
+    labels: 
       - 'analysis'
       - 'best practice'
 
