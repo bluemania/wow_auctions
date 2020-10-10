@@ -115,7 +115,7 @@ Follow this link for instructions on managing [releases](RELEASE.md).
 # License
 
 All assets and code are under the MIT LICENSE and in the public domain unless specified otherwise.
-See the [license](LICENSE.md) for more info.
+See the [license](LICENSE) for more info.
 
 # Contact
 
