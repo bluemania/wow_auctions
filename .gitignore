@@ -5,8 +5,10 @@ venv/
 
 SECRETS.yaml
 
-data/*
+data/*/*.parquet
+data/*/*.json
 !data/.gitkeep
+!data/*/.gitkeep
 
 logs/*
 !logs/.gitkeep
