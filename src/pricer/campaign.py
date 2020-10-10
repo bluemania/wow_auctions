@@ -326,7 +326,6 @@ def analyse_make_policy() -> None:
     make_me = make[(make["make_pass"] == 0) & (make["make_actual"] > 0)]["make_actual"]
     make_me.name = "Automake"
     print(make_me)
-    make_me = make_me.to_dict()
 
     make_main = make[(make["make_pass"] == 1) & (make["make_ideal"] > 0)]["make_ideal"]
     make_main.name = "Make on main"
@@ -342,7 +341,7 @@ def analyse_make_policy() -> None:
     make_should.name = "Missing mats"
     print(make_should)
 
-    materials_list = make[make["make_mat_flag"] == 1]["item_id"].to_dict()
+    materials_list = make[make["make_mat_flag"] == 1]["item_id"]
     sell_items = make[make["Sell"] == 1]["item_id"]
 
     path = utils.make_lua_path(
@@ -360,7 +359,11 @@ def analyse_make_policy() -> None:
     for _, item_data in crafting_dict[
         "f@Alliance - Grobbulus@internalData@crafts"
     ].items():
-        queued = make_me.get(item_data.get("name"), 0)
+        item_name = item_data.get("name")
+        if item_name in make_me:
+            queued = int(make_me.loc[item_name])
+        else:
+            queued = 0
 
         if "queued" in item_data:
             item_data["queued"] = queued
@@ -376,7 +379,7 @@ def analyse_make_policy() -> None:
     start, end = utils.find_attribute_location(content, b'["p@Default@userData@items"]')
 
     item_text = '["p@Default@userData@items"] = {'
-    for _, item_code in materials_list.items():
+    for _, item_code in materials_list.iteritems():
         item_text += f'["i:{item_code}"] = "Herbs", '
 
     for item_name, item_code in sell_items.items():

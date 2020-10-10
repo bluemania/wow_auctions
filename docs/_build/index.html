@@ -5,7 +5,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pricer WoW auctioning tool &#8212; pricer  documentation</title>
+    <title>Pricer for WoW auctioning tool &#8212; pricer  documentation</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
@@ -32,39 +32,124 @@
 
           <div class="body" role="main">
             
-  <div class="section" id="pricer-wow-auctioning-tool">
-<h1>Pricer WoW auctioning tool<a class="headerlink" href="#pricer-wow-auctioning-tool" title="Permalink to this headline">¶</a></h1>
-<p>(blank for now)</p>
-<div class="section" id="installation">
-<h2>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h2>
-<p>To install the pricer project,
-run this command in your terminal:</p>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> pip install pricer
-</pre></div>
-</div>
-</div>
-<div class="section" id="usage">
-<h2>Usage<a class="headerlink" href="#usage" title="Permalink to this headline">¶</a></h2>
-<p>Pricer uses a CLI interface,
-please see run.py for more information.</p>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> pricer <span class="o">[</span>OPTIONS<span class="o">]</span>
-</pre></div>
-</div>
-<dl class="std option">
-<dt id="cmdoption-version">
-<code class="sig-name descname">--version</code><code class="sig-prename descclassname"></code><a class="headerlink" href="#cmdoption-version" title="Permalink to this definition">¶</a></dt>
-<dd><p>Display the version and exit.</p>
-</dd></dl>
-
-<dl class="std option">
-<dt id="cmdoption-help">
-<code class="sig-name descname">--help</code><code class="sig-prename descclassname"></code><a class="headerlink" href="#cmdoption-help" title="Permalink to this definition">¶</a></dt>
-<dd><p>Display a short usage message and exit.</p>
-</dd></dl>
-
+  <div class="section" id="pricer-for-wow-auctioning-tool">
+<h1>Pricer for WoW auctioning tool<a class="headerlink" href="#pricer-for-wow-auctioning-tool" title="Permalink to this headline">¶</a></h1>
 <div class="toctree-wrapper compound">
 </div>
 </div>
+<div class="section" id="pricer-for-wow-auctions">
+<h1>Pricer for WoW Auctions<a class="headerlink" href="#pricer-for-wow-auctions" title="Permalink to this headline">¶</a></h1>
+<a class="reference external image-reference" href="https://github.com/bluemania/wow_auctions/actions?workflow=Tests"><img alt="Tests" src="https://github.com/bluemania/wow_auctions/workflows/Tests/badge.svg" /></a>
+<a class="reference external image-reference" href="https://github.com/psf/black"><img alt="Code style: black" src="https://img.shields.io/badge/code%20style-black-000000.svg" /></a>
+<a class="reference external image-reference" href="https://codecov.io/gh/bluemania/wow_auctions"><img alt="Codecov" src="https://codecov.io/gh/bluemania/wow_auctions/branch/master/graph/badge.svg" /></a>
+<a class="reference external image-reference" href="https://pypi.org/project/pricer/"><img alt="PyPI" src="https://img.shields.io/pypi/v/pricer.svg" /></a>
+<a class="reference external image-reference" href="https://pricer.readthedocs.io/en/latest/?badge=latest"><img alt="Documentation Status" src="https://readthedocs.org/projects/pricer/badge/?version=latest" /></a>
+<div class="section" id="about-the-project">
+<h2>About the project<a class="headerlink" href="#about-the-project" title="Permalink to this headline">¶</a></h2>
+<p>This project helps users automate the decision making required to make profit on the World of Warcraft classic auction house.
+It does so by reading addon data, using historical pricing information from <a class="reference external" href="bootybaygazette.com">booty bay</a>, and user specified preference, to calculate policies.
+These policies take all available information to produce optimal actions for items, i.e. buying volume, selling low, selling high and crafting.
+The policies overwrite the addon data, so that upon re-entering the game, the interface is ready to enact the optimal actions.</p>
+<p>This is primarily a hobby project.
+My aim is to learn about good software development practices, and apply my data science skills to an interesting problem.
+And the extra gold makes raiding even more fun!</p>
+<p>I did some <a class="reference external" href="https://www.twitch.tv/bluemania2">twitch streaming</a> for a while, where I discussed the project goals and showed how things worked in more detail.</p>
+</div>
+<div class="section" id="built-with">
+<h2>Built with<a class="headerlink" href="#built-with" title="Permalink to this headline">¶</a></h2>
+<p>Major frameworks include:</p>
+<ul class="simple">
+<li><p>Python 3+</p></li>
+<li><p>Chromedriver and selenium - for booty bay data</p></li>
+<li><p>Nox - for CI/CD process</p></li>
+<li><p>Poetry - For dependencies, virtual environment, versioning and packaging</p></li>
+</ul>
+<p>Requirements for World of Warcraft classic include:</p>
+<ul class="simple">
+<li><p>An active World of Warcraft account</p></li>
+<li><p>An active Booty Bay Gazette subscription</p></li>
+<li><p>ArkInventory addon - inventory tracking</p></li>
+<li><p>Auctioneer addon - scanning auctions and enacting buy and sell policies</p></li>
+<li><p>Beancounter addon - tracking player auction activity (comes with auctioneer)</p></li>
+<li><p>Trade Skill Master - enacting crafting policies, also recommended to speed up moving items to bank and buying materials from vendors</p></li>
+</ul>
+</div>
+<div class="section" id="getting-started">
+<h2>Getting started<a class="headerlink" href="#getting-started" title="Permalink to this headline">¶</a></h2>
+<p>The following are instructions on how to set up the project locally.</p>
+<p>The latest stable code can be found on <a class="reference external" href="https://pypi.org/project/pricer/">pypi</a>.</p>
+<p>Download locally using:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip install pricer
+</pre></div>
+</div>
+<p>For development, clone the repository.</p>
+<p>This project uses <a class="reference external" href="https://python-poetry.org/">poetry</a> to manage dependencies, virtual environments, versioning and packaging.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>poetry install
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="usage">
+<h1>Usage<a class="headerlink" href="#usage" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="user-configuration">
+<h2>User configuration<a class="headerlink" href="#user-configuration" title="Permalink to this headline">¶</a></h2>
+<p>It is recommended to edit the <code class="docutils literal notranslate"><span class="pre">config/user_items.yaml</span></code> file, as this is the primary mechanism that users can select items of interest for buying, selling and crafting.
+Refer to the file to interpret the structure, ensure that items are named correctly.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">config/user_settings.yaml</span></code> file should also be edited with information about paths to installations (WoW and Chromedriver), and active accounts.
+Account names can be referenced from your WoW directory.
+Booty Bay information should be specified to be specific to your server.
+Specify at least one of your characters as an <code class="docutils literal notranslate"><span class="pre">ahm</span></code> (auction house main), with others as <code class="docutils literal notranslate"><span class="pre">mule</span></code>.</p>
+<p>You can optionally create a <code class="docutils literal notranslate"><span class="pre">SECRETS.yaml</span></code> file in the root directory with the following format.
+This is useful to help automate the booty bay data feed, but not required.
+We highly recommend using the Blizzard authenticator (stay safe!).</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">account</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">youraccount</span>
+<span class="nt">password</span><span class="p">:</span> <span class="l l-Scalar l-Scalar-Plain">yourpassword</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="running-the-program">
+<h2>Running the program<a class="headerlink" href="#running-the-program" title="Permalink to this headline">¶</a></h2>
+<p>Run the program using the following command from command line:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pricer
+</pre></div>
+</div>
+<p>Additional flags can, and should be entered:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">-v</span></code> or <code class="docutils literal notranslate"><span class="pre">-vv</span></code> is useful for debugging purposes</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">-b</span></code> is used to seek a refresh of Booty Bay data; it is recommended to seek an update at least once every day or so.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">-h</span></code> for help on additional flags and functionality that may be available</p></li>
+</ul>
+</div>
+<div class="section" id="tests-and-tooling">
+<h2>Tests and tooling<a class="headerlink" href="#tests-and-tooling" title="Permalink to this headline">¶</a></h2>
+<p>This project seeks to use modern code quality and CI/CD tooling including</p>
+<ul class="simple">
+<li><p>Dependency management, virtual env and packaging (poetry)</p></li>
+<li><p>Linting (black, flake8, darglint)</p></li>
+<li><p>Type checking (mypy)</p></li>
+<li><p>Testing (pytest, pandera, codecov)</p></li>
+<li><p>Docs (sphinx, autodoc)</p></li>
+<li><p>Task automation CI/CD (nox, pre-commit, github actions, pr-labeler, release-drafter)</p></li>
+<li><p>Publishing (pypi, readthedocs)</p></li>
+</ul>
+</div>
+</div>
+<div class="section" id="contributing">
+<h1>Contributing<a class="headerlink" href="#contributing" title="Permalink to this headline">¶</a></h1>
+<p>This project is pre-release and under development.</p>
+<p>Users are welcome to try the program, fork, or <a class="reference external" href="CONTRIBUTING.md">contribute</a>, however <a class="reference external" href="SUPPORT.md">support</a> is not guarenteed.</p>
+<p>Follow this link for instructions on managing <a class="reference external" href="RELEASE.md">releases</a>.</p>
+</div>
+<div class="section" id="license">
+<h1>License<a class="headerlink" href="#license" title="Permalink to this headline">¶</a></h1>
+<p>All assets and code are under the MIT LICENSE and in the public domain unless specified otherwise.
+See the <a class="reference external" href="LICENSE.md">license</a> for more info.</p>
+</div>
+<div class="section" id="contact">
+<h1>Contact<a class="headerlink" href="#contact" title="Permalink to this headline">¶</a></h1>
+<p>Feel free to reach out in-game; you’ll see me on Grobbulus on Amazona.</p>
+<p>You can leave an open issue seeking to connect and I’ll get back to you.</p>
+<p>I also occassionally stream project development on <a class="reference external" href="https://www.twitch.tv/bluemania2">twitch</a>.</p>
 </div>
 
 

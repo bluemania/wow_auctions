@@ -11,14 +11,14 @@ from pricer import config as cfg, io, utils
 logger = logging.getLogger(__name__)
 
 
-def predict_item_prices() -> None:
+def predict_item_prices(quantile: float = 0.025) -> None:
     """Analyse exponential average mean and std of items given 14 day, 2 hour history."""
     bb_fortnight = io.reader("cleaned", "bb_fortnight", "parquet")
 
     user_items = cfg.ui.copy()
 
     # Work out if an item is auctionable, or get default price
-    item_prices = {}
+    item_prices = pd.DataFrame()
     for item_name, item_details in user_items.items():
         vendor_price = item_details.get("vendor_price")
 
@@ -27,29 +27,25 @@ def predict_item_prices() -> None:
         else:
             df = bb_fortnight[bb_fortnight["item"] == item_name]
             df["silver"] = df["silver"].clip(
-                lower=df["silver"].quantile(0.01), upper=df["silver"].quantile(0.99)
+                lower=df["silver"].quantile(quantile),
+                upper=df["silver"].quantile(1 - quantile),
             )
             try:
-                item_prices[item_name] = int(
+                item_prices.loc[item_name, "pred_price"] = int(
                     df["silver"].ewm(alpha=0.2).mean().iloc[-1]
                 )
+                item_prices.loc[item_name, "pred_std"] = df["silver"].std().astype(int)
             except IndexError:
                 logging.exception(
                     f"""Price prediction problem for {item_name}.
                     Did you add something and not use booty bay?"""
                 )
 
-    predicted_prices = pd.DataFrame(pd.Series(item_prices))
-    predicted_prices.columns = ["pred_price"]
-
-    std_df = bb_fortnight.groupby("item").std()["silver"].astype(int)
-    std_df.name = "pred_std"
-
     qty_df = bb_fortnight[bb_fortnight["snapshot"] == bb_fortnight["snapshot"].max()]
     qty_df = qty_df.set_index("item")["quantity"]
     qty_df.name = "pred_quantity"
 
-    predicted_prices = predicted_prices.join(std_df).join(qty_df).fillna(0).astype(int)
+    predicted_prices = item_prices.join(qty_df).fillna(0).astype(int)
     io.writer(predicted_prices, "intermediate", "predicted_prices", "parquet")
 
 
@@ -105,7 +101,10 @@ def analyse_material_cost() -> None:
     mat_prices = item_skeleton.join(purchase_rolling).join(item_prices)
 
     mat_prices["material_price"] = (
-        mat_prices["price_per_rolling"].fillna(mat_prices["pred_price"]).astype(int)
+        mat_prices["price_per_rolling"]
+        .fillna(mat_prices["pred_price"])
+        .fillna(mat_prices["vendor_price"])
+        .astype(int)
     )
 
     user_items = cfg.ui.copy()
@@ -117,9 +116,9 @@ def analyse_material_cost() -> None:
         made_from = item_details.get("made_from", {})
         if made_from:
             for ingredient, count in made_from.items():
-                material_cost += mat_prices.loc[ingredient, "pred_price"] * count
+                material_cost += mat_prices.loc[ingredient, "material_price"] * count
         else:
-            material_cost = mat_prices.loc[item_name, "pred_price"]
+            material_cost = mat_prices.loc[item_name, "material_price"]
         item_costs[item_name] = int(material_cost)
 
     material_costs = pd.DataFrame.from_dict(item_costs, orient="index").reset_index()
@@ -285,7 +284,8 @@ def predict_volume_sell_probability(
     for item in user_sells:
         item_fortnight = bb_fortnight[bb_fortnight["item"] == item]
 
-        results = pd.DataFrame()
+        volume_df = pd.DataFrame()
+        price_df = pd.DataFrame()
         for i in range(1, polls + 1):
             item_fortnight["snapshot_prev"] = item_fortnight["snapshot"].shift(i)
             offset_test = pd.merge(
@@ -294,9 +294,18 @@ def predict_volume_sell_probability(
                 left_on=["snapshot", "item"],
                 right_on=["snapshot_prev", "item"],
             )
-            results[i] = offset_test["quantity_y"] - offset_test["quantity_x"]
+            volume_df[i] = offset_test["quantity_y"] - offset_test["quantity_x"]
+            price_df[i] = offset_test["silver_y"] - offset_test["silver_x"]
 
-        gkde = gaussian_kde(results.dropna().mean(axis=1))
+        volume_df = volume_df.dropna().mean(axis=1)
+        price_df = price_df.dropna().mean(axis=1)
+        volume_df = volume_df[price_df <= 0]
+        try:
+            gkde = gaussian_kde(volume_df)
+        except ValueError as e:
+            raise ValueError(
+                f"Could not analyse {item}, is this new and needs bb?"
+            ) from e
 
         listing_range = range(-MAX_LISTINGS + 1, 1)
         probability = pd.Series(gkde(listing_range), index=listing_range)
