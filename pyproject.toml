@@ -50,6 +50,7 @@ sphinx-autodoc-typehints = "^1.11.0"
 typeguard = "^2.9.1"
 xdoctest = "^0.13.0"
 jupyter = "^1.0.0"
+m2r2 = "^0.2.5"
 
 [tool.poetry.scripts]
 pricer = "pricer.run:main"
