@@ -6,4 +6,6 @@ extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.napoleon",
     "sphinx_autodoc_typehints",
+    "m2r2",
 ]
+source_suffix = [".rst", ".md"]

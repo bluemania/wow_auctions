@@ -38,130 +38,201 @@
 <ul class="simple">
 <li><p><a class="reference internal" href="#module-pricer.sources" id="id1">pricer.sources</a></p></li>
 <li><p><a class="reference internal" href="#module-pricer.analysis" id="id2">pricer.analysis</a></p></li>
-<li><p><a class="reference internal" href="#module-pricer.utils" id="id3">pricer.utils</a></p></li>
-<li><p><a class="reference internal" href="#module-pricer.config" id="id4">pricer.config</a></p></li>
-<li><p><a class="reference internal" href="#module-pricer.run" id="id5">pricer.run</a></p></li>
+<li><p><a class="reference internal" href="#module-pricer.campaign" id="id3">pricer.campaign</a></p></li>
+<li><p><a class="reference internal" href="#module-pricer.reporting" id="id4">pricer.reporting</a></p></li>
+<li><p><a class="reference internal" href="#module-pricer.utils" id="id5">pricer.utils</a></p></li>
+<li><p><a class="reference internal" href="#module-pricer.io" id="id6">pricer.io</a></p></li>
+<li><p><a class="reference internal" href="#module-pricer.schema" id="id7">pricer.schema</a></p></li>
+<li><p><a class="reference internal" href="#module-pricer.config" id="id8">pricer.config</a></p></li>
+<li><p><a class="reference internal" href="#module-pricer.run" id="id9">pricer.run</a></p></li>
 </ul>
 </div>
 <div class="section" id="module-pricer.sources">
 <span id="pricer-sources"></span><h2>pricer.sources<a class="headerlink" href="#module-pricer.sources" title="Permalink to this headline">¶</a></h2>
-<p>It is responsible for managing input data sources.</p>
-<p>It reads data from WoW interface addons and user specified sources.
-Performs basic validation and data cleaning before
-converting into normalized data tables in parquet format.
-When functions are run in test mode, no data is saved.</p>
+<p>Responsible for reading and cleaning input data sources.</p>
 <dl class="py function">
-<dt id="pricer.sources.create_playtime_record">
-<code class="sig-prename descclassname">pricer.sources.</code><code class="sig-name descname">create_playtime_record</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">test</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">run_dt</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">clean_session</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">played</span><span class="o">=</span><span class="default_value">''</span></em>, <em class="sig-param"><span class="n">level_time</span><span class="o">=</span><span class="default_value">''</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pricer.sources.create_playtime_record" title="Permalink to this definition">¶</a></dt>
-<dd><p>Preserves record of how we are spending time on our auction character.</p>
-<p>We record info such as time played (played) or spent leveling (level_time)
-This is useful for calcs involving real time vs game time,
-therefore gold earnt per hour.
-Time played may be automated in future, however we retain ‘clean_session’
-as a user specified flag to indicate inventory is stable (no missing items).</p>
-<p>When in test mode, loading and calcs are performed but no file saves
-Otherwise, saves current analysis as intermediate, loads full, saves backup,
-append interm, and save full</p>
+<dt id="pricer.sources.clean_arkinventory_data">
+<code class="sig-prename descclassname">pricer.sources.</code><code class="sig-name descname">clean_arkinventory_data</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">run_dt</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pricer.sources.clean_arkinventory_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reads Ark Inventory json and parses into tabular format.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>test</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – when True prevents data saving (early return)</p></li>
-<li><p><strong>run_dt</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">datetime</span></code>]) – The common session runtime</p></li>
-<li><p><strong>clean_session</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – User specified flag indicating inventory is stable</p></li>
-<li><p><strong>played</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>) – Ingame timelike string in ‘00d-00h-00m-00s’ format,
-this field is a ‘total time’ field and is expected to relate to
-the amount of time spent on auctioning alt doing auctions</p></li>
-<li><p><strong>level_time</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>) – Ingame timelike string in ‘00d-00h-00m-00s’ format
-this field helps record instances where we’ve done other things
-on our auction character such as leveling, long AFK etc.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">None</span></code></p>
-</dd>
-<dt class="field-odd">Returns</dt>
-<dd class="field-odd"><p>None</p>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">None</span></code></p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py function">
-<dt id="pricer.sources.generate_auction_activity">
-<code class="sig-prename descclassname">pricer.sources.</code><code class="sig-name descname">generate_auction_activity</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">test</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pricer.sources.generate_auction_activity" title="Permalink to this definition">¶</a></dt>
-<dd><p>Read and clean BeanCounter addon data, and save to parquet.</p>
-<p>For all characters on all user specified accounts, collates info on
-auction history in terms of failed/succesful sales, and purchases made.
-Works the data into a labelled and cleaned pandas before parquet saves</p>
+<dt id="pricer.sources.clean_auctioneer_data">
+<code class="sig-prename descclassname">pricer.sources.</code><code class="sig-name descname">clean_auctioneer_data</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pricer.sources.clean_auctioneer_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Cleans Auctioneer json data into tablular format.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>test</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – when True prevents data saving (early return)</p>
-</dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">None</span></code></p>
-</dd>
-<dt class="field-odd">Returns</dt>
-<dd class="field-odd"><p>None</p>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">None</span></code></p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py function">
-<dt id="pricer.sources.generate_auction_scandata">
-<code class="sig-prename descclassname">pricer.sources.</code><code class="sig-name descname">generate_auction_scandata</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">test</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pricer.sources.generate_auction_scandata" title="Permalink to this definition">¶</a></dt>
-<dd><p>Read and clean Auctionneer addon data, and save to parquet.</p>
-<p>Utility function loads addon raw lua auction data from the user
-specified primary auctioning account. It cleans up and selects columns.
-Additionally filters results for the minimum price of user specified
-items of interest.</p>
+<dt id="pricer.sources.clean_bb_data">
+<code class="sig-prename descclassname">pricer.sources.</code><code class="sig-name descname">clean_bb_data</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pricer.sources.clean_bb_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parses all Booty Bay item json into tabular formats.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>test</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – when True prevents data saving (early return)</p>
-</dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">None</span></code></p>
-</dd>
-<dt class="field-odd">Returns</dt>
-<dd class="field-odd"><p>None</p>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">None</span></code></p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py function">
-<dt id="pricer.sources.generate_inventory">
-<code class="sig-prename descclassname">pricer.sources.</code><code class="sig-name descname">generate_inventory</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">test</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">run_dt</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pricer.sources.generate_inventory" title="Permalink to this definition">¶</a></dt>
-<dd><p>Read and clean Arkinventory addon data, and save to parquet.</p>
-<p>For all characters on all user specified accounts, collates info on
-monies and inventory. Uses general settings to determine which slots
-are examined (e.g. mailbox, backpack, auction, bank).</p>
+<dt id="pricer.sources.clean_beancounter_data">
+<code class="sig-prename descclassname">pricer.sources.</code><code class="sig-name descname">clean_beancounter_data</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pricer.sources.clean_beancounter_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reads Beancounter json and parses into tabular format.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>test</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – when True prevents data saving (early return)</p></li>
-<li><p><strong>run_dt</strong> (<code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">datetime</span></code>]) – Session runtime for data lineage timestampping</p></li>
-</ul>
-</dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">None</span></code></p>
-</dd>
-<dt class="field-odd">Returns</dt>
-<dd class="field-odd"><p>None</p>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">None</span></code></p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py function">
-<dt id="pricer.sources.retrieve_pricer_data">
-<code class="sig-prename descclassname">pricer.sources.</code><code class="sig-name descname">retrieve_pricer_data</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">test</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pricer.sources.retrieve_pricer_data" title="Permalink to this definition">¶</a></dt>
-<dd><p>Read BootyBay data (through proxy addon), and save to parquet.</p>
-<p>For all characters on all user specified accounts, collates info on
-prices for items in inventory. Works the data into
-labelled and cleaned pandas before parquet saves.</p>
+<dt id="pricer.sources.clean_beancounter_failed">
+<code class="sig-prename descclassname">pricer.sources.</code><code class="sig-name descname">clean_beancounter_failed</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">df</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pricer.sources.clean_beancounter_failed" title="Permalink to this definition">¶</a></dt>
+<dd><p>Further processing of failed auction beancounter data.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>test</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – when True prevents data saving (early return)</p>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">DataFrame</span></code></p>
 </dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">None</span></code></p>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="pricer.sources.clean_beancounter_posted">
+<code class="sig-prename descclassname">pricer.sources.</code><code class="sig-name descname">clean_beancounter_posted</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">df</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pricer.sources.clean_beancounter_posted" title="Permalink to this definition">¶</a></dt>
+<dd><p>Further processing of posted auction beancounter data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">DataFrame</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="pricer.sources.clean_beancounter_purchases">
+<code class="sig-prename descclassname">pricer.sources.</code><code class="sig-name descname">clean_beancounter_purchases</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">df</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pricer.sources.clean_beancounter_purchases" title="Permalink to this definition">¶</a></dt>
+<dd><p>Further processing of purchase beancounter data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">DataFrame</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="pricer.sources.clean_beancounter_success">
+<code class="sig-prename descclassname">pricer.sources.</code><code class="sig-name descname">clean_beancounter_success</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">df</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pricer.sources.clean_beancounter_success" title="Permalink to this definition">¶</a></dt>
+<dd><p>Further processing of successful auction beancounter data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">DataFrame</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="pricer.sources.create_item_skeleton">
+<code class="sig-prename descclassname">pricer.sources.</code><code class="sig-name descname">create_item_skeleton</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pricer.sources.create_item_skeleton" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates basic dataframe from user items information.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">None</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="pricer.sources.get_arkinventory_data">
+<code class="sig-prename descclassname">pricer.sources.</code><code class="sig-name descname">get_arkinventory_data</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pricer.sources.get_arkinventory_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reads WoW Addon Ark Inventory lua data and saves local copy as json.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">None</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="pricer.sources.get_auctioneer_data">
+<code class="sig-prename descclassname">pricer.sources.</code><code class="sig-name descname">get_auctioneer_data</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pricer.sources.get_auctioneer_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reads WoW Addon Auctioneer lua and parses text file into json.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">None</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="pricer.sources.get_bb_data">
+<code class="sig-prename descclassname">pricer.sources.</code><code class="sig-name descname">get_bb_data</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pricer.sources.get_bb_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reads Booty Bay web API data using selenium and blizzard login.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">None</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="pricer.sources.get_bb_item_page">
+<code class="sig-prename descclassname">pricer.sources.</code><code class="sig-name descname">get_bb_item_page</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">driver</span></em>, <em class="sig-param"><span class="n">item_id</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pricer.sources.get_bb_item_page" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get Booty Bay json info for a given item_id.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code>[<code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="pricer.sources.get_beancounter_data">
+<code class="sig-prename descclassname">pricer.sources.</code><code class="sig-name descname">get_beancounter_data</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pricer.sources.get_beancounter_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reads WoW Addon Beancounter lua and saves to local json.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">None</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="pricer.sources.process_auctioneer_data">
+<code class="sig-prename descclassname">pricer.sources.</code><code class="sig-name descname">process_auctioneer_data</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">df</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pricer.sources.process_auctioneer_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Performs processing of auctioneer data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">DataFrame</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="pricer.sources.process_item_skeleton">
+<code class="sig-prename descclassname">pricer.sources.</code><code class="sig-name descname">process_item_skeleton</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">df</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pricer.sources.process_item_skeleton" title="Permalink to this definition">¶</a></dt>
+<dd><p>Make transformation to item skeleton.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">DataFrame</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="pricer.sources.start_driver">
+<code class="sig-prename descclassname">pricer.sources.</code><code class="sig-name descname">start_driver</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pricer.sources.start_driver" title="Permalink to this definition">¶</a></dt>
+<dd><p>Spin up selenium driver for Booty Bay scraping.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>&lt;module ‘selenium.webdriver’ from ‘/Users/nicholasjenkins/Documents/wow_auctions/.nox/docs/lib/python3.7/site-packages/selenium/webdriver/__init__.py’&gt;</p>
 </dd>
 </dl>
 </dd></dl>
@@ -169,216 +240,187 @@ labelled and cleaned pandas before parquet saves.</p>
 </div>
 <div class="section" id="module-pricer.analysis">
 <span id="pricer-analysis"></span><h2>pricer.analysis<a class="headerlink" href="#module-pricer.analysis" title="Permalink to this headline">¶</a></h2>
-<p>It analyses data sources to form policies and track progress.</p>
-<ul class="simple">
-<li><p>reports on earnings</p></li>
-<li><p>analyses on auction success for items</p></li>
-<li><p>predicts current market price for items</p></li>
-<li><p>analyses the minimum sell price at which we would sell potions</p></li>
-<li><p>produces buying and selling policies, and writes to WoW addon directory</p></li>
-</ul>
+<p>Analyses cleaned data sources to form intermediate tables.</p>
 <dl class="py function">
-<dt id="pricer.analysis.analyse_auction_success">
-<code class="sig-prename descclassname">pricer.analysis.</code><code class="sig-name descname">analyse_auction_success</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">MAX_AUCTIONS</span><span class="o">=</span><span class="default_value">250</span></em>, <em class="sig-param"><span class="n">MIN_AUCTIONS</span><span class="o">=</span><span class="default_value">10</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pricer.analysis.analyse_auction_success" title="Permalink to this definition">¶</a></dt>
-<dd><p>It analyses auction activity data for recent item auction success rate.</p>
-<p>This information is used elsewhere to calculate minimum price which
-we are willing to sell for.</p>
-<p>It filters auction activity to sold (successful) and failed (unsuccessful)
-auctions. It creates a time based rank for each item, so we can identify
-the most recent data per item.</p>
+<dt id="pricer.analysis.analyse_listing_minprice">
+<code class="sig-prename descclassname">pricer.analysis.</code><code class="sig-name descname">analyse_listing_minprice</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pricer.analysis.analyse_listing_minprice" title="Permalink to this definition">¶</a></dt>
+<dd><p>Determine current Auctions minimum price. TODO Is this needed?</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>MAX_AUCTIONS</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>) – Filters data to most recent ‘MAX_AUCTIONS’ ranks.</p></li>
-<li><p><strong>MIN_AUCTIONS</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>) – Will not return item data when less than MIN_AUCTIONS.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p><dl class="simple">
-<dt>Pandas series of item: auction_success, where auction_success</dt><dd><p>is a float value between 0 and 1.</p>
-</dd>
-</dl>
-</p>
-</dd>
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>pd.Series</p>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">None</span></code></p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py function">
-<dt id="pricer.analysis.analyse_item_min_sell_price">
-<code class="sig-prename descclassname">pricer.analysis.</code><code class="sig-name descname">analyse_item_min_sell_price</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">MIN_PROFIT_MARGIN</span><span class="o">=</span><span class="default_value">1000</span></em>, <em class="sig-param"><span class="n">MAT_DEV</span><span class="o">=</span><span class="default_value">0.5</span></em>, <em class="sig-param"><span class="n">test</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pricer.analysis.analyse_item_min_sell_price" title="Permalink to this definition">¶</a></dt>
-<dd><p>It calculates item minimum sell price given costs.</p>
-<p>It loads user specified items of interest. It loads booty bay data for
-pricing information. * Note this will likely be changed in future development.
-Filters to user specified items which are classed as ‘buy’ or ‘sell’.
-Determines minimum sell price given raw ingredient costs, deposit loss from
-auction fail rate, 5% auction house cut, and a minimum profit margin buffer.</p>
+<dt id="pricer.analysis.analyse_listings">
+<code class="sig-prename descclassname">pricer.analysis.</code><code class="sig-name descname">analyse_listings</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pricer.analysis.analyse_listings" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert live listings into single items.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>MIN_PROFIT_MARGIN</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>) – User specified ‘buffer’ to add to prices to help
-ensure profit. Can be considered the ‘min acceptable profit’.</p></li>
-<li><p><strong>MAT_DEV</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code>) – Adds or subtracts pricing standard deviation. Adding
-standard deviation means we will only sell items at higher prices.</p></li>
-<li><p><strong>test</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – when True prevents data saving (early return)</p></li>
-</ul>
-</dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">None</span></code></p>
-</dd>
-<dt class="field-odd">Returns</dt>
-<dd class="field-odd"><p>None</p>
-</dd>
-<dt class="field-even">Raises</dt>
-<dd class="field-even"><p><strong>ValueError</strong> – Error might raised when booty bay addon data sourcing
-    has corrupted.</p>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">None</span></code></p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py function">
-<dt id="pricer.analysis.analyse_item_prices">
-<code class="sig-prename descclassname">pricer.analysis.</code><code class="sig-name descname">analyse_item_prices</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">full_pricing</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">test</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pricer.analysis.analyse_item_prices" title="Permalink to this definition">¶</a></dt>
-<dd><p>It reads auction data and calculates expected item prices.</p>
-<p>Loads all user auction activity (auction sales, buying).
-* NOTE this method is biased because we tend to buy low and sell high
-Loads historic minimum price for user specified items of interest.
-Joins both sources and sorts by date. Calculates the latest expected
-price using exponential weighted mean. Saves results to parquet.</p>
+<dt id="pricer.analysis.analyse_material_cost">
+<code class="sig-prename descclassname">pricer.analysis.</code><code class="sig-name descname">analyse_material_cost</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pricer.analysis.analyse_material_cost" title="Permalink to this definition">¶</a></dt>
+<dd><p>Analyse cost of materials for items, using purchase history or BB predicted price.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>full_pricing</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – Use all item data rather than user specified
-items of interest. Functionality will be depreciated
-during upcoming release refactor.</p></li>
-<li><p><strong>test</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – when True prevents data saving (early return)</p></li>
-</ul>
-</dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">None</span></code></p>
-</dd>
-<dt class="field-odd">Returns</dt>
-<dd class="field-odd"><p>None</p>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">None</span></code></p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py function">
-<dt id="pricer.analysis.analyse_sales_performance">
-<code class="sig-prename descclassname">pricer.analysis.</code><code class="sig-name descname">analyse_sales_performance</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">test</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pricer.analysis.analyse_sales_performance" title="Permalink to this definition">¶</a></dt>
-<dd><p>It combines inventory and pricing data to report performance.</p>
-<p>Produces charts and tables to help measure performance.
-Loads current item prices along with all time inventory
-and money counts.
-It calculates value of inventory based
-on <em>current item prices</em>. This will be changed to price at the
-time of issue in future development, as we cannot perform data
-versioning.
-It groups characters into ‘mule’ and ‘other’ categories. This will
-be changed to a config driven approach in future development.
-Loads use specified time played, and calculates gold p/h. This
-information is saved to log files.
-It generates a chart of monies and inventory value over time,
-which is useful to track long term performance.
-It saves enriched parquet files with inventory and earnings info.</p>
+<dt id="pricer.analysis.analyse_replenishment">
+<code class="sig-prename descclassname">pricer.analysis.</code><code class="sig-name descname">analyse_replenishment</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pricer.analysis.analyse_replenishment" title="Permalink to this definition">¶</a></dt>
+<dd><p>Determine the demand for item replenishment.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>test</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – when True prevents data saving (early return)</p>
-</dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">None</span></code></p>
-</dd>
-<dt class="field-odd">Returns</dt>
-<dd class="field-odd"><p>None</p>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">None</span></code></p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py function">
-<dt id="pricer.analysis.analyse_sell_data">
-<code class="sig-prename descclassname">pricer.analysis.</code><code class="sig-name descname">analyse_sell_data</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">test</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pricer.analysis.analyse_sell_data" title="Permalink to this definition">¶</a></dt>
-<dd><p>It creates a table with latest market information per item.</p>
-<p>Loads minimum listing price/item and current auction minimum price/item.
-From these, determines if it is feasible to sell items at a profit.</p>
-<p>It loads current auction data to determine if we currently have auctions,
-and whether they are being undercut.</p>
-<p>Adds inventory data per item, to determine if we have items available for sale.</p>
+<dt id="pricer.analysis.create_item_inventory">
+<code class="sig-prename descclassname">pricer.analysis.</code><code class="sig-name descname">create_item_inventory</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pricer.analysis.create_item_inventory" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert Arkinventory tabular data into dataframe of counts for user items.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>test</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – when True prevents data saving (early return)</p>
-</dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">None</span></code></p>
-</dd>
-<dt class="field-odd">Returns</dt>
-<dd class="field-odd"><p>None</p>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">None</span></code></p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py function">
-<dt id="pricer.analysis.apply_buy_policy">
-<code class="sig-prename descclassname">pricer.analysis.</code><code class="sig-name descname">apply_buy_policy</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">MAT_DEV</span><span class="o">=</span><span class="default_value">0</span></em>, <em class="sig-param"><span class="n">test</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pricer.analysis.apply_buy_policy" title="Permalink to this definition">¶</a></dt>
-<dd><p>Determines herbs to buy based on potions in inventory.</p>
-<p>Loads user specified items of interest, and ideal holdings of the items.
-Loads information on number of potions in inventory.
-Loads auction success rate for potions, to downweight items that don’t sell.
-Calculates number of herbs required to fill the ideal holdings of potions,
-minus herbs already held in inventory.
-Looks through all auction listings of herbs available for sale (volume and price).
-Sets a buy price at which we buy the right number of herbs to fill demand.
-We set a minimum buy price such that we can always buy bargain herbs.
-The buy policy is converted into lua format and saved to the WoW
-Addon directory for Auctioneer (Snatch). Additionally, the buy policy
-is saved as a parquet file.</p>
+<dt id="pricer.analysis.create_item_table">
+<code class="sig-prename descclassname">pricer.analysis.</code><code class="sig-name descname">create_item_table</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pricer.analysis.create_item_table" title="Permalink to this definition">¶</a></dt>
+<dd><p>Combine item information into single master table.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>MAT_DEV</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>) – Adds or subtracts pricing standard deviation. Adding
-standard deviation means we will buy items at higher prices.</p></li>
-<li><p><strong>test</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – when True prevents data saving (early return)</p></li>
-</ul>
-</dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">None</span></code></p>
-</dd>
-<dt class="field-odd">Returns</dt>
-<dd class="field-odd"><p>None</p>
-</dd>
-<dt class="field-even">Raises</dt>
-<dd class="field-even"><p><strong>KeyError</strong> – All user specified ‘Buy’ items must be present in the
-    Auctioneer ‘snatch’ listing.</p>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">None</span></code></p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py function">
-<dt id="pricer.analysis.apply_sell_policy">
-<code class="sig-prename descclassname">pricer.analysis.</code><code class="sig-name descname">apply_sell_policy</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">stack</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">leads</span><span class="o">=</span><span class="default_value">15</span></em>, <em class="sig-param"><span class="n">duration</span><span class="o">=</span><span class="default_value">'m'</span></em>, <em class="sig-param"><span class="n">update</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">test</span><span class="o">=</span><span class="default_value">False</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pricer.analysis.apply_sell_policy" title="Permalink to this definition">¶</a></dt>
-<dd><p>Combines user input &amp; market data to write a sell policy to WoW addon folder.</p>
-<p>Given user specified parameters, create a selling policy across
-all items, based on the market and inventory information.
-The sell policy is converted into lua format and saved to the WoW
-Addon directory for Auctioneer.</p>
+<dt id="pricer.analysis.predict_item_prices">
+<code class="sig-prename descclassname">pricer.analysis.</code><code class="sig-name descname">predict_item_prices</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">quantile</span><span class="o">=</span><span class="default_value">0.025</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pricer.analysis.predict_item_prices" title="Permalink to this definition">¶</a></dt>
+<dd><p>Analyse exponential average mean and std of items given 14 day, 2 hour history.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>stack</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>) – stack size to sell items</p></li>
-<li><p><strong>leads</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>) – total number of undercut auctions we want to achieve</p></li>
-<li><p><strong>duration</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>) – length of auction</p></li>
-<li><p><strong>update</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – when True, will re-save the market data after applying the sell
-policy. This is useful to run a second sell policy without needing to
-re-run the full analysis.</p></li>
-<li><p><strong>test</strong> (<code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code>) – when True prevents data saving (early return)</p></li>
-</ul>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">None</span></code></p>
 </dd>
-<dt class="field-even">Return type</dt>
-<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">None</span></code></p>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="pricer.analysis.predict_volume_sell_probability">
+<code class="sig-prename descclassname">pricer.analysis.</code><code class="sig-name descname">predict_volume_sell_probability</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dur_char</span><span class="o">=</span><span class="default_value">'m'</span></em>, <em class="sig-param"><span class="n">MAX_LISTINGS</span><span class="o">=</span><span class="default_value">1000</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pricer.analysis.predict_volume_sell_probability" title="Permalink to this definition">¶</a></dt>
+<dd><p>Expected volume changes as a probability of sale given BB recent history.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">None</span></code></p>
 </dd>
-<dt class="field-odd">Returns</dt>
-<dd class="field-odd"><p>None</p>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="module-pricer.campaign">
+<span id="pricer-campaign"></span><h2>pricer.campaign<a class="headerlink" href="#module-pricer.campaign" title="Permalink to this headline">¶</a></h2>
+<p>Collates information to form buy/sell campaigns.</p>
+<dl class="py function">
+<dt id="pricer.campaign.analyse_buy_policy">
+<code class="sig-prename descclassname">pricer.campaign.</code><code class="sig-name descname">analyse_buy_policy</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">MAX_BUY_STD</span><span class="o">=</span><span class="default_value">2</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pricer.campaign.analyse_buy_policy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create buy policy.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">None</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="pricer.campaign.analyse_make_policy">
+<code class="sig-prename descclassname">pricer.campaign.</code><code class="sig-name descname">analyse_make_policy</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pricer.campaign.analyse_make_policy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Prints what potions to make.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">None</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="pricer.campaign.analyse_sell_policy">
+<code class="sig-prename descclassname">pricer.campaign.</code><code class="sig-name descname">analyse_sell_policy</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">stack</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">max_sell</span><span class="o">=</span><span class="default_value">10</span></em>, <em class="sig-param"><span class="n">duration</span><span class="o">=</span><span class="default_value">'m'</span></em>, <em class="sig-param"><span class="n">MAX_STD</span><span class="o">=</span><span class="default_value">5</span></em>, <em class="sig-param"><span class="n">MIN_PROFIT</span><span class="o">=</span><span class="default_value">300</span></em>, <em class="sig-param"><span class="n">MIN_PROFIT_PCT</span><span class="o">=</span><span class="default_value">0.015</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pricer.campaign.analyse_sell_policy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates sell policy based on information.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">None</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="pricer.campaign.encode_buy_campaign">
+<code class="sig-prename descclassname">pricer.campaign.</code><code class="sig-name descname">encode_buy_campaign</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">buy_policy</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pricer.campaign.encode_buy_campaign" title="Permalink to this definition">¶</a></dt>
+<dd><p>Encodes buy campaign dataframe into dictionary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>]]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="pricer.campaign.encode_sell_campaign">
+<code class="sig-prename descclassname">pricer.campaign.</code><code class="sig-name descname">encode_sell_campaign</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">sell_policy</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pricer.campaign.encode_sell_campaign" title="Permalink to this definition">¶</a></dt>
+<dd><p>Encode sell policy dataframe into dictionary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="pricer.campaign.write_buy_policy">
+<code class="sig-prename descclassname">pricer.campaign.</code><code class="sig-name descname">write_buy_policy</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pricer.campaign.write_buy_policy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Writes the buy policy to all accounts.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">None</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="pricer.campaign.write_sell_policy">
+<code class="sig-prename descclassname">pricer.campaign.</code><code class="sig-name descname">write_sell_policy</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pricer.campaign.write_sell_policy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Writes the sell policy to accounts.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">None</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="module-pricer.reporting">
+<span id="pricer-reporting"></span><h2>pricer.reporting<a class="headerlink" href="#module-pricer.reporting" title="Permalink to this headline">¶</a></h2>
+<p>Produces reporting to help interpret analysis and campaigns.</p>
+<dl class="py function">
+<dt id="pricer.reporting.have_in_bag">
+<code class="sig-prename descclassname">pricer.reporting.</code><code class="sig-name descname">have_in_bag</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pricer.reporting.have_in_bag" title="Permalink to this definition">¶</a></dt>
+<dd><p>Prints expected profits, make sure its in your bag.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">None</span></code></p>
 </dd>
 </dl>
 </dd></dl>
@@ -386,19 +428,14 @@ re-run the full analysis.</p></li>
 </div>
 <div class="section" id="module-pricer.utils">
 <span id="pricer-utils"></span><h2>pricer.utils<a class="headerlink" href="#module-pricer.utils" title="Permalink to this headline">¶</a></h2>
-<p>It contains small functions to support data pipeline.</p>
-<ul class="simple">
-<li><p>Loads and writes raw and cleaned files, changes data formats</p></li>
-</ul>
+<p>Contains helper functions to support data pipeline.</p>
 <dl class="py function">
-<dt id="pricer.utils.deploy_pricer_addon">
-<code class="sig-prename descclassname">pricer.utils.</code><code class="sig-name descname">deploy_pricer_addon</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pricer.utils.deploy_pricer_addon" title="Permalink to this definition">¶</a></dt>
-<dd><p>Generates a blank pricer file of items of interest.</p>
-<p>This is used to fill in the latest pricing info from booty bay gazette.
-This is done in game using a self build addon with the /pricer command</p>
+<dt id="pricer.utils.dict_to_lua">
+<code class="sig-prename descclassname">pricer.utils.</code><code class="sig-name descname">dict_to_lua</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">data</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pricer.utils.dict_to_lua" title="Permalink to this definition">¶</a></dt>
+<dd><p>Converts python dict into long str.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">None</span></code></p>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></p>
 </dd>
 </dl>
 </dd></dl>
@@ -415,45 +452,34 @@ This is done in game using a self build addon with the /pricer command</p>
 </dd></dl>
 
 <dl class="py function">
-<dt id="pricer.utils.get_and_format_auction_data">
-<code class="sig-prename descclassname">pricer.utils.</code><code class="sig-name descname">get_and_format_auction_data</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">account</span><span class="o">=</span><span class="default_value">'396255466#1'</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pricer.utils.get_and_format_auction_data" title="Permalink to this definition">¶</a></dt>
-<dd><p>Read raw scandata dict dump and converts to usable dataframe.</p>
+<dt id="pricer.utils.duration_str_to_mins">
+<code class="sig-prename descclassname">pricer.utils.</code><code class="sig-name descname">duration_str_to_mins</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dur_char</span><span class="o">=</span><span class="default_value">'m'</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pricer.utils.duration_str_to_mins" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert duration string to auction minutes.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">DataFrame</span></code></p>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py function">
-<dt id="pricer.utils.get_character_pricer_data">
-<code class="sig-prename descclassname">pricer.utils.</code><code class="sig-name descname">get_character_pricer_data</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">account_name</span></em>, <em class="sig-param"><span class="n">character</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pricer.utils.get_character_pricer_data" title="Permalink to this definition">¶</a></dt>
-<dd><p>Get pricer data for a character on an account.</p>
+<dt id="pricer.utils.find_attribute_location">
+<code class="sig-prename descclassname">pricer.utils.</code><code class="sig-name descname">find_attribute_location</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">content</span></em>, <em class="sig-param"><span class="n">initial_key</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pricer.utils.find_attribute_location" title="Permalink to this definition">¶</a></dt>
+<dd><p>Search binary lua for an attribute start and end location.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></p>
+<dd class="field-odd"><p><code class="xref py py-data docutils literal notranslate"><span class="pre">Tuple</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>]</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py function">
-<dt id="pricer.utils.get_general_settings">
-<code class="sig-prename descclassname">pricer.utils.</code><code class="sig-name descname">get_general_settings</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pricer.utils.get_general_settings" title="Permalink to this definition">¶</a></dt>
-<dd><p>Gets general program settings such as mappings.</p>
+<dt id="pricer.utils.get_item_ids">
+<code class="sig-prename descclassname">pricer.utils.</code><code class="sig-name descname">get_item_ids</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pricer.utils.get_item_ids" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read item id database.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>]</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt id="pricer.utils.get_item_codes">
-<code class="sig-prename descclassname">pricer.utils.</code><code class="sig-name descname">get_item_codes</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pricer.utils.get_item_codes" title="Permalink to this definition">¶</a></dt>
-<dd><p>Read BeanCounter data to create code: item mapping.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>]</p>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>, <code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code>]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -470,34 +496,12 @@ This is done in game using a self build addon with the /pricer command</p>
 </dd></dl>
 
 <dl class="py function">
-<dt id="pricer.utils.load_items">
-<code class="sig-prename descclassname">pricer.utils.</code><code class="sig-name descname">load_items</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pricer.utils.load_items" title="Permalink to this definition">¶</a></dt>
-<dd><p>Loads user specified items of interest.</p>
+<dt id="pricer.utils.make_lua_path">
+<code class="sig-prename descclassname">pricer.utils.</code><code class="sig-name descname">make_lua_path</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">account_name</span><span class="o">=</span><span class="default_value">''</span></em>, <em class="sig-param"><span class="n">datasource</span><span class="o">=</span><span class="default_value">''</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pricer.utils.make_lua_path" title="Permalink to this definition">¶</a></dt>
+<dd><p>Forms a path to a lua file.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Dict</span></code>[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>, <code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code>]</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt id="pricer.utils.read_lua">
-<code class="sig-prename descclassname">pricer.utils.</code><code class="sig-name descname">read_lua</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">datasource</span></em>, <em class="sig-param"><span class="n">merge_account_sources</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">accounts</span><span class="o">=</span><span class="default_value">'BLUEM', '396255466#1', '801032581#1'</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pricer.utils.read_lua" title="Permalink to this definition">¶</a></dt>
-<dd><p>Read lua and merge lua from WoW Addon account locations.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt id="pricer.utils.read_multiple_parquet">
-<code class="sig-prename descclassname">pricer.utils.</code><code class="sig-name descname">read_multiple_parquet</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">loc</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pricer.utils.read_multiple_parquet" title="Permalink to this definition">¶</a></dt>
-<dd><p>Scan directory path for parquet files, concatenate and return.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">DataFrame</span></code></p>
+<dd class="field-odd"><p><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></p>
 </dd>
 </dl>
 </dd></dl>
@@ -513,10 +517,25 @@ This is done in game using a self build addon with the /pricer command</p>
 </dl>
 </dd></dl>
 
+</div>
+<div class="section" id="module-pricer.io">
+<span id="pricer-io"></span><h2>pricer.io<a class="headerlink" href="#module-pricer.io" title="Permalink to this headline">¶</a></h2>
+<p>File read and writes.</p>
 <dl class="py function">
-<dt id="pricer.utils.write_lua">
-<code class="sig-prename descclassname">pricer.utils.</code><code class="sig-name descname">write_lua</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">data</span></em>, <em class="sig-param"><span class="n">account</span><span class="o">=</span><span class="default_value">'396255466#1'</span></em>, <em class="sig-param"><span class="n">name</span><span class="o">=</span><span class="default_value">'Auc-Advanced'</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pricer.utils.write_lua" title="Permalink to this definition">¶</a></dt>
-<dd><p>Write python dict as lua object.</p>
+<dt id="pricer.io.reader">
+<code class="sig-prename descclassname">pricer.io.</code><code class="sig-name descname">reader</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">schema</span><span class="o">=</span><span class="default_value">''</span></em>, <em class="sig-param"><span class="n">name</span><span class="o">=</span><span class="default_value">''</span></em>, <em class="sig-param"><span class="n">ftype</span><span class="o">=</span><span class="default_value">''</span></em>, <em class="sig-param"><span class="n">custom</span><span class="o">=</span><span class="default_value">''</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pricer.io.reader" title="Permalink to this definition">¶</a></dt>
+<dd><p>Standard program writer, allows pathing extensibility i.e. testing or S3.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="pricer.io.writer">
+<code class="sig-prename descclassname">pricer.io.</code><code class="sig-name descname">writer</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">data</span></em>, <em class="sig-param"><span class="n">schema</span><span class="o">=</span><span class="default_value">''</span></em>, <em class="sig-param"><span class="n">name</span><span class="o">=</span><span class="default_value">''</span></em>, <em class="sig-param"><span class="n">ftype</span><span class="o">=</span><span class="default_value">''</span></em>, <em class="sig-param"><span class="n">custom</span><span class="o">=</span><span class="default_value">''</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pricer.io.writer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Standard program writer, allows pathing extensibility i.e. testing or S3.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">None</span></code></p>
@@ -524,6 +543,10 @@ This is done in game using a self build addon with the /pricer command</p>
 </dl>
 </dd></dl>
 
+</div>
+<div class="section" id="module-pricer.schema">
+<span id="pricer-schema"></span><h2>pricer.schema<a class="headerlink" href="#module-pricer.schema" title="Permalink to this headline">¶</a></h2>
+<p>Schema enforcement for project.</p>
 </div>
 <div class="section" id="module-pricer.config">
 <span id="pricer-config"></span><h2>pricer.config<a class="headerlink" href="#module-pricer.config" title="Permalink to this headline">¶</a></h2>
@@ -555,17 +578,6 @@ user specified.</p></li>
 <div class="section" id="module-pricer.run">
 <span id="pricer-run"></span><h2>pricer.run<a class="headerlink" href="#module-pricer.run" title="Permalink to this headline">¶</a></h2>
 <p>Main entry point for pricer program.</p>
-<dl class="simple">
-<dt>Accepts command line arguments to alter program function. Users can:</dt><dd><ul class="simple">
-<li><p>Initialize the program to perform setup tasks</p></li>
-<li><p>Perform test runs (no data saving)</p></li>
-<li><p>Perform AH analysis</p></li>
-<li><p>Apply selling policies</p></li>
-</ul>
-</dd>
-</dl>
-<p>Declares the session datetime variable (run_dt)
-Pre-release; functionality likely to change significantly.</p>
 <dl class="py function">
 <dt id="pricer.run.main">
 <code class="sig-prename descclassname">pricer.run.</code><code class="sig-name descname">main</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pricer.run.main" title="Permalink to this definition">¶</a></dt>
