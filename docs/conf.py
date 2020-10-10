@@ -8,4 +8,4 @@ extensions = [
     "sphinx_autodoc_typehints",
     "m2r2",
 ]
-source_suffix = ['.rst', '.md']
+source_suffix = [".rst", ".md"]
