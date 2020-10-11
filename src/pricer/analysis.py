@@ -86,9 +86,7 @@ def analyse_material_cost() -> None:
     )
     purchase_each = pd.DataFrame([item, price_per], index=["item", "price_per"]).T
 
-    # TODO, this is causing failures with a single item; likely going to fail with no data
-
-    # This should fix a single item, while not being added later with the join
+    # This ensures that it will work for a single item
     purchase_each.loc[purchase_each.index.max() + 1] = ("dummy", 0)
 
     ewm = (
