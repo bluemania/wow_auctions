@@ -3,9 +3,8 @@ categories:
     label: 'feature'
   - title: ':beetle: Bug Fixes'
     labels:
-      - 'hotfix'
-      - 'bugfix'
       - 'invalid'
+      - 'bug'
   - title: ':construction_worker: Maintenance'
     label: 'infra'
   - title: ':books: Documentation'
