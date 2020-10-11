@@ -7,6 +7,7 @@ import logging
 from typing import Any, Dict, List
 
 from bs4 import BeautifulSoup
+from numpy import nan
 import pandas as pd
 from pandera import check_input, check_output
 from selenium import webdriver
@@ -460,6 +461,19 @@ def create_item_skeleton() -> None:
     """Creates basic dataframe from user items information."""
     user_items = cfg.ui.copy()
     item_skeleton_raw = pd.DataFrame(user_items).T
+
+    for col in [
+        "min_holding",
+        "max_holding",
+        "max_sell",
+        "Buy",
+        "Sell",
+        "made_from",
+        "make_pass",
+        "vendor_price",
+    ]:
+        if col not in item_skeleton_raw:
+            item_skeleton_raw[col] = nan
 
     item_skeleton = process_item_skeleton(item_skeleton_raw)
 
