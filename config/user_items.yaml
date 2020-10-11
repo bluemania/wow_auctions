@@ -312,3 +312,29 @@ Empty Vial:
 TRANSMUTE_TIME:
   vendor_price: 1
   make_pass: True
+
+Light Leather:
+  max_holding: 2214
+  min_std: 0
+  max_std: 2
+  Buy: True
+Medium Leather:
+  max_holding: 3616
+  min_std: 0
+  max_std: 2
+  Buy: True
+Heavy Leather:
+  max_holding: 2334
+  min_std: 0
+  max_std: 2
+  Buy: True
+Thick Leather:
+  max_holding: 1830
+  min_std: 0
+  max_std: 2
+  Buy: True
+Turtle Scale:
+  max_holding: 672
+  min_std: 0
+  max_std: 2
+  Buy: True

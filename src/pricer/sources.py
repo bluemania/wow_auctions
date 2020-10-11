@@ -447,6 +447,9 @@ def process_item_skeleton(df: pd.DataFrame) -> pd.DataFrame:
     int_cols = ["min_holding", "max_holding", "vendor_price"]
     df[int_cols] = df[int_cols].fillna(0).astype(int)
 
+    df["min_std"] = df["min_std"].fillna(-10)
+    df["max_std"] = df["max_std"].fillna(10)
+
     # df["max_sell"] = df["max_sell"].fillna(df["max_holding"]).astype(int)
 
     df["std_holding"] = (df["max_holding"] - df["min_holding"]) / 7
@@ -471,6 +474,8 @@ def create_item_skeleton() -> None:
         "made_from",
         "make_pass",
         "vendor_price",
+        "min_std",
+        "max_std"
     ]:
         if col not in item_skeleton_raw:
             item_skeleton_raw[col] = nan
