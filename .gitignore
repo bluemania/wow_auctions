@@ -1,14 +1,26 @@
-*.DS_Store
+**/.DS_Store
 *.ipynb_checkpoints/
 *__pycache__
 venv/
 
+# Never save secrets!
 SECRETS.yaml
 
+# Dont save live data...
 data/*/*.parquet
 data/*/*.json
+
+# ...but do preserve the folder structure
 !data/.gitkeep
 !data/*/.gitkeep
+
+# Retain the test data, and the file structure
+!data/_test/raw/*
+!data/_test/*/.gitkeep
+
+# But none of the test outputs
+data/_test/*/*.parquet
+
 
 logs/*
 !logs/.gitkeep

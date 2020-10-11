@@ -7,6 +7,7 @@ import logging
 from typing import Any, Dict, List
 
 from bs4 import BeautifulSoup
+from numpy import nan
 import pandas as pd
 from pandera import check_input, check_output
 from selenium import webdriver
@@ -91,7 +92,6 @@ def clean_bb_data() -> None:
 
     bb_fortnight: List = []
     bb_history: List = []
-    bb_listings: List = []
     bb_alltime: List = []
     bb_deposit: Dict[str, int] = {}
 
@@ -107,18 +107,6 @@ def clean_bb_data() -> None:
         bb_history_data = pd.DataFrame(data["daily"])
         bb_history_data["item"] = item
         bb_history.append(bb_history_data)
-
-        if data["auctions"]["data"]:
-            bb_listings_data = pd.DataFrame(data["auctions"]["data"])
-            bb_listings_data = bb_listings_data[
-                ["quantity", "buy", "sellerrealm", "sellername"]
-            ]
-            bb_listings_data["price_per"] = (
-                bb_listings_data["buy"] / bb_listings_data["quantity"]
-            ).astype(int)
-            bb_listings_data = bb_listings_data.drop("sellerrealm", axis=1)
-            bb_listings_data["item"] = item
-            bb_listings.append(bb_listings_data)
 
         bb_alltime_data = pd.DataFrame(data["monthly"][0])
         bb_alltime_data["item"] = item
@@ -136,9 +124,6 @@ def clean_bb_data() -> None:
     bb_alltime_df = pd.concat(bb_alltime)
     bb_alltime_df["date"] = pd.to_datetime(bb_alltime_df["date"])
 
-    bb_listings_df = pd.concat(bb_listings)
-    bb_listings_df = bb_listings_df[bb_listings_df["price_per"] > 0]
-
     bb_deposit_df = pd.DataFrame.from_dict(bb_deposit, orient="index")
     bb_deposit_df.columns = ["deposit"]
     bb_deposit_df.index.name = "item"
@@ -146,7 +131,6 @@ def clean_bb_data() -> None:
     io.writer(bb_fortnight_df, "cleaned", "bb_fortnight", "parquet")
     io.writer(bb_history_df, "cleaned", "bb_history", "parquet")
     io.writer(bb_alltime_df, "cleaned", "bb_alltime", "parquet")
-    io.writer(bb_listings_df, "cleaned", "bb_listings", "parquet")
     io.writer(bb_deposit_df, "cleaned", "bb_deposit", "parquet")
 
 
@@ -279,11 +263,14 @@ def clean_beancounter_purchases(df: pd.DataFrame) -> pd.DataFrame:
         "bid",
         "seller",
         "timestamp",
-        "drop_11",
+        "cancelled",
         "drop_12",
     ]
     purchases.columns = columns
     purchases = purchases.drop([col for col in columns if "drop_" in col], axis=1)
+
+    purchases = purchases[purchases["cancelled"] != "Cancelled"]
+    purchases = purchases.drop("cancelled", axis=1)
 
     purchases["qty"] = purchases["qty"].astype(int)
     purchases["buyout"] = purchases["buyout"].astype(float)
@@ -477,6 +464,19 @@ def create_item_skeleton() -> None:
     """Creates basic dataframe from user items information."""
     user_items = cfg.ui.copy()
     item_skeleton_raw = pd.DataFrame(user_items).T
+
+    for col in [
+        "min_holding",
+        "max_holding",
+        "max_sell",
+        "Buy",
+        "Sell",
+        "made_from",
+        "make_pass",
+        "vendor_price",
+    ]:
+        if col not in item_skeleton_raw:
+            item_skeleton_raw[col] = nan
 
     item_skeleton = process_item_skeleton(item_skeleton_raw)
 

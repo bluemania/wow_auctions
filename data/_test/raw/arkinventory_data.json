@@ -1,0 +1,49 @@
+{
+    "Amazona - Grobbulus": {
+        "info": {
+            "money": 42069
+        },
+        "location": {
+            "0": {
+                "bag": [
+                    {
+                        "slot": [
+                            {
+                                "h": "|cffffffff|Hitem:8846::::::::39:::::::|h[Gromsblood]|h|r",
+                                "count": 20
+                            },
+                            {
+                                "h": "|cffffffff|Hitem:13442::::::::39:::::::|h[Mighty Rage Potion]|h|r",
+                                "count": 5
+                            }
+                        ]
+                    }
+                ]
+            },
+            "2": {
+                "bag": [
+                    {
+                        "slot": [
+                            {
+                                "h": "|cffffffff|Hitem:8846::::::::39:::::::|h[Gromsblood]|h|r",
+                                "count": 20
+                            }
+                        ]
+                    }
+                ]
+            },
+            "10": {
+                "bag": [
+                    {
+                        "slot": [
+                            {
+                                "h": "|cffffffff|Hitem:13442::::::::39:::::::|h[Mighty Rage Potion]|h|r",
+                                "count": 5
+                            }
+                        ]
+                    }
+                ]
+            }
+        }
+    }
+}

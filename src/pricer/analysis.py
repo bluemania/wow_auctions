@@ -86,6 +86,9 @@ def analyse_material_cost() -> None:
     )
     purchase_each = pd.DataFrame([item, price_per], index=["item", "price_per"]).T
 
+    # This ensures that it will work for a single item
+    purchase_each.loc[purchase_each.index.max() + 1] = ("dummy", 0)
+
     ewm = (
         purchase_each.groupby("item")
         .apply(lambda x: x["price_per"].ewm(span=100).mean())
