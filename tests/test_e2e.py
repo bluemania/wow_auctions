@@ -27,6 +27,5 @@ def test_e2e() -> None:
 
     campaign.analyse_buy_policy()
     campaign.analyse_sell_policy(stack=5, max_sell=5, duration="m")
-    campaign.analyse_make_policy()
 
     reporting.have_in_bag()
