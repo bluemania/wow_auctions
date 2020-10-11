@@ -1,5 +1,5 @@
 feature: feature/*
-bug: bugfix/*, hotfix/*, bug/*
-docs: docs/*
+bug: ['bugfix/*', 'hotfix/*', 'bug/*']
+docs: ['docs/*', 'doc/*']
 infra: infra/*
 analysis: experiment/*
