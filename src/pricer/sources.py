@@ -263,11 +263,14 @@ def clean_beancounter_purchases(df: pd.DataFrame) -> pd.DataFrame:
         "bid",
         "seller",
         "timestamp",
-        "drop_11",
+        "cancelled",
         "drop_12",
     ]
     purchases.columns = columns
     purchases = purchases.drop([col for col in columns if "drop_" in col], axis=1)
+
+    purchases = purchases[purchases["cancelled"] != "Cancelled"]
+    purchases = purchases.drop("cancelled", axis=1)
 
     purchases["qty"] = purchases["qty"].astype(int)
     purchases["buyout"] = purchases["buyout"].astype(float)

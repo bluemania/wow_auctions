@@ -1,5 +1,5 @@
 feature: feature/*
-bug: bugfix/*, hotfix/*
+bug: bugfix/*, hotfix/*, bug/*
 docs: docs/*
 infra: infra/*
 analysis: experiment/*
