@@ -4,7 +4,7 @@ from datetime import datetime as dt
 import logging
 import warnings
 
-from . import analysis, campaign, config as cfg, reporting, sources
+from . import analysis, campaign, config as cfg, reporting, sources, webserver
 
 warnings.simplefilter(action="ignore")
 logger = logging.getLogger(__name__)
@@ -21,6 +21,9 @@ def main() -> None:
     parser.add_argument("-m", type=int, default=20, help="Max sell")
     parser.add_argument("-d", type=str, default="m", help="Duration")
 
+    parser.add_argument("-f", help="Start flask webserver", action="store_true")
+    parser.add_argument("-n", help="No analysis, skip", action="store_true")
+
     parser.add_argument("-v", help="Verbose mode (info)", action="store_true")
     parser.add_argument("-vv", help="Verbose mode (debug)", action="store_true")
     args = parser.parse_args()
@@ -32,37 +35,42 @@ def main() -> None:
     if args.b:
         sources.get_bb_data()
 
-    sources.clean_bb_data()
-    sources.get_arkinventory_data()
-    sources.clean_arkinventory_data(run_dt)
-    sources.get_beancounter_data()
-    sources.clean_beancounter_data()
-    sources.get_auctioneer_data()
-    sources.clean_auctioneer_data()
-    sources.create_item_skeleton()
+    if not args.n:
+        sources.clean_bb_data()
+        sources.get_arkinventory_data()
+        sources.clean_arkinventory_data(run_dt)
+        sources.get_beancounter_data()
+        sources.clean_beancounter_data()
+        sources.get_auctioneer_data()
+        sources.clean_auctioneer_data()
+        sources.create_item_skeleton()
 
-    analysis.predict_item_prices()
-    analysis.analyse_listing_minprice()
-    analysis.analyse_material_cost()
-    analysis.create_item_inventory()
-    analysis.analyse_listings()
-    analysis.analyse_replenishment()
+        analysis.predict_item_prices()
+        analysis.analyse_listing_minprice()
+        analysis.analyse_material_cost()
+        analysis.create_item_inventory()
+        analysis.analyse_listings()
+        analysis.analyse_replenishment()
 
-    analysis.create_item_table()
+        analysis.create_item_table()
 
-    analysis.predict_volume_sell_probability(args.d)
+        analysis.predict_volume_sell_probability(args.d)
 
-    campaign.analyse_buy_policy()
-    campaign.write_buy_policy()
+        campaign.analyse_buy_policy()
+        campaign.write_buy_policy()
 
-    campaign.analyse_sell_policy(stack=args.s, max_sell=args.m, duration=args.d)
-    campaign.write_sell_policy()
+        campaign.analyse_sell_policy(stack=args.s, max_sell=args.m, duration=args.d)
+        campaign.write_sell_policy()
 
-    campaign.analyse_make_policy()
+        campaign.analyse_make_policy()
 
-    reporting.have_in_bag()
+        reporting.have_in_bag()
 
     logger.info(f"Program end, seconds {(dt.now() - run_dt).total_seconds()}")
+
+    if args.f:
+        logger.info("Starting webserver")
+        webserver.app.run(debug=True, threaded=True)
 
 
 if __name__ == "__main__":
