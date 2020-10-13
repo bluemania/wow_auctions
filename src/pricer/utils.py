@@ -99,7 +99,7 @@ def dump_lua(data: Any) -> Any:
     logger.warning(f"Lua parsing error; unknown type {type(data)}")
 
 
-def find_attribute_location(content: bytes, initial_key: bytes) -> Tuple[int, int]:
+def find_tsm_marker(content: bytes, initial_key: bytes) -> Tuple[int, int]:
     """Search binary lua for an attribute start and end location."""
     start = content.index(initial_key)
 
@@ -117,3 +117,8 @@ def find_attribute_location(content: bytes, initial_key: bytes) -> Tuple[int, in
             break
     _end += start + 1
     return start, _end
+
+
+def get_ahm() -> Dict[str, str]:
+    """Get the auction house main details."""
+    return [role for role in cfg.us.get("roles") if role.get("role") == "ahm"][0]
