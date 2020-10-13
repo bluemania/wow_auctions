@@ -23,15 +23,19 @@ logger = logging.getLogger(__name__)
 
 def get_bb_item_page(driver: webdriver, item_id: int) -> Dict[Any, Any]:
     """Get Booty Bay json info for a given item_id."""
-    driver.get(cfg.us["bb_selenium"]["BB_ITEMAPI"] + str(item_id))
+
+    url = f'{cfg.us["booty"]["api"]}{cfg.us["server_id"]}&item={item_id}'
+    backup_url = f'{cfg.us["booty"]["base"]}{cfg.us["server"].lower()}-a/item/6049'
+
+    driver.get(url)
     soup = BeautifulSoup(driver.page_source)
     text = soup.find("body").text
     if "captcha" in text:
-        driver.get("https://www.bootybaygazette.com/#us/grobbulus-a/item/6049")
+        driver.get(backup_url)
         input("User action required")
 
         # Redo
-        driver.get(cfg.us["bb_selenium"]["BB_ITEMAPI"] + str(item_id))
+        driver.get(url)
         soup = BeautifulSoup(driver.page_source)
         text = soup.find("body").text
     return json.loads(text)
@@ -41,12 +45,17 @@ def start_driver() -> webdriver:
     """Spin up selenium driver for Booty Bay scraping."""
     account = cfg.secrets.get("account")
     password = cfg.secrets.get("password")
+
+    url = f'{cfg.us["booty"]["base"]}{cfg.us["server"].lower()}-a/item/6049'
+
+    if not account:
+        account = getpass.getpass("Account:")
     if not password:
         password = getpass.getpass("Password:")
     try:
-        driver = webdriver.Chrome(cfg.us["bb_selenium"]["CHROMEDRIVER_PATH"])
-        driver.implicitly_wait(cfg.us["bb_selenium"]["PAGE_WAIT"])
-        driver.get(cfg.us["bb_selenium"]["BB_BASEURL"])
+        driver = webdriver.Chrome(cfg.us["booty"]["CHROMEDRIVER_PATH"])
+        driver.implicitly_wait(cfg.us["booty"]["PAGE_WAIT"])
+        driver.get(url)
 
         WebDriverWait(driver, 20).until(
             EC.element_to_be_clickable((By.CLASS_NAME, "battle-net"))
@@ -391,8 +400,8 @@ def clean_beancounter_success(df: pd.DataFrame) -> pd.DataFrame:
 
 def get_auctioneer_data() -> None:
     """Reads WoW Addon Auctioneer lua and parses text file into json."""
-    ahm_account = [r["account"] for r in cfg.us.get("roles") if r.get("role") == "ahm"]
-    path = utils.make_lua_path(ahm_account[0], "Auc-ScanData")
+    ahm = utils.get_ahm()
+    path = utils.make_lua_path(ahm["account"], "Auc-ScanData")
     ropes = io.reader(name=path, ftype="lua", custom="Auc-ScanData")
 
     listings = []

@@ -1,6 +1,6 @@
 """Collates information to form buy/sell campaigns."""
 import logging
-from typing import Any, Dict
+from typing import Any, Dict, Tuple
 
 import pandas as pd
 from scipy.stats import norm
@@ -283,15 +283,19 @@ def analyse_make_policy() -> None:
         "inv_ahm_bank",
         "Sell",
     ]
-    make = item_table[cols]
+    make_policy = item_table[cols]
+
+    make_policy["make_ideal"] = (
+        make_policy["mean_holding"] - make_policy["inv_total_all"]
+    )
+    make_policy["make_counter"] = make_policy["make_ideal"].apply(lambda x: max(x, 0))
+    make_policy["make_mat_available"] = (
+        make_policy["inv_ahm_bag"] + make_policy["inv_ahm_bank"]
+    )
+    make_policy["make_actual"] = 0
+    make_policy["make_mat_flag"] = 0
 
     user_items = cfg.ui.copy()
-
-    make["make_ideal"] = make["mean_holding"] - make["inv_total_all"]
-    make["make_counter"] = make["make_ideal"].apply(lambda x: max(x, 0))
-    make["make_mat_available"] = make["inv_ahm_bag"] + make["inv_ahm_bank"]
-    make["make_actual"] = 0
-    make["make_mat_flag"] = 0
 
     # Iterates through the table one at a time, to ensure fair distribution of mat usage
     # Tests if reached counter and is made from stuff
@@ -301,7 +305,7 @@ def analyse_make_policy() -> None:
     while any(change):
         change = []
 
-        for item, row in make.iterrows():
+        for item, row in make_policy.iterrows():
 
             made_from = user_items[item].get("made_from", {})
             under_counter = row["make_actual"] < row["make_counter"]
@@ -312,82 +316,78 @@ def analyse_make_policy() -> None:
                 for material, qty in made_from.items():
                     if "Vial" not in material:
                         item_increment = (
-                            make.loc[material, "make_mat_available"] >= qty
+                            make_policy.loc[material, "make_mat_available"] >= qty
                         ) & item_increment
 
                 if item_increment:
                     for material, qty in user_items[item].get("made_from", {}).items():
-                        make.loc[material, "make_mat_available"] -= qty
-                        make.loc[material, "make_mat_flag"] = 1
-                    make.loc[item, "make_actual"] += 1
+                        make_policy.loc[material, "make_mat_available"] -= qty
+                        make_policy.loc[material, "make_mat_flag"] = 1
+                    make_policy.loc[item, "make_actual"] += 1
 
                 change.append(item_increment)
 
-    make_me = make[(make["make_pass"] == 0) & (make["make_actual"] > 0)]["make_actual"]
-    make_me.name = "Automake"
-    print(make_me)
+    io.writer(make_policy, "outputs", "make_policy", "parquet")
 
-    make_main = make[(make["make_pass"] == 1) & (make["make_ideal"] > 0)]["make_ideal"]
-    make_main.name = "Make on main"
-    print(make_main)
 
-    make_should = make[
-        (
-            (make["make_pass"] == 0)
-            & (make["make_ideal"] > make["make_actual"])
-            & (make["made_from"] == 1)
-        )
-    ]["make_ideal"]
-    make_should.name = "Missing mats"
-    print(make_should)
+def encode_make_policy(
+    make_policy: pd.DataFrame,
+) -> Tuple[Dict[str, int], Dict[int, str]]:
+    """Encodes make campaign dataframe into dictionary."""
 
-    materials_list = make[make["make_mat_flag"] == 1]["item_id"]
-    sell_items = make[make["Sell"] == 1]["item_id"]
+    make_policy = io.reader("outputs", "make_policy", "parquet")
 
+    new_craft_queue = make_policy[
+        (make_policy["make_pass"] == 0) & (make_policy["make_actual"] > 0)
+    ]["make_actual"].to_dict()
+
+    # Ordering important here for overwrites
+    make_policy["group"] = "Other"
+    make_policy.loc[make_policy[make_policy["Sell"] == 1].index, "group"] = "Sell"
+    make_policy.loc[
+        make_policy[make_policy["make_mat_flag"] == 1].index, "group"
+    ] = "Materials"
+    make_policy = make_policy[make_policy["item_id"] > 0]
+
+    item_groups = make_policy.set_index(["item_id"])["group"].to_dict()
+
+    return new_craft_queue, item_groups
+
+
+def write_make_policy():
+    """Writes the make policy to all accounts."""
+    make_policy = io.reader("outputs", "make_policy", "parquet")
+    new_craft_queue, item_groups = encode_make_policy(make_policy)
+
+    ahm = utils.get_ahm()
     path = utils.make_lua_path(
-        account_name="396255466#1", datasource="TradeSkillMaster"
+        account_name=ahm["account"], datasource="TradeSkillMaster"
     )
     content = io.reader(name=path, ftype="lua", custom="rb")
 
-    start, end = utils.find_attribute_location(
-        content, b'["f@Alliance - Grobbulus@internalData@crafts"]'
-    )
+    craft_mark = f'f@Alliance - {cfg.us["server"]}@internalData@crafts'
+    start, end = utils.find_tsm_marker(content, f'["{craft_mark}"]'.encode("ascii"))
 
-    crafting = content[start:end]
-    crafting_dict = lua.decode("{" + crafting.decode("ascii") + "}")
-
-    for _, item_data in crafting_dict[
-        "f@Alliance - Grobbulus@internalData@crafts"
-    ].items():
-        item_name = item_data.get("name")
-        if item_name in make_me:
-            queued = int(make_me.loc[item_name])
-        else:
-            queued = 0
-
+    crafting_dict = lua.decode("{" + content[start:end].decode("ascii") + "}")
+    for _, item_data in crafting_dict[craft_mark].items():
+        item_name = item_data.get("name", "_no_name")
+        queued = new_craft_queue.get(item_name, 0)
         if "queued" in item_data:
             item_data["queued"] = queued
 
-    new_crafting = utils.dict_to_lua(crafting_dict).encode("ascii")
-    new_crafting = new_crafting.replace(
-        b"\nf@Alliance - Grobbulus@internalData@crafts",
-        b'\n["f@Alliance - Grobbulus@internalData@crafts"]',
+    new_craft = utils.dict_to_lua(crafting_dict).encode("ascii")
+    new_craft = new_craft.replace(
+        f"\n{craft_mark}".encode("ascii"), f'\n["{craft_mark}"]'.encode("ascii"),
     )
+    content = content[:start] + new_craft + content[end:]
 
-    content = content[:start] + new_crafting + content[end:]
-
-    start, end = utils.find_attribute_location(content, b'["p@Default@userData@items"]')
-
-    item_text = '["p@Default@userData@items"] = {'
-    for _, item_code in materials_list.iteritems():
-        item_text += f'["i:{item_code}"] = "Herbs", '
-
-    for item_name, item_code in sell_items.items():
-        if item_name not in materials_list:
-            item_text += f'["i:{item_code}"] = "Sell", '
-
+    # Update item groups
+    groups_mark = '["p@Default@userData@items"]'
+    item_text = f"{groups_mark} = " + "{"
+    for item_code, group in item_groups.items():
+        item_text += f'["i:{item_code}"] = "{group}", '
     item_text += "}"
-
+    start, end = utils.find_tsm_marker(content, groups_mark.encode("ascii"))
     content = content[:start] + item_text.encode("ascii") + content[end:]
+
     io.writer(content, name=path, ftype="lua", custom="wb")
-    io.writer(make, "outputs", "make", "parquet")
