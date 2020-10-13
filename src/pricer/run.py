@@ -61,10 +61,11 @@ def main() -> None:
 
         campaign.analyse_sell_policy(stack=args.s, max_sell=args.m, duration=args.d)
         campaign.write_sell_policy()
-
         campaign.analyse_make_policy()
+        campaign.write_make_policy()
 
         reporting.have_in_bag()
+        reporting.make_missing()
 
     logger.info(f"Program end, seconds {(dt.now() - run_dt).total_seconds()}")
 

@@ -78,6 +78,8 @@ account: youraccount
 password: yourpassword
 ```
 
+TradeSkillMaster needs some additional setup. You will need to add three groups, named `Materials`, `Sell`, and `Other`. These are used to populate crafting ('make') policies and assist with moving items to bank.
+
 ## Running the program
 
 It is recommended to perform a auction scan immediately prior to running the program.

@@ -1,7 +1,7 @@
 
 Arcane Crystal:
   min_holding: 8
-  max_holding: 40
+  max_holding: 36
   max_sell: 4
   Buy: True
   Sell: True
@@ -20,7 +20,7 @@ Arcanite Bar:
   Sell: True
   made_from:
     Arcane Crystal: 1
-    TRANSMUTE_TIME: 100000
+    TRANSMUTE_TIME: 90000
   make_pass: True
 Thorium Bar:
   min_holding: 8
@@ -166,7 +166,7 @@ Blackmouth Oil:
     Empty Vial: 1
     Oily Blackmouth: 2
 Stonescale Oil:
-  max_holding: 80
+  max_holding: 380
   made_from:
     Leaded Vial: 1
     Stonescale Eel: 1
