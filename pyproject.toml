@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pricer"
-version = "0.4.3"
+version = "0.4.4"
 description = "Use WoW addon data to optimize auction buying and selling policies"
 authors = ["bluemania <damnthatswack@hotmail.com>"]
 license = "MIT"
@@ -23,6 +23,7 @@ beautifulsoup4 = "^4.9.1"
 sklearn = "^0.0"
 tqdm = "^4.49.0"
 pandera = "^0.4.5"
+flask = "^1.1.2"
 
 [tool.poetry.dev-dependencies]
 black = "^19.10b0"
