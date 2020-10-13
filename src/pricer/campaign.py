@@ -334,7 +334,6 @@ def encode_make_policy(
     make_policy: pd.DataFrame,
 ) -> Tuple[Dict[str, int], Dict[int, str]]:
     """Encodes make campaign dataframe into dictionary."""
-
     make_policy = io.reader("outputs", "make_policy", "parquet")
 
     new_craft_queue = make_policy[
@@ -354,7 +353,7 @@ def encode_make_policy(
     return new_craft_queue, item_groups
 
 
-def write_make_policy():
+def write_make_policy() -> None:
     """Writes the make policy to all accounts."""
     make_policy = io.reader("outputs", "make_policy", "parquet")
     new_craft_queue, item_groups = encode_make_policy(make_policy)

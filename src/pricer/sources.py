@@ -23,7 +23,6 @@ logger = logging.getLogger(__name__)
 
 def get_bb_item_page(driver: webdriver, item_id: int) -> Dict[Any, Any]:
     """Get Booty Bay json info for a given item_id."""
-
     url = f'{cfg.us["booty"]["api"]}{cfg.us["server_id"]}&item={item_id}'
     backup_url = f'{cfg.us["booty"]["base"]}{cfg.us["server"].lower()}-a/item/6049'
 

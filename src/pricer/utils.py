@@ -121,4 +121,4 @@ def find_tsm_marker(content: bytes, initial_key: bytes) -> Tuple[int, int]:
 
 def get_ahm() -> Dict[str, str]:
     """Get the auction house main details."""
-    return [l for l in cfg.us.get("roles") if l.get("role") == "ahm"][0]
+    return [role for role in cfg.us.get("roles") if role.get("role") == "ahm"][0]
