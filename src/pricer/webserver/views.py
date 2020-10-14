@@ -1,16 +1,5 @@
 """Pages for webserver."""
 import logging
-<<<<<<< HEAD
-from typing import Any
-
-from flask import Flask, render_template
-
-from .. import config as cfg
-
-
-logger = logging.getLogger(__name__)
-app = Flask(__name__)
-=======
 from pathlib import Path
 from typing import Any
 
@@ -26,7 +15,6 @@ if app.root_path is None:
 app.config["data_path"] = Path(app.root_path).parents[2].joinpath("data")
 
 item_icon_manifest = io.reader("item_icons", "_manifest", "json")
->>>>>>> hotfix/flask_tests
 
 
 @app.route("/")
