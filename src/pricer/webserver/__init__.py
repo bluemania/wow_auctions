@@ -1,5 +1,1 @@
-from flask import Flask
-
-app = Flask(__name__)
-
-from . import views
+"""Webserver to support program running and information gathering."""

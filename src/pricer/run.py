@@ -4,7 +4,9 @@ from datetime import datetime as dt
 import logging
 import warnings
 
-from . import analysis, campaign, config as cfg, reporting, sources, webserver
+from . import analysis, campaign, config as cfg, reporting, sources
+from .webserver.views import app
+
 
 warnings.simplefilter(action="ignore")
 logger = logging.getLogger(__name__)
@@ -68,7 +70,7 @@ def main() -> None:
 
     if args.f:
         logger.info("Starting webserver")
-        webserver.app.run(debug=True, threaded=True)
+        app.run(debug=True, threaded=True)
 
 
 if __name__ == "__main__":
