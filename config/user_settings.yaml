@@ -1,6 +1,9 @@
 # Base path to WoW directory
 warcraft_path: /Applications/World of Warcraft/_classic_/
 
+server: Grobbulus
+server_id: 69
+
 roles:
   - name: Amazona
     account: 396255466#1
@@ -17,8 +20,8 @@ accounts:
   - 396255466#1
   - 801032581#1
 
-bb_selenium:
+booty:
   CHROMEDRIVER_PATH: "/Users/nicholasjenkins/Documents/chromedriver"
-  BB_BASEURL: "https://www.bootybaygazette.com/#us/grobbulus-a"
-  BB_ITEMAPI: "https://www.bootybaygazette.com/api/item.php?house=69&item="
+  base: "https://www.bootybaygazette.com/#us/"
+  api: "https://www.bootybaygazette.com/api/item.php?house="
   PAGE_WAIT: 1

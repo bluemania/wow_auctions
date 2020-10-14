@@ -51,20 +51,18 @@ def main() -> None:
         analysis.create_item_inventory()
         analysis.analyse_listings()
         analysis.analyse_replenishment()
-
         analysis.create_item_table()
-
         analysis.predict_volume_sell_probability(args.d)
 
         campaign.analyse_buy_policy()
         campaign.write_buy_policy()
-
         campaign.analyse_sell_policy(stack=args.s, max_sell=args.m, duration=args.d)
         campaign.write_sell_policy()
-
         campaign.analyse_make_policy()
+        campaign.write_make_policy()
 
         reporting.have_in_bag()
+        reporting.make_missing()
 
     logger.info(f"Program end, seconds {(dt.now() - run_dt).total_seconds()}")
 
