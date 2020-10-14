@@ -173,8 +173,6 @@ def clean_arkinventory_data(run_dt: dt) -> None:
     """Reads Ark Inventory json and parses into tabular format."""
     inventory_data = io.reader("raw", "arkinventory_data", "json")
 
-    settings = io.reader("config", "general_settings", "yaml")
-
     raw_data: list = []
     monies: Dict[str, int] = {}
     for character, character_data in inventory_data.items():
@@ -188,10 +186,10 @@ def clean_arkinventory_data(run_dt: dt) -> None:
 
         for lkey in location_slots:
             items: Dict[str, int] = defaultdict(int)
-            if str(lkey) not in settings["location_info"]:
+            if str(lkey) not in cfg.gs["location_info"]:
                 continue
             else:
-                loc_name = settings["location_info"][str(lkey)]
+                loc_name = cfg.gs["location_info"][str(lkey)]
 
             location_slot = location_slots[lkey]
             if location_slot:

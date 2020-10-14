@@ -52,6 +52,7 @@ def set_loggers(
 
 us = io.reader("config", "user_settings", "yaml")
 ui = io.reader("config", "user_items", "yaml")
+gs = io.reader("config", "general_settings", "yaml")
 try:
     secrets = io.reader(name="SECRETS", ftype="yaml")
 except FileNotFoundError:
