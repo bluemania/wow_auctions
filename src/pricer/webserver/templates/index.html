@@ -8,15 +8,29 @@
         <h3>Item details</h3>
         <ul>
           {% for item_name in user_items %}
-          <li>{{item_name}}</li>
+          <li>
+            <img src="{{ url_for('item_icons', filename=item_name) }}" width="24">
+            <a href="#{{item_name}}">{{item_name}}</a>
+          </li>
           {% endfor %}
         </ul>
       </div>
     </div>
     <div class="col-lg-8">
       {% for item_name in user_items %}
-      <div class="shadow-sm p-1 bg-white rounded">
-        <h3>{{item_name}}</h3>
+      <div class="shadow-sm p-1 bg-white rounded" id="{{item_name}}">
+        <h3><img src="{{ url_for('item_icons', filename=item_name) }}" width="32">
+        {{item_name}}</h3>
+        <div class="row">
+          <div class="col-lg-3">
+            Table here
+          </div>
+          <div class="col-lg-5">
+            Charts here
+          </div>
+        </div>
+        <a href="#top">top</a>
+        <hr>
       </div>
       {% endfor %}      
     </div>
