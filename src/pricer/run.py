@@ -1,4 +1,11 @@
-"""Main entry point for pricer program."""
+"""Main entry point for pricer program.
+
+First time running checklist
+- Set up TSM groups
+- Run booty bay
+- Get icons
+
+"""
 import argparse
 from datetime import datetime as dt
 import logging
@@ -18,6 +25,7 @@ def main() -> None:
 
     parser = argparse.ArgumentParser(description="WoW Auctions")
     parser.add_argument("-b", help="Update web booty bay analysis", action="store_true")
+    parser.add_argument("-i", help="Get item icons for webserver", action="store_true")    
 
     parser.add_argument("-s", type=int, default=5, help="Stack size")
     parser.add_argument("-m", type=int, default=20, help="Max sell")
@@ -36,6 +44,8 @@ def main() -> None:
 
     if args.b:
         sources.get_bb_data()
+    if args.i:
+        sources.get_item_icons()
 
     if not args.n:
         sources.clean_bb_data()

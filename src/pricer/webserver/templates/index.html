@@ -1,12 +1,28 @@
-<html>
-	<body>
+{% extends "template.html" %}
+{% block content %}
 
-    {% for item, details in user_items.items() %}
-        <li class="breadcrumb-item">
-            {{ item }}
-        </li>
-    {% endfor %}
+<div class="container">
+  <div class="row">
+    <div class="col-lg-4">
+      <div class="shadow-sm p-1 bg-white rounded">
+        <h3>Item details</h3>
+        <ul>
+          {% for item_name in user_items %}
+          <li>{{item_name}}</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+    <div class="col-lg-8">
+      {% for item_name in user_items %}
+      <div class="shadow-sm p-1 bg-white rounded">
+        <h3>{{item_name}}</h3>
+      </div>
+      {% endfor %}      
+    </div>
+  </div>
+</div>
 
+<script src="{{ url_for('static', filename='scripts.js') }}"></script>
 
-	</body>
-</html>
+{% endblock %}

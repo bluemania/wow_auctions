@@ -9,6 +9,7 @@ SECRETS.yaml
 # Dont save live data...
 data/*/*.parquet
 data/*/*.json
+data/*/*.jpg
 
 # ...but do preserve the folder structure
 !data/.gitkeep
