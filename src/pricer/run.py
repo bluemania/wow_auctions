@@ -4,7 +4,9 @@ from datetime import datetime as dt
 import logging
 import warnings
 
-from . import analysis, campaign, config as cfg, reporting, sources, webserver
+from . import analysis, campaign, config as cfg, reporting, sources
+from .webserver.views import app
+
 
 warnings.simplefilter(action="ignore")
 logger = logging.getLogger(__name__)
@@ -51,14 +53,11 @@ def main() -> None:
         analysis.create_item_inventory()
         analysis.analyse_listings()
         analysis.analyse_replenishment()
-
         analysis.create_item_table()
-
         analysis.predict_volume_sell_probability(args.d)
 
         campaign.analyse_buy_policy()
         campaign.write_buy_policy()
-
         campaign.analyse_sell_policy(stack=args.s, max_sell=args.m, duration=args.d)
         campaign.write_sell_policy()
         campaign.analyse_make_policy()
@@ -71,7 +70,7 @@ def main() -> None:
 
     if args.f:
         logger.info("Starting webserver")
-        webserver.app.run(debug=True, threaded=True)
+        app.run(debug=True, threaded=True)
 
 
 if __name__ == "__main__":
