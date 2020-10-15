@@ -17,10 +17,20 @@ app.config["data_path"] = Path(app.root_path).parents[2].joinpath("data")
 item_icon_manifest = io.reader("item_icons", "_manifest", "json")
 
 
+@app.context_processor
+def g():
+    def item_profits():
+        return reporting.have_in_bag()
+    def user_items():
+        return sorted(cfg.ui.keys())
+
+    return dict(item_profits=item_profits, user_items=user_items)
+
+
 @app.route("/")
 def home() -> Any:
     """Return homepage."""
-    return render_template("index.html", user_items=sorted(cfg.ui.keys()))
+    return render_template("home.html")
 
 
 @app.route("/data_static/item_icons/<path:filename>")

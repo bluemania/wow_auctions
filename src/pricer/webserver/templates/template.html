@@ -36,8 +36,31 @@
   </div>
 </div>
 
-{% block content %}
-{% endblock %}
+<div class="container">
+  <div class="row">
+    <div class="col-lg-4">
+      <div class="shadow-sm p-1 bg-white rounded">
+        <h3>Item details</h3>
+        <ul>
+          {% for item_name in user_items() %}
+          <li>
+            <img src="{{ url_for('item_icons', filename=item_name) }}" width="24">
+            <a href="#{{item_name}}">{{item_name}}</a>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+    <div class="col-lg-8">
+      <div class="shadow-sm p-1 bg-white rounded">
+      {% block content %}
+      {% endblock %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="{{ url_for('static', filename='scripts.js') }}"></script>
 
 </body>
 </html>
