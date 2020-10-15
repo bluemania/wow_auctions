@@ -2,5 +2,8 @@
 {% block content %}
 
 <h3>Homepage</h3>
+{{ item_profits()|safe }}
+<hr>
+{{ make_missing()|safe }}
 
 {% endblock %}

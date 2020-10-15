@@ -45,7 +45,7 @@
           {% for item_name in user_items() %}
           <li>
             <img src="{{ url_for('item_icons', filename=item_name) }}" width="24">
-            <a href="#{{item_name}}">{{item_name}}</a>
+            <a href="{{ url_for('item_report', item_name=item_name) }}">{{item_name}}</a>
           </li>
           {% endfor %}
         </ul>
