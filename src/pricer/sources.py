@@ -470,15 +470,16 @@ def clean_auctioneer_data() -> None:
 @check_output(schema.item_skeleton_schema)
 def process_item_skeleton(df: pd.DataFrame) -> pd.DataFrame:
     """Make transformation to item skeleton."""
-    df["user_Make"] = (df["user_made_from"] == df["user_made_from"]) & (df["user_make_pass"]==0)
-
     int_cols = ["user_min_holding", "user_max_holding", "user_vendor_price"]
     df[int_cols] = df[int_cols].fillna(0).astype(int)
 
-    df["user_std_holding"] = (df["user_max_holding"] - df["user_min_holding"]) / cfg.gs['analysis']['USER_STD_SPREAD']
+    df["user_std_holding"] = (df["user_max_holding"] - df["user_min_holding"]) / cfg.us['analysis']['USER_STD_SPREAD']
     df["user_mean_holding"] = df[["user_min_holding", "user_max_holding"]].mean(axis=1).astype(int)
 
-    bool_cols = ["user_Buy", "user_Sell", "user_make_pass"]
+    df["user_Make"] = (df["user_made_from"] == df["user_made_from"]) & (df["user_make_pass"]==0)
+    df = df.drop('user_made_from', axis=1)
+
+    bool_cols = ["user_Buy", "user_Sell", "user_Make", "user_make_pass"]
     df[bool_cols] = df[bool_cols].fillna(False).astype(int)
     return df
 

@@ -69,6 +69,8 @@ def main() -> None:
     parser.add_argument("-f", help="Start flask webserver", action="store_true")
     parser.add_argument("-n", help="No analysis, skip", action="store_true")
 
+    parser.add_argument("-t", help="Run on test data", action="store_true")
+
     parser.add_argument("-v", help="Verbose mode (info)", action="store_true")
     parser.add_argument("-vv", help="Verbose mode (debug)", action="store_true")
     args = parser.parse_args()
@@ -81,6 +83,9 @@ def main() -> None:
         sources.get_bb_data()
     if args.i:
         sources.get_item_icons()
+    if args.t:
+        """Test environment."""
+        cfg.env = {"basepath": "data/_test"}
 
     if not args.n:
         run_analytics(stack=args.s, max_sell=args.m, duration=args.d)
