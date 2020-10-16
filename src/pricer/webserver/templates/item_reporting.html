@@ -1,0 +1,17 @@
+{% extends "template.html" %}
+{% block content %}
+
+
+<h3>
+	<img src="{{ url_for('item_icons', filename=item_name) }}" width="24">
+	{{ item_name }}
+</h3>
+<div class="row">
+	<div class="col-lg-4">
+	{{ item_report|safe }}
+	</div>
+	<div class="col-lg-4">
+	<img src="{{ url_for('item_plot_profit', item_name=item_name) }}">
+	</div>
+</div>
+{% endblock %}

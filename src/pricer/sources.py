@@ -10,6 +10,7 @@ from bs4 import BeautifulSoup
 from numpy import nan
 import pandas as pd
 from pandera import check_input, check_output
+import requests
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
@@ -142,6 +143,24 @@ def clean_bb_data() -> None:
     io.writer(bb_deposit_df, "cleaned", "bb_deposit", "parquet")
 
 
+def get_item_icons() -> None:
+    """Reads the booty bay data to determine item icons, and downloads them."""
+    bb_data = io.reader("raw", "bb_data", "json")
+    item_icons = {k: v["stats"][0]["icon"] for k, v in bb_data.items()}
+
+    for _, icon_name in item_icons.items():
+        url = f"https://wow.zamimg.com/images/wow/icons/large/{icon_name}.jpg"
+        r = requests.get(url)
+        io.writer(r.content, "item_icons", icon_name, "jpg")
+
+    # Default for failures
+    url = "https://wow.zamimg.com/images/wow/icons/large/inv_scroll_03.jpg"
+    r = requests.get(url)
+    io.writer(r.content, "item_icons", "inv_scroll_03", "jpg")
+
+    io.writer(item_icons, "item_icons", "_manifest", "json")
+
+
 def get_arkinventory_data() -> None:
     """Reads WoW Addon Ark Inventory lua data and saves local copy as json."""
     acc_inv: dict = {}
@@ -158,8 +177,6 @@ def clean_arkinventory_data(run_dt: dt) -> None:
     """Reads Ark Inventory json and parses into tabular format."""
     inventory_data = io.reader("raw", "arkinventory_data", "json")
 
-    settings = io.reader("config", "general_settings", "yaml")
-
     raw_data: list = []
     monies: Dict[str, int] = {}
     for character, character_data in inventory_data.items():
@@ -173,10 +190,10 @@ def clean_arkinventory_data(run_dt: dt) -> None:
 
         for lkey in location_slots:
             items: Dict[str, int] = defaultdict(int)
-            if str(lkey) not in settings["location_info"]:
+            if str(lkey) not in cfg.gs["location_info"]:
                 continue
             else:
-                loc_name = settings["location_info"][str(lkey)]
+                loc_name = cfg.gs["location_info"][str(lkey)]
 
             location_slot = location_slots[lkey]
             if location_slot:

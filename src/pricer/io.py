@@ -70,3 +70,6 @@ def writer(
         else:
             with open(path, "w") as lua_w:
                 lua_w.write(utils.dict_to_lua(data))
+    elif ftype == "jpg":
+        with open(path, "wb") as jpg_wb:
+            jpg_wb.write(data)
