@@ -17,13 +17,13 @@ def analyse_buy_policy(MAX_BUY_STD: int = 2) -> None:
 
     item_table = io.reader("intermediate", "item_table", "parquet")
 
-    buy_policy = item_table[item_table["Buy"] == True]
+    buy_policy = item_table[item_table["user_Buy"] == True]
     subset_cols = [
         "pred_price",
         "pred_std",
         "inv_total_all",
         "replenish_qty",
-        "std_holding",
+        "user_std_holding",
         "replenish_z",
     ]
     buy_policy = buy_policy[subset_cols]
@@ -39,7 +39,7 @@ def analyse_buy_policy(MAX_BUY_STD: int = 2) -> None:
     rank_list = rank_list.drop_duplicates()
     rank_list["updated_rank"] = rank_list["replenish_qty"] - rank_list["rank"]
     rank_list["updated_replenish_z"] = (
-        rank_list["updated_rank"] / rank_list["std_holding"]
+        rank_list["updated_rank"] / rank_list["user_std_holding"]
     )
 
     rank_list["updated_replenish_z"] = rank_list["updated_replenish_z"].clip(
@@ -155,7 +155,7 @@ def write_sell_policy() -> None:
 
 def analyse_sell_policy(
     stack: int = 1,
-    max_sell: int = 10,
+    user_max_sell: int = 10,
     duration: str = "m",
     MAX_STD: int = 5,
     MIN_PROFIT: int = 300,
@@ -173,12 +173,12 @@ def analyse_sell_policy(
         "material_costs",
         "pred_std",
         "pred_price",
-        "max_sell",
+        "user_max_sell",
         "inv_ahm_bag",
         "replenish_qty",
         "replenish_z",
     ]
-    sell_items = item_table[item_table["Sell"] == True][cols]
+    sell_items = item_table[item_table["user_Sell"] == True][cols]
     sell_items["deposit"] = sell_items["deposit"] * (
         utils.duration_str_to_mins(duration) / (60 * 24)
     )
@@ -247,13 +247,13 @@ def analyse_sell_policy(
     sell_policy = sell_policy.sort_values("estimated_profit", ascending=False)
 
     sell_policy["stack"] = stack
-    sell_policy["max_sell"] = sell_policy["max_sell"].replace(0, max_sell)
-    sell_policy["sell_count"] = sell_policy[["inv_ahm_bag", "max_sell"]].min(axis=1)
+    sell_policy["user_max_sell"] = sell_policy["user_max_sell"].replace(0, user_max_sell)
+    sell_policy["sell_count"] = sell_policy[["inv_ahm_bag", "user_max_sell"]].min(axis=1)
     sell_policy["sell_count"] = (
         sell_policy["sell_count"] / sell_policy["stack"]
     ).astype(int)
 
-    sell_policy["min_sell"] = sell_policy[["max_sell", "inv_ahm_bag"]].min(axis=1)
+    sell_policy["min_sell"] = sell_policy[["user_max_sell", "inv_ahm_bag"]].min(axis=1)
     adjust_stack = sell_policy[sell_policy["min_sell"] < sell_policy["stack"]].index
     sell_policy.loc[adjust_stack, "stack"] = 1
     sell_policy.loc[adjust_stack, "sell_count"] = sell_policy.loc[
@@ -275,18 +275,18 @@ def analyse_make_policy() -> None:
 
     cols = [
         "item_id",
-        "made_from",
-        "make_pass",
+        "user_Make",
+        "user_Sell",
+        "user_make_pass",
+        "user_mean_holding",
         "inv_total_all",
-        "mean_holding",
         "inv_ahm_bag",
-        "inv_ahm_bank",
-        "Sell",
+        "inv_ahm_bank"
     ]
     make_policy = item_table[cols]
 
     make_policy["make_ideal"] = (
-        make_policy["mean_holding"] - make_policy["inv_total_all"]
+        make_policy["user_mean_holding"] - make_policy["inv_total_all"]
     )
     make_policy["make_counter"] = make_policy["make_ideal"].apply(lambda x: max(x, 0))
     make_policy["make_mat_available"] = (
@@ -309,9 +309,9 @@ def analyse_make_policy() -> None:
 
             made_from = user_items[item].get("made_from", {})
             under_counter = row["make_actual"] < row["make_counter"]
-            make_pass = row["make_pass"]
+            user_make_pass = row["user_make_pass"]
 
-            if made_from and under_counter and not (make_pass):
+            if made_from and under_counter and not (user_make_pass):
                 item_increment = True
                 for material, qty in made_from.items():
                     if "Vial" not in material:
@@ -337,12 +337,12 @@ def encode_make_policy(
     make_policy = io.reader("outputs", "make_policy", "parquet")
 
     new_craft_queue = make_policy[
-        (make_policy["make_pass"] == 0) & (make_policy["make_actual"] > 0)
+        (make_policy["user_make_pass"] == 0) & (make_policy["make_actual"] > 0)
     ]["make_actual"].to_dict()
 
     # Ordering important here for overwrites
     make_policy["group"] = "Other"
-    make_policy.loc[make_policy[make_policy["Sell"] == 1].index, "group"] = "Sell"
+    make_policy.loc[make_policy[make_policy["user_Sell"] == 1].index, "group"] = "Sell"
     make_policy.loc[
         make_policy[make_policy["make_mat_flag"] == 1].index, "group"
     ] = "Materials"

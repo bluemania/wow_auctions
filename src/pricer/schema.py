@@ -65,7 +65,8 @@ auc_listings_raw_schema = pa.DataFrameSchema(
         25: Column(pa.String, nullable=True),
         26: Column(pa.String, nullable=True),
         27: Column(pa.String, nullable=True),
-    }
+    },
+    strict=True,    
 )
 
 auc_listings_schema = pa.DataFrameSchema(
@@ -76,7 +77,8 @@ auc_listings_schema = pa.DataFrameSchema(
         "sellername": Column(pa.String),
         "price_per": Column(pa.Int),
         "time_remaining": Column(pa.Int),
-    }
+    },
+    strict=True,    
 )
 
 beancounter_data_raw_schema = pa.DataFrameSchema(
@@ -94,7 +96,8 @@ beancounter_data_raw_schema = pa.DataFrameSchema(
         10: Column(pa.String, nullable=True),
         11: Column(pa.String, nullable=True),
         12: Column(pa.String, nullable=True),
-    }
+    },
+    strict=True,    
 )
 
 beancounter_purchases_schema = pa.DataFrameSchema(
@@ -109,7 +112,8 @@ beancounter_purchases_schema = pa.DataFrameSchema(
         "timestamp": Column(pa.DateTime),
         "buyout_per": Column(pa.Float),
         "bid_per": Column(pa.Float),
-    }
+    },
+    strict=True,    
 )
 
 beancounter_posted_schema = pa.DataFrameSchema(
@@ -124,7 +128,8 @@ beancounter_posted_schema = pa.DataFrameSchema(
         "timestamp": Column(pa.DateTime),
         "buyout_per": Column(pa.Float),
         "bid_per": Column(pa.Float),
-    }
+    },
+    strict=True,    
 )
 
 beancounter_failed_schema = pa.DataFrameSchema(
@@ -139,7 +144,8 @@ beancounter_failed_schema = pa.DataFrameSchema(
         "timestamp": Column(pa.DateTime),
         "buyout_per": Column(pa.Float),
         "bid_per": Column(pa.Float),
-    }
+    },
+    strict=True,    
 )
 
 beancounter_success_schema = pa.DataFrameSchema(
@@ -158,5 +164,26 @@ beancounter_success_schema = pa.DataFrameSchema(
         "received_per": Column(pa.Float),
         "buyout_per": Column(pa.Float),
         "bid_per": Column(pa.Float),
-    }
+    },
+    strict=True,    
+)
+
+
+ark_inventory_schema = pa.DataFrameSchema(
+    columns={
+        "character": Column(pa.String),
+        "location": Column(pa.String),
+        "item": Column(pa.String),
+        "count": Column(pa.Int),
+        "timestamp": Column(pa.DateTime)
+    },
+    strict=True,    
+)
+
+ark_money_schema = pa.DataFrameSchema(
+    columns={
+        "monies": Column(pa.Int),
+        "timestamp": Column(pa.DateTime)
+    },
+    strict=True,    
 )

@@ -20,10 +20,10 @@ def predict_item_prices(quantile: float = 0.025) -> None:
     # Work out if an item is auctionable, or get default price
     item_prices = pd.DataFrame()
     for item_name, item_details in user_items.items():
-        vendor_price = item_details.get("vendor_price")
+        user_vendor_price = item_details.get("user_vendor_price")
 
-        if vendor_price:
-            item_prices[item_name] = vendor_price
+        if user_vendor_price:
+            item_prices[item_name] = user_vendor_price
         else:
             df = bb_fortnight[bb_fortnight["item"] == item_name]
             df["silver"] = df["silver"].clip(
@@ -106,7 +106,7 @@ def analyse_material_cost() -> None:
     mat_prices["material_price"] = (
         mat_prices["price_per_rolling"]
         .fillna(mat_prices["pred_price"])
-        .fillna(mat_prices["vendor_price"])
+        .fillna(mat_prices["user_vendor_price"])
         .astype(int)
     )
 
@@ -116,9 +116,9 @@ def analyse_material_cost() -> None:
     item_costs = {}
     for item_name, item_details in user_items.items():
         material_cost = 0
-        made_from = item_details.get("made_from", {})
-        if made_from:
-            for ingredient, count in made_from.items():
+        user_made_from = item_details.get("user_made_from", {})
+        if user_made_from:
+            for ingredient, count in user_made_from.items():
                 material_cost += mat_prices.loc[ingredient, "material_price"] * count
         else:
             material_cost = mat_prices.loc[item_name, "material_price"]
@@ -221,17 +221,17 @@ def analyse_replenishment() -> None:
 
     user_items = cfg.ui.copy()
 
-    replenish["replenish_qty"] = replenish["mean_holding"] - replenish["inv_total_all"]
+    replenish["replenish_qty"] = replenish["user_mean_holding"] - replenish["inv_total_all"]
 
-    # Update replenish list with made_from
+    # Update replenish list with user_made_from
     for item, row in replenish.iterrows():
         if row["replenish_qty"] > 0:
-            for ingredient, count in user_items[item].get("made_from", {}).items():
+            for ingredient, count in user_items[item].get("user_made_from", {}).items():
                 replenish.loc[ingredient, "replenish_qty"] += (
                     count * row["replenish_qty"]
                 )
 
-    replenish["replenish_z"] = replenish["replenish_qty"] / replenish["std_holding"]
+    replenish["replenish_z"] = replenish["replenish_qty"] / replenish["user_std_holding"]
     replenish["replenish_z"] = (
         replenish["replenish_z"].replace([inf, -inf], 0).fillna(0)
     )
