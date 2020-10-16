@@ -25,3 +25,6 @@ booty:
   base: "https://www.bootybaygazette.com/#us/"
   api: "https://www.bootybaygazette.com/api/item.php?house="
   PAGE_WAIT: 1
+
+analysis:
+  USER_STD_SPREAD: 7
