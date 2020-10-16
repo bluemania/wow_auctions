@@ -7,3 +7,5 @@ auction_type_labels:
   completedAuctions: "sell_price"
   completedBidsBuyouts: "buy_price"
   failedAuctions: "failed"
+flask:
+  CUSTOM_STATIC_PATH: '/Users/nicholasjenkins/Documents/wow_auctions/data'
