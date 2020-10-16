@@ -1,6 +1,7 @@
 """Produces reporting to help interpret analysis and campaigns."""
 import logging
 
+import matplotlib.pyplot as plt  # type: ignore
 import pandas as pd
 
 from pricer import io
@@ -21,7 +22,7 @@ def have_in_bag() -> str:
     return sell_policy[["estimated_profit"]].astype(int).to_html()
 
 
-def make_missing() -> None:
+def make_missing() -> str:
     """Prints details of items unable to be made."""
     make_policy = io.reader("outputs", "make_policy", "parquet")
 
@@ -74,9 +75,8 @@ def produce_item_reporting() -> None:
     )
 
     for item in item_info.index:
-        # item = 'Elixir of Giants'
         plt.figure()
-        plot = listing_profits[item].plot(title=item)
+        listing_profits[item].plot(title=item)
         pd.Series([sell_policy.loc[item, "feasible_profit"]] * 1000).plot()
         plt.savefig(f"data/reporting/feasible/{item}.png")
         plt.close()

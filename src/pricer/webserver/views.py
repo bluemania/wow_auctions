@@ -1,7 +1,7 @@
 """Pages for webserver."""
 import logging
 from pathlib import Path
-from typing import Any
+from typing import Any, Dict, List
 
 from flask import Flask, redirect, render_template, send_from_directory, url_for
 
@@ -19,14 +19,16 @@ item_reporting = io.reader("reporting", "item_reporting", "json")
 
 
 @app.context_processor
-def g():
-    def item_profits():
+def g() -> Dict[Any, Any]:
+    """Globals for general purpose."""
+
+    def item_profits() -> str:
         return reporting.have_in_bag()
 
-    def make_missing():
+    def make_missing() -> str:
         return reporting.make_missing()
 
-    def user_items():
+    def user_items() -> List[str]:
         return sorted(cfg.ui.keys())
 
     return dict(
@@ -41,7 +43,7 @@ def home() -> Any:
 
 
 @app.route("/<path:item_name>")
-def item_report(item_name) -> Any:
+def item_report(item_name: str) -> Any:
     """Return info on an item."""
     item_report = item_reporting.get(item_name, None)
     return render_template(
