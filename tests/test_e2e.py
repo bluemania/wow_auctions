@@ -17,7 +17,6 @@ def test_e2e() -> None:
     sources.clean_item_skeleton()
 
     analysis.predict_item_prices()
-    analysis.analyse_listing_minprice()
     analysis.analyse_material_cost()
     analysis.create_item_inventory()
     analysis.analyse_listings()

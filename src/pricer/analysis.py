@@ -34,7 +34,9 @@ def predict_item_prices(quantile: float = 0.025) -> None:
                 item_prices.loc[item_name, "bbpred_price"] = int(
                     df["silver"].ewm(alpha=0.2).mean().iloc[-1]
                 )
-                item_prices.loc[item_name, "bbpred_std"] = df["silver"].std().astype(int)
+                item_prices.loc[item_name, "bbpred_std"] = (
+                    df["silver"].std().astype(int)
+                )
             except IndexError:
                 logging.exception(
                     f"""Price prediction problem for {item_name}.
@@ -47,20 +49,6 @@ def predict_item_prices(quantile: float = 0.025) -> None:
 
     predicted_prices = item_prices.join(qty_df).fillna(0).astype(int)
     io.writer(predicted_prices, "intermediate", "predicted_prices", "parquet")
-
-
-def analyse_listing_minprice() -> None:
-    """Determine current Auctions minimum price. TODO Is this needed?"""
-    auc_listings = io.reader("cleaned", "auc_listings", "parquet")
-
-    # Note this SHOULD be a simple groupby min, but getting 0's for some strange reason!
-    item_mins = {}
-    for item in auc_listings["item"].unique():
-        x = auc_listings[(auc_listings["item"] == item)]
-        item_mins[item] = int(x["price_per"].min())
-
-    listings_minprice = pd.DataFrame(pd.Series(item_mins, name="listing_minprice"))
-    io.writer(listings_minprice, "intermediate", "listings_minprice", "parquet")
 
 
 def analyse_material_cost() -> None:
@@ -123,9 +111,9 @@ def analyse_material_cost() -> None:
             material_cost = mat_prices.loc[item_name, "material_price"]
         item_costs[item_name] = int(material_cost)
 
-    material_costs = pd.DataFrame.from_dict(item_costs, orient="index").reset_index()
-    material_costs.columns = ["item", "material_costs"]
-    io.writer(material_costs, "intermediate", "material_costs", "parquet")
+    material_costs = pd.DataFrame.from_dict(item_costs, orient="index")
+    material_costs.columns = ["bbpred_matcosts"]
+    io.writer(material_costs, "intermediate", "bbpred_matcosts", "parquet")
 
 
 def create_item_inventory() -> None:
@@ -190,8 +178,10 @@ def analyse_listings() -> None:
         right_index=True,
         validate="m:1",
     )
-
-    ranges["pred_z"] = (ranges["price_per"] - ranges["bbpred_price"]) / ranges["bbpred_std"]
+    # TODO pred_z needs renaming
+    ranges["pred_z"] = (ranges["price_per"] - ranges["bbpred_price"]) / ranges[
+        "bbpred_std"
+    ]
 
     item: List = sum(
         ranges.apply(lambda x: [x["item"]] * x["quantity"], axis=1).tolist(), []
@@ -246,16 +236,14 @@ def analyse_replenishment() -> None:
 def create_item_table() -> None:
     """Combine item information into single master table."""
     item_skeleton = io.reader("intermediate", "item_skeleton", "parquet")
-    material_costs = io.reader("intermediate", "material_costs", "parquet")
+    material_costs = io.reader("intermediate", "bbpred_matcosts", "parquet")
     bb_deposit = io.reader("cleaned", "bb_deposit", "parquet")
-    listings_minprice = io.reader("intermediate", "listings_minprice", "parquet")
     item_inventory = io.reader("intermediate", "item_inventory", "parquet")
     predicted_prices = io.reader("intermediate", "predicted_prices", "parquet")
     replenish = io.reader("intermediate", "replenish", "parquet")
 
     item_table = (
-        item_skeleton.join(material_costs.set_index("item"))
-        .join(listings_minprice)
+        item_skeleton.join(material_costs)
         .join(predicted_prices)
         .join(item_inventory)
         .join(bb_deposit)

@@ -86,3 +86,18 @@ def produce_item_reporting() -> None:
     }
 
     io.writer(item_reporting, "reporting", "item_reporting", "json")
+
+
+def produce_listing_items() -> None:
+    """Generte the item listing on current AH."""
+    listing_each = io.reader("intermediate", "listing_each", "parquet")
+    item_buys = [k for k, v in cfg.ui.items() if v.get("Buy")]
+
+    for item_buy in item_buys:
+        plt.figure()
+        listing_item = listing_each[listing_each["item"] == item_buy][
+            "price_per"
+        ].sort_values()
+        listing_item.reset_index(drop=True).plot(title=item)
+        plt.savefig(f"data/reporting/listing_item/{item_buy}.png")
+        plt.close()
