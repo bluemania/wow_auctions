@@ -184,7 +184,7 @@ beancounter_results_schema = pa.DataFrameSchema(
         "received_per": Column(pa.Float, nullable=True),
         "buyout_per": Column(pa.Float),
         "bid_per": Column(pa.Float),
-        "success": pa.Column(pa.Int)
+        "success": pa.Column(pa.Int),
     },
     strict=True,
 )
