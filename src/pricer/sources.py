@@ -265,7 +265,7 @@ def clean_beancounter_data() -> None:
     bean_results["success"] = bean_results["auction_type"].replace(
         {"completedAuctions": 1, "failedAuctions": 0}
     )
-    io.writer(bean_results, "cleaned", "bean_results", "parquet") # , schema_name="bean_results_schema")
+    io.writer(bean_results, "cleaned", "bean_results", "parquet", schema_name="bean_results_schema")
 
 
 @check_input(schema.beancounter_data_raw_schema)

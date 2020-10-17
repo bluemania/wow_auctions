@@ -168,6 +168,10 @@ beancounter_success_schema = pa.DataFrameSchema(
     strict=True,    
 )
 
+beancounter_results_schema = schema.add_columns({
+    "success": pa.Column(pa.Int)
+    }
+)
 
 ark_inventory_schema = pa.DataFrameSchema(
     columns={
