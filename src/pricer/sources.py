@@ -132,7 +132,7 @@ def clean_bb_data() -> None:
     bb_alltime_df["date"] = pd.to_datetime(bb_alltime_df["date"])
 
     bb_deposit_df = pd.DataFrame.from_dict(bb_deposit, orient="index")
-    bb_deposit_df.columns = ["deposit"]
+    bb_deposit_df.columns = ["item_deposit"]
     bb_deposit_df.index.name = "item"
 
     io.writer(bb_fortnight_df, "cleaned", "bb_fortnight", "parquet")
@@ -334,7 +334,7 @@ def clean_beancounter_posted(df: pd.DataFrame) -> pd.DataFrame:
         "buyout",
         "bid",
         "duration",
-        "deposit",
+        "item_deposit",
         "timestamp",
         "drop_9",
         "drop_10",
@@ -348,7 +348,7 @@ def clean_beancounter_posted(df: pd.DataFrame) -> pd.DataFrame:
     posted["buyout"] = posted["buyout"].astype(float)
     posted["bid"] = posted["bid"].astype(int)
     posted["duration"] = posted["duration"].astype(int)
-    posted["deposit"] = posted["deposit"].replace("", 0).astype(int)
+    posted["item_deposit"] = posted["item_deposit"].replace("", 0).astype(int)
 
     posted["buyout_per"] = posted["buyout"] / posted["qty"]
     posted["bid_per"] = posted["bid"] / posted["qty"]
@@ -369,7 +369,7 @@ def _clean_beancounter_failed(df: pd.DataFrame) -> pd.DataFrame:
         "seller",
         "qty",
         "drop_4",
-        "deposit",
+        "item_deposit",
         "drop_6",
         "buyout",
         "bid",
@@ -381,7 +381,7 @@ def _clean_beancounter_failed(df: pd.DataFrame) -> pd.DataFrame:
     failed.columns = columns
     failed = failed.drop([col for col in columns if "drop_" in col], axis=1)
 
-    col = ["qty", "deposit", "buyout", "bid"]
+    col = ["qty", "item_deposit", "buyout", "bid"]
     failed[col] = failed[col].replace("", 0).astype(int)
 
     failed["buyout_per"] = failed["buyout"] / failed["qty"]
@@ -403,7 +403,7 @@ def _clean_beancounter_success(df: pd.DataFrame) -> pd.DataFrame:
         "seller",
         "qty",
         "received",
-        "deposit",
+        "item_deposit",
         "ah_cut",
         "buyout",
         "bid",
@@ -415,7 +415,7 @@ def _clean_beancounter_success(df: pd.DataFrame) -> pd.DataFrame:
     success.columns = columns
     success = success.drop([col for col in columns if "drop_" in col], axis=1)
 
-    col = ["qty", "received", "deposit", "ah_cut", "buyout", "bid"]
+    col = ["qty", "received", "item_deposit", "ah_cut", "buyout", "bid"]
     success[col] = success[col].replace("", 0).astype(int)
 
     success["received_per"] = success["received"] / success["qty"]
@@ -526,4 +526,5 @@ def clean_item_skeleton() -> None:
             item_skeleton_raw[col] = nan
 
     item_skeleton = _process_item_skeleton(item_skeleton_raw)
+    item_skeleton.index.name = "item"
     io.writer(item_skeleton, "intermediate", "item_skeleton", "parquet")

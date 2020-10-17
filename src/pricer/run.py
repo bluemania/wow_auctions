@@ -23,7 +23,7 @@ def run_analytics(stack: int = 5, max_sell: int = 20, duration: str = "m") -> No
     """Run the main analytics pipeline."""
     run_dt = dt.now().replace(microsecond=0)
     # TODO remove this run_dt crap
-    # sources.clean_bb_data()
+    sources.clean_bb_data()
     sources.get_arkinventory_data()
     sources.clean_arkinventory_data(run_dt)
     sources.get_beancounter_data()
@@ -34,9 +34,10 @@ def run_analytics(stack: int = 5, max_sell: int = 20, duration: str = "m") -> No
 
     analysis.predict_item_prices()
     analysis.analyse_material_cost()
-    analysis.create_item_inventory()
     analysis.analyse_listings()
     analysis.analyse_replenishment()
+    analysis.create_item_inventory()
+    analysis.create_item_facts()
     analysis.create_item_table()
     analysis.predict_volume_sell_probability(duration)
 

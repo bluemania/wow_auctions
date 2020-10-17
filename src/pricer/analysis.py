@@ -87,7 +87,6 @@ def analyse_material_cost() -> None:
         int
     )
 
-    item_skeleton.index.name = "item"
     mat_prices = item_skeleton.join(purchase_rolling).join(item_prices)
 
     mat_prices["material_price"] = (
@@ -162,6 +161,72 @@ def create_item_inventory() -> None:
     io.writer(item_inventory, "intermediate", "item_inventory", "parquet")
 
 
+def analyse_replenishment() -> None:
+    """Determine the demand for item replenishment."""
+    item_skeleton = io.reader("intermediate", "item_skeleton", "parquet")
+    item_inventory = io.reader("intermediate", "item_inventory", "parquet")
+
+    replenish = item_skeleton.join(item_inventory).fillna(0).astype(int)
+
+    user_items = cfg.ui.copy()
+
+    replenish["replenish_qty"] = (
+        replenish["user_mean_holding"] - replenish["inv_total_all"]
+    )
+
+    # Update replenish list with user_made_from
+    for item, row in replenish.iterrows():
+        if row["replenish_qty"] > 0:
+            for ingredient, count in user_items[item].get("user_made_from", {}).items():
+                replenish.loc[ingredient, "replenish_qty"] += (
+                    count * row["replenish_qty"]
+                )
+
+    replenish["replenish_z"] = (
+        replenish["replenish_qty"] / replenish["user_std_holding"]
+    )
+    replenish["replenish_z"] = (
+        replenish["replenish_z"].replace([inf, -inf], 0).fillna(0)
+    )
+
+    replenish = replenish[["replenish_qty", "replenish_z"]]
+    io.writer(replenish, "intermediate", "replenish", "parquet")
+
+
+def create_item_facts() -> None:
+    """Collate simple item facts."""
+    item_skeleton = io.reader("intermediate", "item_skeleton", "parquet")
+    bb_deposit = io.reader("cleaned", "bb_deposit", "parquet")
+    item_ids = utils.get_item_ids()
+
+    item_facts = item_skeleton.join(bb_deposit)[["item_deposit"]].join(
+        pd.Series(item_ids, name="item_id")
+    )
+    item_facts = item_facts.fillna(0).astype(int)
+
+    io.writer(item_facts, "intermediate", "item_facts", "parquet")
+
+
+def create_item_table() -> None:
+    """Combine item information into single master table."""
+    item_skeleton = io.reader("intermediate", "item_skeleton", "parquet")
+    material_costs = io.reader("intermediate", "bbpred_matcosts", "parquet")
+    item_facts = io.reader("intermediate", "item_facts", "parquet")
+    item_inventory = io.reader("intermediate", "item_inventory", "parquet")
+    predicted_prices = io.reader("intermediate", "predicted_prices", "parquet")
+    replenish = io.reader("intermediate", "replenish", "parquet")
+
+    item_table = (
+        item_skeleton.join(material_costs)
+        .join(predicted_prices)
+        .join(item_inventory)
+        .join(item_facts)
+        .join(replenish)
+    )
+
+    io.writer(item_table, "intermediate", "item_table", "parquet")
+
+
 def analyse_listings() -> None:
     """Convert live listings into single items."""
     auc_listings = io.reader("cleaned", "auc_listings", "parquet")
@@ -198,68 +263,6 @@ def analyse_listings() -> None:
     ).T
 
     io.writer(listing_each, "intermediate", "listing_each", "parquet")
-
-
-def analyse_replenishment() -> None:
-    """Determine the demand for item replenishment."""
-    item_skeleton = io.reader("intermediate", "item_skeleton", "parquet")
-    item_inventory = io.reader("intermediate", "item_inventory", "parquet")
-
-    item_skeleton.index.name = "item"
-    replenish = item_skeleton.join(item_inventory).fillna(0).astype(int)
-
-    user_items = cfg.ui.copy()
-
-    replenish["replenish_qty"] = (
-        replenish["user_mean_holding"] - replenish["inv_total_all"]
-    )
-
-    # Update replenish list with user_made_from
-    for item, row in replenish.iterrows():
-        if row["replenish_qty"] > 0:
-            for ingredient, count in user_items[item].get("user_made_from", {}).items():
-                replenish.loc[ingredient, "replenish_qty"] += (
-                    count * row["replenish_qty"]
-                )
-
-    replenish["replenish_z"] = (
-        replenish["replenish_qty"] / replenish["user_std_holding"]
-    )
-    replenish["replenish_z"] = (
-        replenish["replenish_z"].replace([inf, -inf], 0).fillna(0)
-    )
-
-    replenish = replenish[["replenish_qty", "replenish_z"]].reset_index()
-    io.writer(replenish, "intermediate", "replenish", "parquet")
-
-
-def create_item_table() -> None:
-    """Combine item information into single master table."""
-    item_skeleton = io.reader("intermediate", "item_skeleton", "parquet")
-    material_costs = io.reader("intermediate", "bbpred_matcosts", "parquet")
-    bb_deposit = io.reader("cleaned", "bb_deposit", "parquet")
-    item_inventory = io.reader("intermediate", "item_inventory", "parquet")
-    predicted_prices = io.reader("intermediate", "predicted_prices", "parquet")
-    replenish = io.reader("intermediate", "replenish", "parquet")
-
-    item_table = (
-        item_skeleton.join(material_costs)
-        .join(predicted_prices)
-        .join(item_inventory)
-        .join(bb_deposit)
-        .fillna(0)
-        .astype(int)
-        .join(replenish.set_index("item"))
-    )
-
-    item_ids = utils.get_item_ids()
-
-    item_table["item_id"] = item_table.index
-    item_table["item_id"] = item_table["item_id"].apply(
-        lambda x: item_ids[x] if x in item_ids else 0
-    )
-
-    io.writer(item_table, "intermediate", "item_table", "parquet")
 
 
 def predict_volume_sell_probability(

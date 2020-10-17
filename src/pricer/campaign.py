@@ -169,7 +169,7 @@ def analyse_sell_policy(
     )
 
     cols = [
-        "deposit",
+        "item_deposit",
         "bbpred_matcosts",
         "bbpred_std",
         "bbpred_price",
@@ -179,7 +179,7 @@ def analyse_sell_policy(
         "replenish_z",
     ]
     sell_items = item_table[item_table["user_Sell"] == True][cols]
-    sell_items["deposit"] = sell_items["deposit"] * (
+    sell_items["item_deposit"] = sell_items["item_deposit"] * (
         utils.duration_str_to_mins(duration) / (60 * 24)
     )
 
@@ -215,7 +215,7 @@ def analyse_sell_policy(
     listing_profits["estimated_profit"] = (
         (listing_profits["proposed_buy"] * 0.95 - listing_profits["bbpred_matcosts"])
         * (listing_profits["probability"] ** listing_profits["exponential_percent"])
-    ) - (listing_profits["deposit"] * (1 - listing_profits["probability"]))
+    ) - (listing_profits["item_deposit"] * (1 - listing_profits["probability"]))
 
     best_profits_ind = listing_profits.groupby("item")["estimated_profit"].idxmax()
     sell_policy = listing_profits.loc[best_profits_ind]

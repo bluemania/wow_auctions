@@ -4,7 +4,7 @@ import logging
 import matplotlib.pyplot as plt  # type: ignore
 import pandas as pd
 
-from pricer import io
+from pricer import config as cfg, io
 
 logger = logging.getLogger(__name__)
 
@@ -98,6 +98,6 @@ def produce_listing_items() -> None:
         listing_item = listing_each[listing_each["item"] == item_buy][
             "price_per"
         ].sort_values()
-        listing_item.reset_index(drop=True).plot(title=item)
+        listing_item.reset_index(drop=True).plot(title=item_buy)
         plt.savefig(f"data/reporting/listing_item/{item_buy}.png")
         plt.close()
