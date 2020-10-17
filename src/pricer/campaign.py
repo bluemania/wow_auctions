@@ -19,8 +19,8 @@ def analyse_buy_policy(MAX_BUY_STD: int = 2) -> None:
 
     buy_policy = item_table[item_table["user_Buy"] == True]
     subset_cols = [
-        "pred_price",
-        "pred_std",
+        "bbpred_price",
+        "bbpred_std",
         "inv_total_all",
         "replenish_qty",
         "user_std_holding",
@@ -171,8 +171,8 @@ def analyse_sell_policy(
     cols = [
         "deposit",
         "material_costs",
-        "pred_std",
-        "pred_price",
+        "bbpred_std",
+        "bbpred_price",
         "user_max_sell",
         "inv_ahm_bag",
         "replenish_qty",
@@ -199,7 +199,7 @@ def analyse_sell_policy(
     listing_each = listing_each.set_index(["item"])
     listing_each["pred_z"] = listing_each["pred_z"].fillna(MAX_STD)
 
-    gouge_price = sell_items["pred_price"] + (sell_items["pred_std"] * MAX_STD)
+    gouge_price = sell_items["bbpred_price"] + (sell_items["bbpred_std"] * MAX_STD)
 
     listing_each["price_per"] = (
         listing_each["price_per"].fillna(gouge_price).astype(int)
@@ -221,7 +221,7 @@ def analyse_sell_policy(
     sell_policy = listing_profits.loc[best_profits_ind]
 
     sell_policy["min_profit"] = MIN_PROFIT
-    sell_policy["profit_pct"] = MIN_PROFIT_PCT * sell_policy["pred_price"]
+    sell_policy["profit_pct"] = MIN_PROFIT_PCT * sell_policy["bbpred_price"]
     sell_policy["feasible_profit"] = sell_policy[["min_profit", "profit_pct"]].max(
         axis=1
     )

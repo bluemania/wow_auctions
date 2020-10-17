@@ -31,10 +31,10 @@ def predict_item_prices(quantile: float = 0.025) -> None:
                 upper=df["silver"].quantile(1 - quantile),
             )
             try:
-                item_prices.loc[item_name, "pred_price"] = int(
+                item_prices.loc[item_name, "bbpred_price"] = int(
                     df["silver"].ewm(alpha=0.2).mean().iloc[-1]
                 )
-                item_prices.loc[item_name, "pred_std"] = df["silver"].std().astype(int)
+                item_prices.loc[item_name, "bbpred_std"] = df["silver"].std().astype(int)
             except IndexError:
                 logging.exception(
                     f"""Price prediction problem for {item_name}.
@@ -43,7 +43,7 @@ def predict_item_prices(quantile: float = 0.025) -> None:
 
     qty_df = bb_fortnight[bb_fortnight["snapshot"] == bb_fortnight["snapshot"].max()]
     qty_df = qty_df.set_index("item")["quantity"]
-    qty_df.name = "pred_quantity"
+    qty_df.name = "bbpred_quantity"
 
     predicted_prices = item_prices.join(qty_df).fillna(0).astype(int)
     io.writer(predicted_prices, "intermediate", "predicted_prices", "parquet")
@@ -59,8 +59,7 @@ def analyse_listing_minprice() -> None:
         x = auc_listings[(auc_listings["item"] == item)]
         item_mins[item] = int(x["price_per"].min())
 
-    listings_minprice = pd.DataFrame(pd.Series(item_mins)).reset_index()
-    listings_minprice.columns = ["item", "listing_minprice"]
+    listings_minprice = pd.DataFrame(pd.Series(item_mins, name="listing_minprice"))
     io.writer(listings_minprice, "intermediate", "listings_minprice", "parquet")
 
 
@@ -105,7 +104,7 @@ def analyse_material_cost() -> None:
 
     mat_prices["material_price"] = (
         mat_prices["price_per_rolling"]
-        .fillna(mat_prices["pred_price"])
+        .fillna(mat_prices["bbpred_price"])
         .fillna(mat_prices["user_vendor_price"])
         .astype(int)
     )
@@ -192,7 +191,7 @@ def analyse_listings() -> None:
         validate="m:1",
     )
 
-    ranges["pred_z"] = (ranges["price_per"] - ranges["pred_price"]) / ranges["pred_std"]
+    ranges["pred_z"] = (ranges["price_per"] - ranges["bbpred_price"]) / ranges["bbpred_std"]
 
     item: List = sum(
         ranges.apply(lambda x: [x["item"]] * x["quantity"], axis=1).tolist(), []
@@ -256,7 +255,7 @@ def create_item_table() -> None:
 
     item_table = (
         item_skeleton.join(material_costs.set_index("item"))
-        .join(listings_minprice.set_index("item"))
+        .join(listings_minprice)
         .join(predicted_prices)
         .join(item_inventory)
         .join(bb_deposit)
