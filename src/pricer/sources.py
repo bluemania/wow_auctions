@@ -256,7 +256,7 @@ def clean_beancounter_data() -> None:
     df = pd.DataFrame(parsed)
 
     bean_purchases = _clean_beancounter_purchases(df)
-    io.writer(bean_purchases, "cleaned", "bean_purchases", "parquet", schema_name="beancounter_purchases_schema")
+    io.writer(bean_purchases, "cleaned", "bean_purchases", "parquet")
 
     failed = _clean_beancounter_failed(df)
     success = _clean_beancounter_success(df)
@@ -506,5 +506,4 @@ def clean_item_skeleton() -> None:
             item_skeleton_raw[col] = nan
 
     item_skeleton = _process_item_skeleton(item_skeleton_raw)
-
     io.writer(item_skeleton, "intermediate", "item_skeleton", "parquet")
