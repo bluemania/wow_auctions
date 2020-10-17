@@ -19,7 +19,7 @@ warnings.simplefilter(action="ignore")
 logger = logging.getLogger(__name__)
 
 
-def run_analytics(stack: int = 5, user_max_sell: int = 20, duration: str = "m") -> None:
+def run_analytics(stack: int = 5, max_sell: int = 20, duration: str = "m") -> None:
     """Run the main analytics pipeline."""
     run_dt = dt.now().replace(microsecond=0)
     # TODO remove this run_dt crap
@@ -43,7 +43,7 @@ def run_analytics(stack: int = 5, user_max_sell: int = 20, duration: str = "m") 
 
     campaign.analyse_buy_policy()
     campaign.write_buy_policy()
-    campaign.analyse_sell_policy(stack=stack, user_max_sell=user_max_sell, duration=duration)
+    campaign.analyse_sell_policy(stack=stack, max_sell=max_sell, duration=duration)
     campaign.write_sell_policy()
     campaign.analyse_make_policy()
     campaign.write_make_policy()
@@ -90,7 +90,7 @@ def main() -> None:
         cfg.ui = {k: v for k, v in cfg.ui.items() if k in test_items}
 
     if not args.n:
-        run_analytics(stack=args.s, user_max_sell=args.m, duration=args.d)
+        run_analytics(stack=args.s, max_sell=args.m, duration=args.d)
 
     logger.info(f"Program end, seconds {(dt.now() - run_dt).total_seconds()}")
 

@@ -221,7 +221,9 @@ def analyse_replenishment() -> None:
 
     user_items = cfg.ui.copy()
 
-    replenish["replenish_qty"] = replenish["user_mean_holding"] - replenish["inv_total_all"]
+    replenish["replenish_qty"] = (
+        replenish["user_mean_holding"] - replenish["inv_total_all"]
+    )
 
     # Update replenish list with user_made_from
     for item, row in replenish.iterrows():
@@ -231,7 +233,9 @@ def analyse_replenishment() -> None:
                     count * row["replenish_qty"]
                 )
 
-    replenish["replenish_z"] = replenish["replenish_qty"] / replenish["user_std_holding"]
+    replenish["replenish_z"] = (
+        replenish["replenish_qty"] / replenish["user_std_holding"]
+    )
     replenish["replenish_z"] = (
         replenish["replenish_z"].replace([inf, -inf], 0).fillna(0)
     )

@@ -14,7 +14,13 @@ logger = logging.getLogger(__name__)
 pd.options.mode.chained_assignment = None  # default='warn'
 
 
-def reader(folder: str = "", name: str = "", ftype: str = "", custom: str = "", schema_name: str = "") -> Any:
+def reader(
+    folder: str = "",
+    name: str = "",
+    ftype: str = "",
+    custom: str = "",
+    schema_name: str = "",
+) -> Any:
     """Standard program writer, allows pathing extensibility i.e. testing or S3."""
     if ftype == "yaml":
         base_path = ""
@@ -57,7 +63,12 @@ def reader(folder: str = "", name: str = "", ftype: str = "", custom: str = "", 
 
 
 def writer(
-    data: Any, folder: str = "", name: str = "", ftype: str = "", custom: str = "", schema_name: str = "",
+    data: Any,
+    folder: str = "",
+    name: str = "",
+    ftype: str = "",
+    custom: str = "",
+    schema_name: str = "",
 ) -> None:
     """Standard program writer, allows pathing extensibility i.e. testing or S3."""
     path = Path(cfg.env["basepath"], folder, name + "." + ftype)

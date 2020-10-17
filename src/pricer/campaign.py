@@ -155,7 +155,7 @@ def write_sell_policy() -> None:
 
 def analyse_sell_policy(
     stack: int = 1,
-    user_max_sell: int = 10,
+    max_sell: int = 10,
     duration: str = "m",
     MAX_STD: int = 5,
     MIN_PROFIT: int = 300,
@@ -247,8 +247,10 @@ def analyse_sell_policy(
     sell_policy = sell_policy.sort_values("estimated_profit", ascending=False)
 
     sell_policy["stack"] = stack
-    sell_policy["user_max_sell"] = sell_policy["user_max_sell"].replace(0, user_max_sell)
-    sell_policy["sell_count"] = sell_policy[["inv_ahm_bag", "user_max_sell"]].min(axis=1)
+    sell_policy["user_max_sell"] = sell_policy["user_max_sell"].replace(0, max_sell)
+    sell_policy["sell_count"] = sell_policy[["inv_ahm_bag", "user_max_sell"]].min(
+        axis=1
+    )
     sell_policy["sell_count"] = (
         sell_policy["sell_count"] / sell_policy["stack"]
     ).astype(int)
@@ -281,7 +283,7 @@ def analyse_make_policy() -> None:
         "user_mean_holding",
         "inv_total_all",
         "inv_ahm_bag",
-        "inv_ahm_bank"
+        "inv_ahm_bank",
     ]
     make_policy = item_table[cols]
 

@@ -14,7 +14,7 @@ def test_e2e() -> None:
     sources.clean_arkinventory_data(pd.to_datetime("2020-10-10"))
     sources.clean_beancounter_data()
     sources.clean_auctioneer_data()
-    sources.create_item_skeleton()
+    sources.clean_item_skeleton()
 
     analysis.predict_item_prices()
     analysis.analyse_listing_minprice()

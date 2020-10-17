@@ -79,7 +79,7 @@ def get_bb_data() -> None:
     driver = start_driver()
     # Get item_ids for user specified items of interest
     user_items = cfg.ui.copy()
-    user_auc_items = {k: v for k, v in user_items.items() if 'vendor_price' not in v}
+    user_auc_items = {k: v for k, v in user_items.items() if "vendor_price" not in v}
 
     item_ids = utils.get_item_ids()
     items_ids = {k: v for k, v in item_ids.items() if k in user_auc_items}
@@ -212,13 +212,21 @@ def clean_arkinventory_data(run_dt: dt) -> None:
     ark_inventory = pd.DataFrame(raw_data)
     ark_inventory.columns = cols
     ark_inventory["timestamp"] = run_dt
-    io.writer(ark_inventory, "cleaned", "ark_inventory", "parquet", schema_name='ark_inventory_schema')
+    io.writer(
+        ark_inventory,
+        "cleaned",
+        "ark_inventory",
+        "parquet",
+        schema_name="ark_inventory_schema",
+    )
 
     ark_monies = pd.Series(monies)
     ark_monies.name = "monies"
     ark_monies = pd.DataFrame(ark_monies)
     ark_monies["timestamp"] = run_dt
-    io.writer(ark_monies, "cleaned", "ark_monies", "parquet", schema_name='ark_money_schema')
+    io.writer(
+        ark_monies, "cleaned", "ark_monies", "parquet", schema_name="ark_money_schema"
+    )
 
 
 def get_beancounter_data() -> None:
@@ -265,7 +273,13 @@ def clean_beancounter_data() -> None:
     bean_results["success"] = bean_results["auction_type"].replace(
         {"completedAuctions": 1, "failedAuctions": 0}
     )
-    io.writer(bean_results, "cleaned", "bean_results", "parquet", schema_name="bean_results_schema")
+    io.writer(
+        bean_results,
+        "cleaned",
+        "bean_results",
+        "parquet",
+        schema_name="beancounter_results_schema",
+    )
 
 
 @check_input(schema.beancounter_data_raw_schema)
@@ -471,11 +485,17 @@ def _process_item_skeleton(df: pd.DataFrame) -> pd.DataFrame:
     int_cols = ["user_min_holding", "user_max_holding", "user_vendor_price"]
     df[int_cols] = df[int_cols].fillna(0).astype(int)
 
-    df["user_std_holding"] = (df["user_max_holding"] - df["user_min_holding"]) / cfg.us['analysis']['USER_STD_SPREAD']
-    df["user_mean_holding"] = df[["user_min_holding", "user_max_holding"]].mean(axis=1).astype(int)
+    df["user_std_holding"] = (df["user_max_holding"] - df["user_min_holding"]) / cfg.us[
+        "analysis"
+    ]["USER_STD_SPREAD"]
+    df["user_mean_holding"] = (
+        df[["user_min_holding", "user_max_holding"]].mean(axis=1).astype(int)
+    )
 
-    df["user_Make"] = (df["user_made_from"] == df["user_made_from"]) & (df["user_make_pass"]==0)
-    df = df.drop('user_made_from', axis=1)
+    df["user_Make"] = (df["user_made_from"] == df["user_made_from"]) & (
+        df["user_make_pass"] == 0
+    )
+    df = df.drop("user_made_from", axis=1)
 
     bool_cols = ["user_Buy", "user_Sell", "user_Make", "user_make_pass"]
     df[bool_cols] = df[bool_cols].fillna(False).astype(int)

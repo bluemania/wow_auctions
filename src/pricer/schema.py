@@ -66,7 +66,7 @@ auc_listings_raw_schema = pa.DataFrameSchema(
         26: Column(pa.String, nullable=True),
         27: Column(pa.String, nullable=True),
     },
-    strict=True,    
+    strict=True,
 )
 
 auc_listings_schema = pa.DataFrameSchema(
@@ -78,7 +78,7 @@ auc_listings_schema = pa.DataFrameSchema(
         "price_per": Column(pa.Int),
         "time_remaining": Column(pa.Int),
     },
-    strict=True,    
+    strict=True,
 )
 
 beancounter_data_raw_schema = pa.DataFrameSchema(
@@ -97,7 +97,7 @@ beancounter_data_raw_schema = pa.DataFrameSchema(
         11: Column(pa.String, nullable=True),
         12: Column(pa.String, nullable=True),
     },
-    strict=True,    
+    strict=True,
 )
 
 beancounter_purchases_schema = pa.DataFrameSchema(
@@ -113,7 +113,7 @@ beancounter_purchases_schema = pa.DataFrameSchema(
         "buyout_per": Column(pa.Float),
         "bid_per": Column(pa.Float),
     },
-    strict=True,    
+    strict=True,
 )
 
 beancounter_posted_schema = pa.DataFrameSchema(
@@ -129,7 +129,7 @@ beancounter_posted_schema = pa.DataFrameSchema(
         "buyout_per": Column(pa.Float),
         "bid_per": Column(pa.Float),
     },
-    strict=True,    
+    strict=True,
 )
 
 beancounter_failed_schema = pa.DataFrameSchema(
@@ -145,7 +145,7 @@ beancounter_failed_schema = pa.DataFrameSchema(
         "buyout_per": Column(pa.Float),
         "bid_per": Column(pa.Float),
     },
-    strict=True,    
+    strict=True,
 )
 
 beancounter_success_schema = pa.DataFrameSchema(
@@ -165,12 +165,28 @@ beancounter_success_schema = pa.DataFrameSchema(
         "buyout_per": Column(pa.Float),
         "bid_per": Column(pa.Float),
     },
-    strict=True,    
+    strict=True,
 )
 
-beancounter_results_schema = schema.add_columns({
-    "success": pa.Column(pa.Int)
-    }
+beancounter_results_schema = pa.DataFrameSchema(
+    columns={
+        "auction_type": Column(pa.String),
+        "item": Column(pa.String),
+        "seller": Column(pa.String),
+        "qty": Column(pa.Int),
+        "received": Column(pa.Int, nullable=True),
+        "deposit": Column(pa.Int),
+        "ah_cut": Column(pa.Int, nullable=True),
+        "buyout": Column(pa.Int, nullable=True),
+        "bid": Column(pa.Int),
+        "buyer": Column(pa.String, nullable=True),
+        "timestamp": Column(pa.DateTime),
+        "received_per": Column(pa.Float, nullable=True),
+        "buyout_per": Column(pa.Float),
+        "bid_per": Column(pa.Float),
+        "success": pa.Column(pa.Int)
+    },
+    strict=True,
 )
 
 ark_inventory_schema = pa.DataFrameSchema(
@@ -179,15 +195,11 @@ ark_inventory_schema = pa.DataFrameSchema(
         "location": Column(pa.String),
         "item": Column(pa.String),
         "count": Column(pa.Int),
-        "timestamp": Column(pa.DateTime)
+        "timestamp": Column(pa.DateTime),
     },
-    strict=True,    
+    strict=True,
 )
 
 ark_money_schema = pa.DataFrameSchema(
-    columns={
-        "monies": Column(pa.Int),
-        "timestamp": Column(pa.DateTime)
-    },
-    strict=True,    
+    columns={"monies": Column(pa.Int), "timestamp": Column(pa.DateTime)}, strict=True,
 )
