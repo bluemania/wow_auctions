@@ -226,6 +226,7 @@ def clean_arkinventory_data(run_dt: dt) -> None:
 
     ark_monies = pd.Series(monies)
     ark_monies.name = "monies"
+    ark_monies.index.name = "character"
     ark_monies = pd.DataFrame(ark_monies)
     ark_monies["timestamp"] = run_dt
     io.writer(
@@ -527,4 +528,4 @@ def clean_item_skeleton() -> None:
 
     item_skeleton = _process_item_skeleton(item_skeleton_raw)
     item_skeleton.index.name = "item"
-    io.writer(item_skeleton, "intermediate", "item_skeleton", "parquet")
+    io.writer(item_skeleton, "cleaned", "item_skeleton", "parquet")

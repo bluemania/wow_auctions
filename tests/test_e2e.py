@@ -16,13 +16,15 @@ def test_e2e() -> None:
     sources.clean_auctioneer_data()
     sources.clean_item_skeleton()
 
+    analysis.create_item_inventory()
+    analysis.create_item_facts()
+
     analysis.predict_item_prices()
     analysis.analyse_material_cost()
     analysis.analyse_listings()
     analysis.analyse_replenishment()
-    analysis.create_item_inventory()
-    analysis.create_item_facts()
-    analysis.create_item_table()
+
+    analysis.merge_item_table()
     analysis.predict_volume_sell_probability("m")
 
     campaign.analyse_buy_policy()

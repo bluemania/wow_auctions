@@ -54,7 +54,7 @@ def predict_item_prices(quantile: float = 0.025) -> None:
 def analyse_material_cost() -> None:
     """Analyse cost of materials for items, using purchase history or BB predicted price."""
     bean_purchases = io.reader("cleaned", "bean_purchases", "parquet")
-    item_skeleton = io.reader("intermediate", "item_skeleton", "parquet")
+    item_skeleton = io.reader("cleaned", "item_skeleton", "parquet")
     item_prices = io.reader("intermediate", "predicted_prices", "parquet")
 
     user_items = cfg.ui.copy()
@@ -163,7 +163,7 @@ def create_item_inventory() -> None:
 
 def analyse_replenishment() -> None:
     """Determine the demand for item replenishment."""
-    item_skeleton = io.reader("intermediate", "item_skeleton", "parquet")
+    item_skeleton = io.reader("cleaned", "item_skeleton", "parquet")
     item_inventory = io.reader("intermediate", "item_inventory", "parquet")
 
     replenish = item_skeleton.join(item_inventory).fillna(0).astype(int)
@@ -195,7 +195,7 @@ def analyse_replenishment() -> None:
 
 def create_item_facts() -> None:
     """Collate simple item facts."""
-    item_skeleton = io.reader("intermediate", "item_skeleton", "parquet")
+    item_skeleton = io.reader("cleaned", "item_skeleton", "parquet")
     bb_deposit = io.reader("cleaned", "bb_deposit", "parquet")
     item_ids = utils.get_item_ids()
 
@@ -207,9 +207,9 @@ def create_item_facts() -> None:
     io.writer(item_facts, "intermediate", "item_facts", "parquet")
 
 
-def create_item_table() -> None:
+def merge_item_table() -> None:
     """Combine item information into single master table."""
-    item_skeleton = io.reader("intermediate", "item_skeleton", "parquet")
+    item_skeleton = io.reader("cleaned", "item_skeleton", "parquet")
     material_costs = io.reader("intermediate", "bbpred_matcosts", "parquet")
     item_facts = io.reader("intermediate", "item_facts", "parquet")
     item_inventory = io.reader("intermediate", "item_inventory", "parquet")
