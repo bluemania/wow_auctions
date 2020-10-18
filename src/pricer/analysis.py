@@ -222,7 +222,7 @@ def create_item_table() -> None:
         .join(item_inventory)
         .join(item_facts)
         .join(replenish)
-    )
+    ).fillna(0)
 
     io.writer(item_table, "intermediate", "item_table", "parquet")
 

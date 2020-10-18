@@ -19,7 +19,7 @@ def reader(
     name: str = "",
     ftype: str = "",
     custom: str = "",
-    schema_name: str = "",
+    self_schema: bool = False,
 ) -> Any:
     """Standard program writer, allows pathing extensibility i.e. testing or S3."""
     if ftype == "yaml":
@@ -56,8 +56,8 @@ def reader(
         with open(path, "r") as yaml_r:
             data = yaml.safe_load(yaml_r)
 
-    if schema_name:
-        getattr(schema, schema_name).validate(data)
+    if self_schema:
+        getattr(schema, f"{name}_schema").validate(data)
 
     return data
 
@@ -68,14 +68,14 @@ def writer(
     name: str = "",
     ftype: str = "",
     custom: str = "",
-    schema_name: str = "",
+    self_schema: bool = False,
 ) -> None:
     """Standard program writer, allows pathing extensibility i.e. testing or S3."""
     path = Path(cfg.env["basepath"], folder, name + "." + ftype)
     logger.debug(f"Writing {name} {ftype} to {path}")
 
-    if schema_name:
-        getattr(schema, schema_name).validate(data)
+    if self_schema:
+        getattr(schema, f"{name}_schema").validate(data)
 
     if ftype == "parquet":
         data.to_parquet(path, compression="gzip")

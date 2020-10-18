@@ -21,7 +21,7 @@ def test_e2e() -> None:
     analysis.analyse_listings()
     analysis.analyse_replenishment()
     analysis.create_item_inventory()
-    analysis.create_item_facts()    
+    analysis.create_item_facts()
     analysis.create_item_table()
     analysis.predict_volume_sell_probability("m")
 

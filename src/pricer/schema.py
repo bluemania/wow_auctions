@@ -2,6 +2,51 @@
 import pandera as pa
 from pandera import Column, Index
 
+bb_fortnight_schema = pa.DataFrameSchema(
+    columns={
+        "snapshot": Column(pa.DateTime),
+        "silver": Column(pa.Int),
+        "quantity": Column(pa.Int),
+        "item": Column(pa.String),
+    },
+    strict=True,
+    index=Index(pa.Int),
+)
+
+bb_history_schema = pa.DataFrameSchema(
+    columns={
+        "date": Column(pa.DateTime),
+        "silvermin": Column(pa.Int),
+        "silveravg": Column(pa.Int),
+        "silvermax": Column(pa.Int),
+        "silverstart": Column(pa.Int),
+        "silverend": Column(pa.Int),
+        "quantitymin": Column(pa.Int),
+        "quantityavg": Column(pa.Int),
+        "quantitymax": Column(pa.Int),
+        "item": Column(pa.String),
+    },
+    strict=True,
+    index=Index(pa.Int),
+)
+
+bb_alltime_schema = pa.DataFrameSchema(
+    columns={
+        "date": Column(pa.DateTime),
+        "silver": Column(pa.Int),
+        "quantity": Column(pa.Int),
+        "item": Column(pa.String),
+    },
+    strict=True,
+    index=Index(pa.Int),
+)
+
+bb_deposit_schema = pa.DataFrameSchema(
+    columns={"item_deposit": Column(pa.Int, nullable=True)},
+    strict=True,
+    index=Index(pa.String, name="item"),
+)
+
 item_skeleton_raw_schema = pa.DataFrameSchema(
     columns={
         "user_min_holding": Column(pa.Int, nullable=True),
@@ -81,7 +126,7 @@ auc_listings_schema = pa.DataFrameSchema(
     strict=True,
 )
 
-beancounter_data_raw_schema = pa.DataFrameSchema(
+beancounter_raw_schema = pa.DataFrameSchema(
     columns={
         0: Column(pa.String, nullable=True),
         1: Column(pa.String, nullable=True),
@@ -100,7 +145,7 @@ beancounter_data_raw_schema = pa.DataFrameSchema(
     strict=True,
 )
 
-beancounter_purchases_schema = pa.DataFrameSchema(
+bean_purchases_schema = pa.DataFrameSchema(
     columns={
         "auction_type": Column(pa.String),
         "item": Column(pa.String),
@@ -116,7 +161,7 @@ beancounter_purchases_schema = pa.DataFrameSchema(
     strict=True,
 )
 
-beancounter_posted_schema = pa.DataFrameSchema(
+bean_posted_schema = pa.DataFrameSchema(
     columns={
         "auction_type": Column(pa.String),
         "item": Column(pa.String),
@@ -132,7 +177,7 @@ beancounter_posted_schema = pa.DataFrameSchema(
     strict=True,
 )
 
-beancounter_failed_schema = pa.DataFrameSchema(
+bean_failed_schema = pa.DataFrameSchema(
     columns={
         "auction_type": Column(pa.String),
         "item": Column(pa.String),
@@ -148,7 +193,7 @@ beancounter_failed_schema = pa.DataFrameSchema(
     strict=True,
 )
 
-beancounter_success_schema = pa.DataFrameSchema(
+bean_success_schema = pa.DataFrameSchema(
     columns={
         "auction_type": Column(pa.String),
         "item": Column(pa.String),
@@ -168,7 +213,7 @@ beancounter_success_schema = pa.DataFrameSchema(
     strict=True,
 )
 
-beancounter_results_schema = pa.DataFrameSchema(
+bean_results_schema = pa.DataFrameSchema(
     columns={
         "auction_type": Column(pa.String),
         "item": Column(pa.String),
@@ -200,6 +245,6 @@ ark_inventory_schema = pa.DataFrameSchema(
     strict=True,
 )
 
-ark_money_schema = pa.DataFrameSchema(
+ark_monies_schema = pa.DataFrameSchema(
     columns={"monies": Column(pa.Int), "timestamp": Column(pa.DateTime)}, strict=True,
 )

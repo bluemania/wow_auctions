@@ -80,7 +80,6 @@ def main() -> None:
 
     if args.b:
         sources.get_bb_data()
-        sources.clean_bb_data()
     if args.i:
         sources.get_item_icons()
     if args.t:

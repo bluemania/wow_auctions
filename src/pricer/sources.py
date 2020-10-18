@@ -135,10 +135,18 @@ def clean_bb_data() -> None:
     bb_deposit_df.columns = ["item_deposit"]
     bb_deposit_df.index.name = "item"
 
-    io.writer(bb_fortnight_df, "cleaned", "bb_fortnight", "parquet")
-    io.writer(bb_history_df, "cleaned", "bb_history", "parquet")
-    io.writer(bb_alltime_df, "cleaned", "bb_alltime", "parquet")
-    io.writer(bb_deposit_df, "cleaned", "bb_deposit", "parquet")
+    io.writer(
+        bb_fortnight_df, "cleaned", "bb_fortnight", "parquet", self_schema=True,
+    )
+    io.writer(
+        bb_history_df, "cleaned", "bb_history", "parquet", self_schema=True,
+    )
+    io.writer(
+        bb_alltime_df, "cleaned", "bb_alltime", "parquet", self_schema=True,
+    )
+    io.writer(
+        bb_deposit_df, "cleaned", "bb_deposit", "parquet", self_schema=True,
+    )
 
 
 def get_item_icons() -> None:
@@ -213,11 +221,7 @@ def clean_arkinventory_data(run_dt: dt) -> None:
     ark_inventory.columns = cols
     ark_inventory["timestamp"] = run_dt
     io.writer(
-        ark_inventory,
-        "cleaned",
-        "ark_inventory",
-        "parquet",
-        schema_name="ark_inventory_schema",
+        ark_inventory, "cleaned", "ark_inventory", "parquet", self_schema=True,
     )
 
     ark_monies = pd.Series(monies)
@@ -225,7 +229,7 @@ def clean_arkinventory_data(run_dt: dt) -> None:
     ark_monies = pd.DataFrame(ark_monies)
     ark_monies["timestamp"] = run_dt
     io.writer(
-        ark_monies, "cleaned", "ark_monies", "parquet", schema_name="ark_money_schema"
+        ark_monies, "cleaned", "ark_monies", "parquet", self_schema=True,
     )
 
 
@@ -274,16 +278,12 @@ def clean_beancounter_data() -> None:
         {"completedAuctions": 1, "failedAuctions": 0}
     )
     io.writer(
-        bean_results,
-        "cleaned",
-        "bean_results",
-        "parquet",
-        schema_name="beancounter_results_schema",
+        bean_results, "cleaned", "bean_results", "parquet", self_schema=True,
     )
 
 
-@check_input(schema.beancounter_data_raw_schema)
-@check_output(schema.beancounter_purchases_schema)
+@check_input(schema.beancounter_raw_schema)
+@check_output(schema.bean_purchases_schema)
 def _clean_beancounter_purchases(df: pd.DataFrame) -> pd.DataFrame:
     """Further processing of purchase beancounter data."""
     purchases = df[df[0] == "completedBidsBuyouts"]
@@ -320,8 +320,8 @@ def _clean_beancounter_purchases(df: pd.DataFrame) -> pd.DataFrame:
     return purchases
 
 
-@check_input(schema.beancounter_data_raw_schema)
-@check_output(schema.beancounter_posted_schema)
+@check_input(schema.beancounter_raw_schema)
+@check_output(schema.bean_posted_schema)
 def clean_beancounter_posted(df: pd.DataFrame) -> pd.DataFrame:
     """Further processing of posted auction beancounter data."""
     posted = df[df[0] == "postedAuctions"]
@@ -357,8 +357,8 @@ def clean_beancounter_posted(df: pd.DataFrame) -> pd.DataFrame:
     return posted
 
 
-@check_input(schema.beancounter_data_raw_schema)
-@check_output(schema.beancounter_failed_schema)
+@check_input(schema.beancounter_raw_schema)
+@check_output(schema.bean_failed_schema)
 def _clean_beancounter_failed(df: pd.DataFrame) -> pd.DataFrame:
     """Further processing of failed auction beancounter data."""
     failed = df[df[0] == "failedAuctions"]
@@ -391,8 +391,8 @@ def _clean_beancounter_failed(df: pd.DataFrame) -> pd.DataFrame:
     return failed
 
 
-@check_input(schema.beancounter_data_raw_schema)
-@check_output(schema.beancounter_success_schema)
+@check_input(schema.beancounter_raw_schema)
+@check_output(schema.bean_success_schema)
 def _clean_beancounter_success(df: pd.DataFrame) -> pd.DataFrame:
     """Further processing of successful auction beancounter data."""
     success = df[df[0] == "completedAuctions"]
