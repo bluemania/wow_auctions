@@ -1,6 +1,6 @@
 """Analyses cleaned data sources to form intermediate tables."""
 import logging
-from typing import List
+from typing import Any, Dict, List
 
 from numpy import inf
 import pandas as pd
@@ -11,24 +11,30 @@ from pricer import config as cfg, io, utils
 logger = logging.getLogger(__name__)
 
 
-def predict_item_prices(quantile: float = 0.025) -> None:
+def predict_item_prices() -> None:
     """Analyse exponential average mean and std of items given 14 day, 2 hour history."""
     bb_fortnight = io.reader("cleaned", "bb_fortnight", "parquet")
-
     user_items = cfg.ui.copy()
 
+    predicted_prices = _predict_item_prices(bb_fortnight, user_items)
+    io.writer(predicted_prices, "intermediate", "predicted_prices", "parquet")
+
+
+def _predict_item_prices(
+    bb_fortnight: pd.DataFrame, user_items: Dict[str, Any]
+) -> pd.DataFrame:
     # Work out if an item is auctionable, or get default price
     item_prices = pd.DataFrame()
     for item_name, item_details in user_items.items():
-        user_vendor_price = item_details.get("user_vendor_price")
+        user_vendor_price = item_details.get("vendor_price")
 
         if user_vendor_price:
             item_prices[item_name] = user_vendor_price
         else:
+            q = cfg.us["analysis"]["ITEM_PRICE_OUTLIER_CAP"]
             df = bb_fortnight[bb_fortnight["item"] == item_name]
             df["silver"] = df["silver"].clip(
-                lower=df["silver"].quantile(quantile),
-                upper=df["silver"].quantile(1 - quantile),
+                lower=df["silver"].quantile(q), upper=df["silver"].quantile(1 - q),
             )
             try:
                 item_prices.loc[item_name, "bbpred_price"] = int(
@@ -48,7 +54,7 @@ def predict_item_prices(quantile: float = 0.025) -> None:
     qty_df.name = "bbpred_quantity"
 
     predicted_prices = item_prices.join(qty_df).fillna(0).astype(int)
-    io.writer(predicted_prices, "intermediate", "predicted_prices", "parquet")
+    return predicted_prices
 
 
 def analyse_material_cost() -> None:
@@ -204,14 +210,14 @@ def create_item_facts() -> None:
     )
     item_facts = item_facts.fillna(0).astype(int)
 
-    io.writer(item_facts, "intermediate", "item_facts", "parquet")
+    io.writer(item_facts, "cleaned", "item_facts", "parquet")
 
 
 def merge_item_table() -> None:
     """Combine item information into single master table."""
     item_skeleton = io.reader("cleaned", "item_skeleton", "parquet")
     material_costs = io.reader("intermediate", "bbpred_matcosts", "parquet")
-    item_facts = io.reader("intermediate", "item_facts", "parquet")
+    item_facts = io.reader("cleaned", "item_facts", "parquet")
     item_inventory = io.reader("intermediate", "item_inventory", "parquet")
     predicted_prices = io.reader("intermediate", "predicted_prices", "parquet")
     replenish = io.reader("intermediate", "replenish", "parquet")

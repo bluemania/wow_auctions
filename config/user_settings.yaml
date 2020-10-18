@@ -28,3 +28,4 @@ booty:
 
 analysis:
   USER_STD_SPREAD: 7
+  ITEM_PRICE_OUTLIER_CAP: 0.025

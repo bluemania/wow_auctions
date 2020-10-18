@@ -163,7 +163,6 @@ def get_item_icons() -> None:
     url = "https://wow.zamimg.com/images/wow/icons/large/inv_scroll_03.jpg"
     r = requests.get(url)
     io.writer(r.content, "item_icons", "inv_scroll_03", "jpg")
-
     io.writer(item_icons, "item_icons", "_manifest", "json")
 
 
