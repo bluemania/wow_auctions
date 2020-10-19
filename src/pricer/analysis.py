@@ -30,7 +30,7 @@ def _predict_item_prices(
 
         if user_vendor_price:
             item_prices.loc[item_name, "bbpred_price"] = user_vendor_price
-            item_prices.loc[item_name, "bbpred_std"] = 0                        
+            item_prices.loc[item_name, "bbpred_std"] = 0
         else:
             q = cfg.us["analysis"]["ITEM_PRICE_OUTLIER_CAP"]
             df = bb_fortnight[bb_fortnight["item"] == item_name]
@@ -71,8 +71,10 @@ def analyse_material_cost() -> None:
         ["item", "timestamp"]
     )
 
-    purchase_each = utils.enumerate_quantities(bean_purchases, cols=['item', 'buyout_per'], qty_col="qty")
-    purchase_each.columns = ['item', 'price_per']
+    purchase_each = utils.enumerate_quantities(
+        bean_purchases, cols=["item", "buyout_per"], qty_col="qty"
+    )
+    purchase_each.columns = ["item", "price_per"]
 
     # This ensures that it will work for a single item
     purchase_each.loc[purchase_each.index.max() + 1] = ("dummy", 0)
@@ -249,7 +251,9 @@ def analyse_listings() -> None:
         "bbpred_std"
     ]
 
-    listing_each = utils.enumerate_quantities(ranges, cols=['item', 'price_per', 'pred_z'], qty_col="quantity")
+    listing_each = utils.enumerate_quantities(
+        ranges, cols=["item", "price_per", "pred_z"], qty_col="quantity"
+    )
 
     io.writer(listing_each, "intermediate", "listing_each", "parquet")
 
