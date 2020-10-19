@@ -1,6 +1,6 @@
 """Analyses cleaned data sources to form intermediate tables."""
 import logging
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 from numpy import inf
 import pandas as pd

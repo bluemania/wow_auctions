@@ -1,6 +1,6 @@
 """Contains helper functions to support data pipeline."""
 import logging
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Tuple, Union
 
 import pandas as pd
 
@@ -127,10 +127,13 @@ def get_ahm() -> Dict[str, str]:
 
 
 def enumerate_quantities(
-    df: pd.DataFrame, cols: List = [], qty_col="quantity"
+    df: pd.DataFrame, cols: Union[List[str], None] = None, qty_col: str = "quantity"
 ) -> pd.DataFrame:
     """Creates new dataframe to convert x,count to x*count."""
-    new_cols = [
+    if not cols:
+        raise ValueError("parameter cols must be an iterable of strings")
+
+    new_cols: List = [
         sum(df.apply(lambda x: [x[col]] * x[qty_col], axis=1).tolist(), [])
         for col in cols
     ]
