@@ -29,7 +29,8 @@ def _predict_item_prices(
         user_vendor_price = item_details.get("vendor_price")
 
         if user_vendor_price:
-            item_prices[item_name] = user_vendor_price
+            item_prices.loc[item_name, "bbpred_price"] = user_vendor_price
+            item_prices.loc[item_name, "bbpred_std"] = 0                        
         else:
             q = cfg.us["analysis"]["ITEM_PRICE_OUTLIER_CAP"]
             df = bb_fortnight[bb_fortnight["item"] == item_name]
@@ -70,14 +71,8 @@ def analyse_material_cost() -> None:
         ["item", "timestamp"]
     )
 
-    item: List = sum(
-        bean_purchases.apply(lambda x: [x["item"]] * x["qty"], axis=1).tolist(), []
-    )
-    price_per: List = sum(
-        bean_purchases.apply(lambda x: [x["buyout_per"]] * x["qty"], axis=1).tolist(),
-        [],
-    )
-    purchase_each = pd.DataFrame([item, price_per], index=["item", "price_per"]).T
+    purchase_each = utils.enumerate_quantities(bean_purchases, cols=['item', 'buyout_per'], qty_col="qty")
+    purchase_each.columns = ['item', 'price_per']
 
     # This ensures that it will work for a single item
     purchase_each.loc[purchase_each.index.max() + 1] = ("dummy", 0)
@@ -108,7 +103,7 @@ def analyse_material_cost() -> None:
     item_costs = {}
     for item_name, item_details in user_items.items():
         material_cost = 0
-        user_made_from = item_details.get("user_made_from", {})
+        user_made_from = item_details.get("made_from", {})
         if user_made_from:
             for ingredient, count in user_made_from.items():
                 material_cost += mat_prices.loc[ingredient, "material_price"] * count
@@ -254,19 +249,7 @@ def analyse_listings() -> None:
         "bbpred_std"
     ]
 
-    item: List = sum(
-        ranges.apply(lambda x: [x["item"]] * x["quantity"], axis=1).tolist(), []
-    )
-    price_per: List = sum(
-        ranges.apply(lambda x: [x["price_per"]] * x["quantity"], axis=1).tolist(), []
-    )
-    z: List = sum(
-        ranges.apply(lambda x: [x["pred_z"]] * x["quantity"], axis=1).tolist(), []
-    )
-
-    listing_each = pd.DataFrame(
-        [item, price_per, z], index=["item", "price_per", "pred_z"]
-    ).T
+    listing_each = utils.enumerate_quantities(ranges, cols=['item', 'price_per', 'pred_z'], qty_col="quantity")
 
     io.writer(listing_each, "intermediate", "listing_each", "parquet")
 

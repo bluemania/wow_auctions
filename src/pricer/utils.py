@@ -1,6 +1,8 @@
 """Contains helper functions to support data pipeline."""
 import logging
-from typing import Any, Dict, Tuple
+from typing import Any, Dict, List, Tuple
+
+import pandas as pd
 
 from pricer import config as cfg, io
 
@@ -122,3 +124,9 @@ def find_tsm_marker(content: bytes, initial_key: bytes) -> Tuple[int, int]:
 def get_ahm() -> Dict[str, str]:
     """Get the auction house main details."""
     return [role for role in cfg.us.get("roles") if role.get("role") == "ahm"][0]
+
+def enumerate_quantities(df: pd.DataFrame, cols: List = [], qty_col="quantity") -> pd.DataFrame:
+    """Creates new dataframe to convert x,count to x*count."""
+    new_cols = [sum(df.apply(lambda x: [x[col]] * x[qty_col], axis=1).tolist(), []) for col in cols]
+    new_df = pd.DataFrame(new_cols, index=cols).T
+    return new_df
