@@ -14,8 +14,11 @@ if app.root_path is None:
     raise
 app.config["data_path"] = Path(app.root_path).parents[2].joinpath("data")
 
-item_icon_manifest = io.reader("item_icons", "_manifest", "json")
-item_reporting = io.reader("reporting", "item_reporting", "json")
+try:
+    item_icon_manifest = io.reader("item_icons", "_manifest", "json")
+    item_reporting = io.reader("reporting", "item_reporting", "json")
+except FileNotFoundError:
+    logger.exception("Reporting files not present, unable to start webserver")
 
 
 @app.context_processor

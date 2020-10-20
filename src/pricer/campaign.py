@@ -170,7 +170,7 @@ def analyse_sell_policy(
 
     cols = [
         "item_deposit",
-        "bbpred_matcosts",
+        "material_make_cost",
         "bbpred_std",
         "bbpred_price",
         "user_max_sell",
@@ -213,7 +213,7 @@ def analyse_sell_policy(
     listing_profits["proposed_buy"] = listing_profits["price_per"] - 9
 
     listing_profits["estimated_profit"] = (
-        (listing_profits["proposed_buy"] * 0.95 - listing_profits["bbpred_matcosts"])
+        (listing_profits["proposed_buy"] * 0.95 - listing_profits["material_make_cost"])
         * (listing_profits["probability"] ** listing_profits["exponential_percent"])
     ) - (listing_profits["item_deposit"] * (1 - listing_profits["probability"]))
 

@@ -77,11 +77,9 @@ def analyse_rolling_buyout() -> None:
         .apply(lambda x: x["buyout_per"].ewm(span=SPAN).mean())
         .reset_index()
     )
-
-    # Get the latest value
-    bean_rolling_buyout = ewm.loc[ewm.groupby("item")["level_1"].max()].set_index(
-        "item"
-    )[["buyout_per"]]
+    # Get the latest item value
+    latest_item = ewm.groupby("item")["level_1"].max()
+    bean_rolling_buyout = ewm.loc[latest_item].set_index("item")[["buyout_per"]]
 
     bean_rolling_buyout = bean_rolling_buyout.drop("dummy").astype(int)
     bean_rolling_buyout.columns = ["bean_rolling_buyout"]
@@ -90,61 +88,35 @@ def analyse_rolling_buyout() -> None:
 
 def analyse_material_cost() -> None:
     """Analyse cost of materials for items, using purchase history or BB predicted price."""
-    bean_purchases = io.reader("cleaned", "bean_purchases", "parquet")
-    item_skeleton = io.reader("cleaned", "item_skeleton", "parquet")
+    bean_rolling_buyout = io.reader("intermediate", "bean_rolling_buyout", "parquet")
     item_prices = io.reader("intermediate", "predicted_prices", "parquet")
+    mat_prices = item_prices.join(bean_rolling_buyout)
 
-    user_items = cfg.ui.copy()
-    user_buys = [k for k, v in user_items.items() if v.get("Buy")]
+    r = cfg.us["analysis"]["BB_MAT_PRICE_RATIO"]
 
-    bean_purchases = bean_purchases[bean_purchases["item"].isin(user_buys)].sort_values(
-        ["item", "timestamp"]
-    )
+    # Material costs are taken as a ratio of booty bay prices, and (recent) actual buyouts
+    mat_prices["material_buyout_cost"] = (
+        mat_prices["bean_rolling_buyout"].fillna(mat_prices["bbpred_price"]) * (1 - r)
+        + (mat_prices["bbpred_price"] * r)
+    ).astype(int)
 
-    cols = ["item", "buyout_per"]
-    purchase_each = utils.enumerate_quantities(bean_purchases, cols=cols, qty_col="qty")
-    purchase_each.columns = ["item", "price_per"]
-
-    # This ensures that it will work for a single item
-    purchase_each.loc[purchase_each.index.max() + 1] = ("dummy", 0)
-
-    ewm = (
-        purchase_each.groupby("item")
-        .apply(lambda x: x["price_per"].ewm(span=100).mean())
-        .reset_index()
-    )
-    purchase_rolling = purchase_each.join(ewm, rsuffix="_rolling")
-    purchase_rolling = purchase_rolling.drop_duplicates("item", keep="last")
-    purchase_rolling = purchase_rolling.set_index("item")["price_per_rolling"].astype(
-        int
-    )
-
-    mat_prices = item_skeleton.join(purchase_rolling).join(item_prices)
-
-    mat_prices["material_price"] = (
-        mat_prices["price_per_rolling"]
-        .fillna(mat_prices["bbpred_price"])
-        .fillna(mat_prices["user_vendor_price"])
-        .astype(int)
-    )
-
-    user_items = cfg.ui.copy()
+    mat_prices["material_make_cost"] = 0
 
     # Determine raw material cost for manufactured items
-    item_costs = {}
-    for item_name, item_details in user_items.items():
+    for item_name, item_details in cfg.ui.items():
         material_cost = 0
         user_made_from = item_details.get("made_from", {})
         if user_made_from:
             for ingredient, count in user_made_from.items():
-                material_cost += mat_prices.loc[ingredient, "material_price"] * count
+                material_cost += (
+                    mat_prices.loc[ingredient, "material_buyout_cost"] * count
+                )
         else:
-            material_cost = mat_prices.loc[item_name, "material_price"]
-        item_costs[item_name] = int(material_cost)
+            material_cost = mat_prices.loc[item_name, "material_buyout_cost"]
+        mat_prices.loc[item_name, "material_make_cost"] = int(material_cost)
 
-    material_costs = pd.DataFrame.from_dict(item_costs, orient="index")
-    material_costs.columns = ["bbpred_matcosts"]
-    io.writer(material_costs, "intermediate", "bbpred_matcosts", "parquet")
+    mat_prices = mat_prices[["material_buyout_cost", "material_make_cost"]]
+    io.writer(mat_prices, "intermediate", "mat_prices", "parquet")
 
 
 def create_item_inventory() -> None:
@@ -209,7 +181,7 @@ def analyse_replenishment() -> None:
     # Update replenish list with user_made_from
     for item, row in replenish.iterrows():
         if row["replenish_qty"] > 0:
-            for ingredient, count in user_items[item].get("user_made_from", {}).items():
+            for ingredient, count in user_items[item].get("made_from", {}).items():
                 replenish.loc[ingredient, "replenish_qty"] += (
                     count * row["replenish_qty"]
                 )
@@ -242,14 +214,14 @@ def create_item_facts() -> None:
 def merge_item_table() -> None:
     """Combine item information into single master table."""
     item_skeleton = io.reader("cleaned", "item_skeleton", "parquet")
-    material_costs = io.reader("intermediate", "bbpred_matcosts", "parquet")
+    mat_prices = io.reader("intermediate", "mat_prices", "parquet")
     item_facts = io.reader("cleaned", "item_facts", "parquet")
     item_inventory = io.reader("intermediate", "item_inventory", "parquet")
     predicted_prices = io.reader("intermediate", "predicted_prices", "parquet")
     replenish = io.reader("intermediate", "replenish", "parquet")
 
     item_table = (
-        item_skeleton.join(material_costs)
+        item_skeleton.join(mat_prices)
         .join(predicted_prices)
         .join(item_inventory)
         .join(item_facts)
