@@ -139,3 +139,8 @@ def enumerate_quantities(
     ]
     new_df = pd.DataFrame(new_cols, index=cols).T
     return new_df
+
+
+def user_item_filter(field: str) -> List[str, Any]:
+    """Returns user items filtered by a field."""
+    return [k for k, v in cfg.ui.items() if v.get(field)]

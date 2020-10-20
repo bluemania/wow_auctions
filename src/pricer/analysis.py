@@ -71,9 +71,8 @@ def analyse_material_cost() -> None:
         ["item", "timestamp"]
     )
 
-    purchase_each = utils.enumerate_quantities(
-        bean_purchases, cols=["item", "buyout_per"], qty_col="qty"
-    )
+    cols = ["item", "buyout_per"]
+    purchase_each = utils.enumerate_quantities(bean_purchases, cols=cols, qty_col="qty")
     purchase_each.columns = ["item", "price_per"]
 
     # This ensures that it will work for a single item
@@ -251,9 +250,8 @@ def analyse_listings() -> None:
         "bbpred_std"
     ]
 
-    listing_each = utils.enumerate_quantities(
-        ranges, cols=["item", "price_per", "pred_z"], qty_col="quantity"
-    )
+    cols = ["item", "price_per", "pred_z"]
+    listing_each = utils.enumerate_quantities(ranges, cols=cols)
 
     io.writer(listing_each, "intermediate", "listing_each", "parquet")
 
