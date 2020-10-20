@@ -16,7 +16,7 @@ app.config["data_path"] = Path(app.root_path).parents[2].joinpath("data")
 
 try:
     item_icon_manifest = io.reader("item_icons", "_manifest", "json")
-    item_reporting = io.reader("reporting", "item_reporting", "json")
+
 except FileNotFoundError:
     logger.exception("Reporting files not present, unable to start webserver")
 
@@ -48,6 +48,7 @@ def home() -> Any:
 @app.route("/<path:item_name>")
 def item_report(item_name: str) -> Any:
     """Return info on an item."""
+    item_reporting = io.reader("reporting", "item_reporting", "json")
     item_report = item_reporting.get(item_name, None)
     return render_template(
         "item_reporting.html", item_name=item_name, item_report=item_report

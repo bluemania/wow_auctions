@@ -50,8 +50,7 @@ auc_listings_raw_schema = pa.DataFrameSchema(
         25: Column(pa.String, nullable=True),
         26: Column(pa.String, nullable=True),
         27: Column(pa.String, nullable=True),
-    },
-    strict=True,
+    }
 )
 
 auc_listings_schema = pa.DataFrameSchema(
