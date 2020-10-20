@@ -74,10 +74,11 @@ def produce_item_reporting() -> None:
         sell_policy, item_table_x, how="left", left_index=True, right_index=True
     )
 
+    MAX_LISTINGS = cfg.us["analysis"]["MAX_LISTINGS_PROBABILITY"]
     for item in item_info.index:
         plt.figure()
         listing_profits[item].plot(title=item)
-        pd.Series([sell_policy.loc[item, "feasible_profit"]] * 1000).plot()
+        pd.Series([sell_policy.loc[item, "feasible_profit"]] * MAX_LISTINGS).plot()
         plt.savefig(f"data/reporting/feasible/{item}.png")
         plt.close()
 

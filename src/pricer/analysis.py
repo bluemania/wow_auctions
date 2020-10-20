@@ -234,10 +234,9 @@ def merge_item_table() -> None:
 def analyse_listings() -> None:
     """Convert live listings into single items."""
     auc_listings = io.reader("cleaned", "auc_listings", "parquet")
-    predicted_prices = io.reader("intermediate", "predicted_prices", "parquet")
+    auc_listings = auc_listings[auc_listings["item"].isin(cfg.ui)]
 
-    user_items = cfg.ui.copy()
-    auc_listings = auc_listings[auc_listings["item"].isin(user_items)]
+    predicted_prices = io.reader("intermediate", "predicted_prices", "parquet")
 
     ranges = pd.merge(
         auc_listings,
@@ -247,28 +246,26 @@ def analyse_listings() -> None:
         right_index=True,
         validate="m:1",
     )
-    # TODO pred_z needs renaming
-    ranges["pred_z"] = (ranges["price_per"] - ranges["bbpred_price"]) / ranges[
+    ranges["price_z"] = (ranges["price_per"] - ranges["bbpred_price"]) / ranges[
         "bbpred_std"
     ]
 
-    cols = ["item", "price_per", "pred_z"]
+    cols = ["item", "price_per", "price_z"]
     listing_each = utils.enumerate_quantities(ranges, cols=cols)
+    listing_each.columns = ["item", "list_price_per", "list_price_z"]
 
     io.writer(listing_each, "intermediate", "listing_each", "parquet")
 
 
-def predict_volume_sell_probability(
-    dur_char: str = "m", MAX_LISTINGS: int = 1000
-) -> None:
+def predict_volume_sell_probability(dur_char: str = "m") -> None:
     """Expected volume changes as a probability of sale given BB recent history."""
     bb_fortnight = io.reader("cleaned", "bb_fortnight", "parquet")
-
     user_sells = utils.user_item_filter("Sell")
+    MAX_LISTINGS = cfg.us["analysis"]["MAX_LISTINGS_PROBABILITY"]
 
     duration_mins = utils.duration_str_to_mins(dur_char)
     polls = int(duration_mins / 60 / 2)
-    logger.debug(f"{polls} polls")
+    logger.debug(f"Analysing volume sell prob based on {polls} snapshot periods")
 
     item_volume_change_probability = pd.DataFrame(columns=user_sells)
     for item in user_sells:
@@ -305,10 +302,10 @@ def predict_volume_sell_probability(
 
         item_volume_change_probability[item] = probability.sort_index()
 
-    item_volume_change_probability.index.name = "rank"
+    item_volume_change_probability.index.name = "sell_rank"
     item_volume_change_probability.columns.name = "item"
     item_volume_change_probability = item_volume_change_probability.stack()
-    item_volume_change_probability.name = "probability"
+    item_volume_change_probability.name = "sell_probability"
     item_volume_change_probability = item_volume_change_probability.reset_index()
 
     io.writer(

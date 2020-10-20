@@ -30,14 +30,16 @@ def analyse_buy_policy(MAX_BUY_STD: int = 2) -> None:
 
     listing_each = io.reader("intermediate", "listing_each", "parquet")
 
-    listing_each = listing_each.sort_values("price_per")
+    listing_each = listing_each.sort_values("list_price_per")
 
     rank_list = listing_each.join(buy_policy, on="item").dropna()
 
-    rank_list["rank"] = rank_list.groupby("item")["price_per"].rank(method="max")
+    rank_list["sell_rank"] = rank_list.groupby("item")["list_price_per"].rank(
+        method="max"
+    )
 
     rank_list = rank_list.drop_duplicates()
-    rank_list["updated_rank"] = rank_list["replenish_qty"] - rank_list["rank"]
+    rank_list["updated_rank"] = rank_list["replenish_qty"] - rank_list["sell_rank"]
     rank_list["updated_replenish_z"] = (
         rank_list["updated_rank"] / rank_list["user_std_holding"]
     )
@@ -46,10 +48,10 @@ def analyse_buy_policy(MAX_BUY_STD: int = 2) -> None:
         upper=MAX_BUY_STD
     )
 
-    rank_list = rank_list[rank_list["updated_replenish_z"] > rank_list["pred_z"]]
+    rank_list = rank_list[rank_list["updated_replenish_z"] > rank_list["list_price_z"]]
     io.writer(rank_list, "reporting", "buy_rank", "parquet")
 
-    buy_policy["buy_price"] = rank_list.groupby("item")["price_per"].max()
+    buy_policy["buy_price"] = rank_list.groupby("item")["list_price_per"].max()
     buy_policy["buy_price"] = buy_policy["buy_price"].fillna(1).astype(int)
 
     buy_policy.index.name = "item"
@@ -187,35 +189,42 @@ def analyse_sell_policy(
         lambda x: norm.cdf(x)
     )
 
-    listing_each = listing_each[listing_each["pred_z"] < MAX_STD]
-    listing_each = listing_each.sort_values(["item", "price_per"])
-    listing_each["rank"] = (
-        listing_each.groupby("item")["pred_z"].rank(method="first").astype(int) - 1
+    listing_each = listing_each[listing_each["list_price_z"] < MAX_STD]
+    listing_each = listing_each.sort_values(["item", "list_price_per"])
+    listing_each["sell_rank"] = (
+        listing_each.groupby("item")["list_price_z"].rank(method="first").astype(int)
+        - 1
     )
 
     listing_each = pd.merge(
-        item_volume_change_probability, listing_each, how="left", on=["item", "rank"]
+        item_volume_change_probability,
+        listing_each,
+        how="left",
+        on=["item", "sell_rank"],
     )
     listing_each = listing_each.set_index(["item"])
-    listing_each["pred_z"] = listing_each["pred_z"].fillna(MAX_STD)
+    listing_each["list_price_z"] = listing_each["list_price_z"].fillna(MAX_STD)
 
     gouge_price = sell_items["bbpred_price"] + (sell_items["bbpred_std"] * MAX_STD)
 
-    listing_each["price_per"] = (
-        listing_each["price_per"].fillna(gouge_price).astype(int)
+    listing_each["list_price_per"] = (
+        listing_each["list_price_per"].fillna(gouge_price).astype(int)
     )
-    listing_each = listing_each.reset_index().sort_values(["item", "rank"])
+    listing_each = listing_each.reset_index().sort_values(["item", "sell_rank"])
 
     listing_profits = pd.merge(
         listing_each, sell_items, how="left", left_on="item", right_index=True
     )
 
-    listing_profits["proposed_buy"] = listing_profits["price_per"] - 9
+    listing_profits["proposed_buy"] = listing_profits["list_price_per"] - 9
 
     listing_profits["estimated_profit"] = (
         (listing_profits["proposed_buy"] * 0.95 - listing_profits["material_make_cost"])
-        * (listing_profits["probability"] ** listing_profits["exponential_percent"])
-    ) - (listing_profits["item_deposit"] * (1 - listing_profits["probability"]))
+        * (
+            listing_profits["sell_probability"]
+            ** listing_profits["exponential_percent"]
+        )
+    ) - (listing_profits["item_deposit"] * (1 - listing_profits["sell_probability"]))
 
     best_profits_ind = listing_profits.groupby("item")["estimated_profit"].idxmax()
     sell_policy = listing_profits.loc[best_profits_ind]
@@ -264,7 +273,7 @@ def analyse_sell_policy(
 
     io.writer(sell_policy, "outputs", "sell_policy", "parquet")
 
-    listing_profits = listing_profits.set_index(["rank", "item"])[
+    listing_profits = listing_profits.set_index(["sell_rank", "item"])[
         "estimated_profit"
     ].unstack()
     io.writer(listing_profits, "reporting", "listing_profits", "parquet")
