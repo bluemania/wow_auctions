@@ -58,6 +58,36 @@ def _predict_item_prices(
     return predicted_prices
 
 
+def analyse_rolling_buyout() -> None:
+    """Builds rolling average of user's auction purchases using beancounter data."""
+    bean_purchases = io.reader("cleaned", "bean_purchases", "parquet")
+
+    bean_buys = bean_purchases["item"].isin(utils.user_item_filter("Buy"))
+    bean_purchases = bean_purchases[bean_buys].sort_values(["item", "timestamp"])
+
+    cols = ["item", "buyout_per"]
+    purchase_each = utils.enumerate_quantities(bean_purchases, cols=cols, qty_col="qty")
+
+    # Needed to ensure that groupby will work for a single item
+    purchase_each.loc[purchase_each.index.max() + 1] = ("dummy", 0)
+
+    SPAN = cfg.us["analysis"]["ROLLING_BUYOUT_SPAN"]
+    ewm = (
+        purchase_each.groupby("item")
+        .apply(lambda x: x["buyout_per"].ewm(span=SPAN).mean())
+        .reset_index()
+    )
+
+    # Get the latest value
+    bean_rolling_buyout = ewm.loc[ewm.groupby("item")["level_1"].max()].set_index(
+        "item"
+    )[["buyout_per"]]
+
+    bean_rolling_buyout = bean_rolling_buyout.drop("dummy").astype(int)
+    bean_rolling_buyout.columns = ["bean_rolling_buyout"]
+    io.writer(bean_rolling_buyout, "intermediate", "bean_rolling_buyout", "parquet")
+
+
 def analyse_material_cost() -> None:
     """Analyse cost of materials for items, using purchase history or BB predicted price."""
     bean_purchases = io.reader("cleaned", "bean_purchases", "parquet")
@@ -262,7 +292,7 @@ def predict_volume_sell_probability(
     """Expected volume changes as a probability of sale given BB recent history."""
     bb_fortnight = io.reader("cleaned", "bb_fortnight", "parquet")
 
-    user_sells = [k for k, v in cfg.ui.items() if v.get("Sell")]
+    user_sells = utils.user_item_filter("Sell")
 
     duration_mins = utils.duration_str_to_mins(dur_char)
     polls = int(duration_mins / 60 / 2)

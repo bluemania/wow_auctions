@@ -37,6 +37,7 @@ def run_analytics(stack: int = 5, max_sell: int = 20, duration: str = "m") -> No
     analysis.create_item_facts()
 
     analysis.predict_item_prices()
+    analysis.analyse_rolling_buyout()
     analysis.analyse_material_cost()
     analysis.analyse_listings()
     analysis.analyse_replenishment()

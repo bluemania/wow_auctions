@@ -141,6 +141,6 @@ def enumerate_quantities(
     return new_df
 
 
-def user_item_filter(field: str) -> List[str, Any]:
+def user_item_filter(field: str) -> List[str]:
     """Returns user items filtered by a field."""
     return [k for k, v in cfg.ui.items() if v.get(field)]

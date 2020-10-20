@@ -20,6 +20,7 @@ def test_e2e() -> None:
     analysis.create_item_facts()
 
     analysis.predict_item_prices()
+    analysis.analyse_rolling_buyout()
     analysis.analyse_material_cost()
     analysis.analyse_listings()
     analysis.analyse_replenishment()
