@@ -1,6 +1,6 @@
 """Analyses cleaned data sources to form intermediate tables."""
 import logging
-from typing import List
+from typing import Any, Dict
 
 from numpy import inf
 import pandas as pd
@@ -11,30 +11,39 @@ from pricer import config as cfg, io, utils
 logger = logging.getLogger(__name__)
 
 
-def predict_item_prices(quantile: float = 0.025) -> None:
+def predict_item_prices() -> None:
     """Analyse exponential average mean and std of items given 14 day, 2 hour history."""
     bb_fortnight = io.reader("cleaned", "bb_fortnight", "parquet")
-
     user_items = cfg.ui.copy()
 
+    predicted_prices = _predict_item_prices(bb_fortnight, user_items)
+    io.writer(predicted_prices, "intermediate", "predicted_prices", "parquet")
+
+
+def _predict_item_prices(
+    bb_fortnight: pd.DataFrame, user_items: Dict[str, Any]
+) -> pd.DataFrame:
     # Work out if an item is auctionable, or get default price
     item_prices = pd.DataFrame()
     for item_name, item_details in user_items.items():
-        vendor_price = item_details.get("vendor_price")
+        user_vendor_price = item_details.get("vendor_price")
 
-        if vendor_price:
-            item_prices[item_name] = vendor_price
+        if user_vendor_price:
+            item_prices.loc[item_name, "bbpred_price"] = user_vendor_price
+            item_prices.loc[item_name, "bbpred_std"] = 0
         else:
+            q = cfg.us["analysis"]["ITEM_PRICE_OUTLIER_CAP"]
             df = bb_fortnight[bb_fortnight["item"] == item_name]
             df["silver"] = df["silver"].clip(
-                lower=df["silver"].quantile(quantile),
-                upper=df["silver"].quantile(1 - quantile),
+                lower=df["silver"].quantile(q), upper=df["silver"].quantile(1 - q),
             )
             try:
-                item_prices.loc[item_name, "pred_price"] = int(
+                item_prices.loc[item_name, "bbpred_price"] = int(
                     df["silver"].ewm(alpha=0.2).mean().iloc[-1]
                 )
-                item_prices.loc[item_name, "pred_std"] = df["silver"].std().astype(int)
+                item_prices.loc[item_name, "bbpred_std"] = (
+                    df["silver"].std().astype(int)
+                )
             except IndexError:
                 logging.exception(
                     f"""Price prediction problem for {item_name}.
@@ -43,90 +52,71 @@ def predict_item_prices(quantile: float = 0.025) -> None:
 
     qty_df = bb_fortnight[bb_fortnight["snapshot"] == bb_fortnight["snapshot"].max()]
     qty_df = qty_df.set_index("item")["quantity"]
-    qty_df.name = "pred_quantity"
+    qty_df.name = "bbpred_quantity"
 
     predicted_prices = item_prices.join(qty_df).fillna(0).astype(int)
-    io.writer(predicted_prices, "intermediate", "predicted_prices", "parquet")
+    return predicted_prices
 
 
-def analyse_listing_minprice() -> None:
-    """Determine current Auctions minimum price. TODO Is this needed?"""
-    auc_listings = io.reader("cleaned", "auc_listings", "parquet")
+def analyse_rolling_buyout() -> None:
+    """Builds rolling average of user's auction purchases using beancounter data."""
+    bean_purchases = io.reader("cleaned", "bean_purchases", "parquet")
 
-    # Note this SHOULD be a simple groupby min, but getting 0's for some strange reason!
-    item_mins = {}
-    for item in auc_listings["item"].unique():
-        x = auc_listings[(auc_listings["item"] == item)]
-        item_mins[item] = int(x["price_per"].min())
+    bean_buys = bean_purchases["item"].isin(utils.user_item_filter("Buy"))
+    bean_purchases = bean_purchases[bean_buys].sort_values(["item", "timestamp"])
 
-    listings_minprice = pd.DataFrame(pd.Series(item_mins)).reset_index()
-    listings_minprice.columns = ["item", "listing_minprice"]
-    io.writer(listings_minprice, "intermediate", "listings_minprice", "parquet")
+    cols = ["item", "buyout_per"]
+    purchase_each = utils.enumerate_quantities(bean_purchases, cols=cols, qty_col="qty")
+
+    # Needed to ensure that groupby will work for a single item
+    purchase_each.loc[purchase_each.index.max() + 1] = ("dummy", 0)
+
+    SPAN = cfg.us["analysis"]["ROLLING_BUYOUT_SPAN"]
+    ewm = (
+        purchase_each.groupby("item")
+        .apply(lambda x: x["buyout_per"].ewm(span=SPAN).mean())
+        .reset_index()
+    )
+    # Get the latest item value
+    latest_item = ewm.groupby("item")["level_1"].max()
+    bean_rolling_buyout = ewm.loc[latest_item].set_index("item")[["buyout_per"]]
+
+    bean_rolling_buyout = bean_rolling_buyout.drop("dummy").astype(int)
+    bean_rolling_buyout.columns = ["bean_rolling_buyout"]
+    io.writer(bean_rolling_buyout, "intermediate", "bean_rolling_buyout", "parquet")
 
 
 def analyse_material_cost() -> None:
     """Analyse cost of materials for items, using purchase history or BB predicted price."""
-    bean_purchases = io.reader("cleaned", "bean_purchases", "parquet")
-    item_skeleton = io.reader("intermediate", "item_skeleton", "parquet")
+    bean_rolling_buyout = io.reader("intermediate", "bean_rolling_buyout", "parquet")
     item_prices = io.reader("intermediate", "predicted_prices", "parquet")
+    mat_prices = item_prices.join(bean_rolling_buyout)
 
-    user_items = cfg.ui.copy()
-    user_buys = [k for k, v in user_items.items() if v.get("Buy")]
+    r = cfg.us["analysis"]["BB_MAT_PRICE_RATIO"]
 
-    bean_purchases = bean_purchases[bean_purchases["item"].isin(user_buys)].sort_values(
-        ["item", "timestamp"]
-    )
+    # Material costs are taken as a ratio of booty bay prices, and (recent) actual buyouts
+    mat_prices["material_buyout_cost"] = (
+        mat_prices["bean_rolling_buyout"].fillna(mat_prices["bbpred_price"]) * (1 - r)
+        + (mat_prices["bbpred_price"] * r)
+    ).astype(int)
 
-    item: List = sum(
-        bean_purchases.apply(lambda x: [x["item"]] * x["qty"], axis=1).tolist(), []
-    )
-    price_per: List = sum(
-        bean_purchases.apply(lambda x: [x["buyout_per"]] * x["qty"], axis=1).tolist(),
-        [],
-    )
-    purchase_each = pd.DataFrame([item, price_per], index=["item", "price_per"]).T
-
-    # This ensures that it will work for a single item
-    purchase_each.loc[purchase_each.index.max() + 1] = ("dummy", 0)
-
-    ewm = (
-        purchase_each.groupby("item")
-        .apply(lambda x: x["price_per"].ewm(span=100).mean())
-        .reset_index()
-    )
-    purchase_rolling = purchase_each.join(ewm, rsuffix="_rolling")
-    purchase_rolling = purchase_rolling.drop_duplicates("item", keep="last")
-    purchase_rolling = purchase_rolling.set_index("item")["price_per_rolling"].astype(
-        int
-    )
-
-    item_skeleton.index.name = "item"
-    mat_prices = item_skeleton.join(purchase_rolling).join(item_prices)
-
-    mat_prices["material_price"] = (
-        mat_prices["price_per_rolling"]
-        .fillna(mat_prices["pred_price"])
-        .fillna(mat_prices["vendor_price"])
-        .astype(int)
-    )
-
-    user_items = cfg.ui.copy()
+    mat_prices["material_make_cost"] = 0
 
     # Determine raw material cost for manufactured items
-    item_costs = {}
-    for item_name, item_details in user_items.items():
+    for item_name, item_details in cfg.ui.items():
         material_cost = 0
-        made_from = item_details.get("made_from", {})
-        if made_from:
-            for ingredient, count in made_from.items():
-                material_cost += mat_prices.loc[ingredient, "material_price"] * count
+        user_made_from = item_details.get("made_from", {})
+        if user_made_from:
+            for ingredient, count in user_made_from.items():
+                material_cost += (
+                    mat_prices.loc[ingredient, "material_buyout_cost"] * count
+                )
         else:
-            material_cost = mat_prices.loc[item_name, "material_price"]
-        item_costs[item_name] = int(material_cost)
+            material_cost = mat_prices.loc[item_name, "material_buyout_cost"]
+        mat_prices.loc[item_name, "material_make_cost"] = int(material_cost)
 
-    material_costs = pd.DataFrame.from_dict(item_costs, orient="index").reset_index()
-    material_costs.columns = ["item", "material_costs"]
-    io.writer(material_costs, "intermediate", "material_costs", "parquet")
+    mat_prices = mat_prices[["material_buyout_cost", "material_make_cost"]]
+    io.writer(mat_prices, "intermediate", "mat_prices", "parquet")
 
 
 def create_item_inventory() -> None:
@@ -175,13 +165,78 @@ def create_item_inventory() -> None:
     io.writer(item_inventory, "intermediate", "item_inventory", "parquet")
 
 
+def analyse_replenishment() -> None:
+    """Determine the demand for item replenishment."""
+    item_skeleton = io.reader("cleaned", "item_skeleton", "parquet")
+    item_inventory = io.reader("intermediate", "item_inventory", "parquet")
+
+    replenish = item_skeleton.join(item_inventory).fillna(0).astype(int)
+
+    user_items = cfg.ui.copy()
+
+    replenish["replenish_qty"] = (
+        replenish["user_mean_holding"] - replenish["inv_total_all"]
+    )
+
+    # Update replenish list with user_made_from
+    for item, row in replenish.iterrows():
+        if row["replenish_qty"] > 0:
+            for ingredient, count in user_items[item].get("made_from", {}).items():
+                replenish.loc[ingredient, "replenish_qty"] += (
+                    count * row["replenish_qty"]
+                )
+
+    replenish["replenish_z"] = (
+        replenish["replenish_qty"] / replenish["user_std_holding"]
+    )
+    replenish["replenish_z"] = (
+        replenish["replenish_z"].replace([inf, -inf], 0).fillna(0)
+    )
+
+    replenish = replenish[["replenish_qty", "replenish_z"]]
+    io.writer(replenish, "intermediate", "replenish", "parquet")
+
+
+def create_item_facts() -> None:
+    """Collate simple item facts."""
+    item_skeleton = io.reader("cleaned", "item_skeleton", "parquet")
+    bb_deposit = io.reader("cleaned", "bb_deposit", "parquet")
+    item_ids = utils.get_item_ids()
+
+    item_facts = item_skeleton.join(bb_deposit)[["item_deposit"]].join(
+        pd.Series(item_ids, name="item_id")
+    )
+    item_facts = item_facts.fillna(0).astype(int)
+
+    io.writer(item_facts, "cleaned", "item_facts", "parquet")
+
+
+def merge_item_table() -> None:
+    """Combine item information into single master table."""
+    item_skeleton = io.reader("cleaned", "item_skeleton", "parquet")
+    mat_prices = io.reader("intermediate", "mat_prices", "parquet")
+    item_facts = io.reader("cleaned", "item_facts", "parquet")
+    item_inventory = io.reader("intermediate", "item_inventory", "parquet")
+    predicted_prices = io.reader("intermediate", "predicted_prices", "parquet")
+    replenish = io.reader("intermediate", "replenish", "parquet")
+
+    item_table = (
+        item_skeleton.join(mat_prices)
+        .join(predicted_prices)
+        .join(item_inventory)
+        .join(item_facts)
+        .join(replenish)
+    ).fillna(0)
+
+    io.writer(item_table, "intermediate", "item_table", "parquet")
+
+
 def analyse_listings() -> None:
     """Convert live listings into single items."""
     auc_listings = io.reader("cleaned", "auc_listings", "parquet")
-    predicted_prices = io.reader("intermediate", "predicted_prices", "parquet")
+    auc_listings = auc_listings[auc_listings["item"].isin(cfg.ui)]
 
-    user_items = cfg.ui.copy()
-    auc_listings = auc_listings[auc_listings["item"].isin(user_items)]
+    predicted_prices = io.reader("intermediate", "predicted_prices", "parquet")
 
     ranges = pd.merge(
         auc_listings,
@@ -191,97 +246,26 @@ def analyse_listings() -> None:
         right_index=True,
         validate="m:1",
     )
+    ranges["price_z"] = (ranges["price_per"] - ranges["bbpred_price"]) / ranges[
+        "bbpred_std"
+    ]
 
-    ranges["pred_z"] = (ranges["price_per"] - ranges["pred_price"]) / ranges["pred_std"]
-
-    item: List = sum(
-        ranges.apply(lambda x: [x["item"]] * x["quantity"], axis=1).tolist(), []
-    )
-    price_per: List = sum(
-        ranges.apply(lambda x: [x["price_per"]] * x["quantity"], axis=1).tolist(), []
-    )
-    z: List = sum(
-        ranges.apply(lambda x: [x["pred_z"]] * x["quantity"], axis=1).tolist(), []
-    )
-
-    listing_each = pd.DataFrame(
-        [item, price_per, z], index=["item", "price_per", "pred_z"]
-    ).T
+    cols = ["item", "price_per", "price_z"]
+    listing_each = utils.enumerate_quantities(ranges, cols=cols)
+    listing_each.columns = ["item", "list_price_per", "list_price_z"]
 
     io.writer(listing_each, "intermediate", "listing_each", "parquet")
 
 
-def analyse_replenishment() -> None:
-    """Determine the demand for item replenishment."""
-    item_skeleton = io.reader("intermediate", "item_skeleton", "parquet")
-    item_inventory = io.reader("intermediate", "item_inventory", "parquet")
-
-    item_skeleton.index.name = "item"
-    replenish = item_skeleton.join(item_inventory).fillna(0).astype(int)
-
-    user_items = cfg.ui.copy()
-
-    replenish["replenish_qty"] = replenish["mean_holding"] - replenish["inv_total_all"]
-
-    # Update replenish list with made_from
-    for item, row in replenish.iterrows():
-        if row["replenish_qty"] > 0:
-            for ingredient, count in user_items[item].get("made_from", {}).items():
-                replenish.loc[ingredient, "replenish_qty"] += (
-                    count * row["replenish_qty"]
-                )
-
-    replenish["replenish_z"] = replenish["replenish_qty"] / replenish["std_holding"]
-    replenish["replenish_z"] = (
-        replenish["replenish_z"].replace([inf, -inf], 0).fillna(0)
-    )
-
-    replenish = replenish[["replenish_qty", "replenish_z"]].reset_index()
-    io.writer(replenish, "intermediate", "replenish", "parquet")
-
-
-def create_item_table() -> None:
-    """Combine item information into single master table."""
-    item_skeleton = io.reader("intermediate", "item_skeleton", "parquet")
-    material_costs = io.reader("intermediate", "material_costs", "parquet")
-    bb_deposit = io.reader("cleaned", "bb_deposit", "parquet")
-    listings_minprice = io.reader("intermediate", "listings_minprice", "parquet")
-    item_inventory = io.reader("intermediate", "item_inventory", "parquet")
-    predicted_prices = io.reader("intermediate", "predicted_prices", "parquet")
-    replenish = io.reader("intermediate", "replenish", "parquet")
-
-    item_table = (
-        item_skeleton.join(material_costs.set_index("item"))
-        .join(listings_minprice.set_index("item"))
-        .join(predicted_prices)
-        .join(item_inventory)
-        .join(bb_deposit)
-        .fillna(0)
-        .astype(int)
-        .join(replenish.set_index("item"))
-    )
-
-    item_ids = utils.get_item_ids()
-
-    item_table["item_id"] = item_table.index
-    item_table["item_id"] = item_table["item_id"].apply(
-        lambda x: item_ids[x] if x in item_ids else 0
-    )
-
-    io.writer(item_table, "intermediate", "item_table", "parquet")
-
-
-def predict_volume_sell_probability(
-    dur_char: str = "m", MAX_LISTINGS: int = 1000
-) -> None:
+def predict_volume_sell_probability(dur_char: str = "m") -> None:
     """Expected volume changes as a probability of sale given BB recent history."""
     bb_fortnight = io.reader("cleaned", "bb_fortnight", "parquet")
-
-    user_sells = [k for k, v in cfg.ui.items() if v.get("Sell")]
+    user_sells = utils.user_item_filter("Sell")
+    MAX_LISTINGS = cfg.us["analysis"]["MAX_LISTINGS_PROBABILITY"]
 
     duration_mins = utils.duration_str_to_mins(dur_char)
     polls = int(duration_mins / 60 / 2)
-    logger.debug(f"{polls} polls")
+    logger.debug(f"Analysing volume sell prob based on {polls} snapshot periods")
 
     item_volume_change_probability = pd.DataFrame(columns=user_sells)
     for item in user_sells:
@@ -318,10 +302,10 @@ def predict_volume_sell_probability(
 
         item_volume_change_probability[item] = probability.sort_index()
 
-    item_volume_change_probability.index.name = "rank"
+    item_volume_change_probability.index.name = "sell_rank"
     item_volume_change_probability.columns.name = "item"
     item_volume_change_probability = item_volume_change_probability.stack()
-    item_volume_change_probability.name = "probability"
+    item_volume_change_probability.name = "sell_probability"
     item_volume_change_probability = item_volume_change_probability.reset_index()
 
     io.writer(

@@ -79,12 +79,10 @@ def get_bb_data() -> None:
     driver = start_driver()
     # Get item_ids for user specified items of interest
     user_items = cfg.ui.copy()
-    user_items.pop("Empty Vial")
-    user_items.pop("Leaded Vial")
-    user_items.pop("Crystal Vial")
+    user_auc_items = {k: v for k, v in user_items.items() if "vendor_price" not in v}
 
     item_ids = utils.get_item_ids()
-    items_ids = {k: v for k, v in item_ids.items() if k in user_items}
+    items_ids = {k: v for k, v in item_ids.items() if k in user_auc_items}
 
     # Get bb data from API
     bb_data: Dict[str, Dict[Any, Any]] = defaultdict(dict)
@@ -134,13 +132,21 @@ def clean_bb_data() -> None:
     bb_alltime_df["date"] = pd.to_datetime(bb_alltime_df["date"])
 
     bb_deposit_df = pd.DataFrame.from_dict(bb_deposit, orient="index")
-    bb_deposit_df.columns = ["deposit"]
+    bb_deposit_df.columns = ["item_deposit"]
     bb_deposit_df.index.name = "item"
 
-    io.writer(bb_fortnight_df, "cleaned", "bb_fortnight", "parquet")
-    io.writer(bb_history_df, "cleaned", "bb_history", "parquet")
-    io.writer(bb_alltime_df, "cleaned", "bb_alltime", "parquet")
-    io.writer(bb_deposit_df, "cleaned", "bb_deposit", "parquet")
+    io.writer(
+        bb_fortnight_df, "cleaned", "bb_fortnight", "parquet", self_schema=True,
+    )
+    io.writer(
+        bb_history_df, "cleaned", "bb_history", "parquet", self_schema=True,
+    )
+    io.writer(
+        bb_alltime_df, "cleaned", "bb_alltime", "parquet", self_schema=True,
+    )
+    io.writer(
+        bb_deposit_df, "cleaned", "bb_deposit", "parquet", self_schema=True,
+    )
 
 
 def get_item_icons() -> None:
@@ -157,7 +163,6 @@ def get_item_icons() -> None:
     url = "https://wow.zamimg.com/images/wow/icons/large/inv_scroll_03.jpg"
     r = requests.get(url)
     io.writer(r.content, "item_icons", "inv_scroll_03", "jpg")
-
     io.writer(item_icons, "item_icons", "_manifest", "json")
 
 
@@ -214,13 +219,18 @@ def clean_arkinventory_data(run_dt: dt) -> None:
     ark_inventory = pd.DataFrame(raw_data)
     ark_inventory.columns = cols
     ark_inventory["timestamp"] = run_dt
-    io.writer(ark_inventory, "cleaned", "ark_inventory", "parquet")
+    io.writer(
+        ark_inventory, "cleaned", "ark_inventory", "parquet", self_schema=True,
+    )
 
     ark_monies = pd.Series(monies)
     ark_monies.name = "monies"
+    ark_monies.index.name = "character"
     ark_monies = pd.DataFrame(ark_monies)
     ark_monies["timestamp"] = run_dt
-    io.writer(ark_monies, "cleaned", "ark_monies", "parquet")
+    io.writer(
+        ark_monies, "cleaned", "ark_monies", "parquet", self_schema=True,
+    )
 
 
 def get_beancounter_data() -> None:
@@ -257,22 +267,24 @@ def clean_beancounter_data() -> None:
     # Setup as pandas dataframe, remove irrelevant columns
     df = pd.DataFrame(parsed)
 
-    bean_purchases = clean_beancounter_purchases(df)
+    bean_purchases = _clean_beancounter_purchases(df)
     io.writer(bean_purchases, "cleaned", "bean_purchases", "parquet")
 
-    failed = clean_beancounter_failed(df)
-    success = clean_beancounter_success(df)
+    failed = _clean_beancounter_failed(df)
+    success = _clean_beancounter_success(df)
 
     bean_results = success.append(failed)
     bean_results["success"] = bean_results["auction_type"].replace(
         {"completedAuctions": 1, "failedAuctions": 0}
     )
-    io.writer(bean_results, "cleaned", "bean_results", "parquet")
+    io.writer(
+        bean_results, "cleaned", "bean_results", "parquet", self_schema=True,
+    )
 
 
-@check_input(schema.beancounter_data_raw_schema)
-@check_output(schema.beancounter_purchases_schema)
-def clean_beancounter_purchases(df: pd.DataFrame) -> pd.DataFrame:
+@check_input(schema.beancounter_raw_schema)
+@check_output(schema.bean_purchases_schema)
+def _clean_beancounter_purchases(df: pd.DataFrame) -> pd.DataFrame:
     """Further processing of purchase beancounter data."""
     purchases = df[df[0] == "completedBidsBuyouts"]
 
@@ -308,8 +320,8 @@ def clean_beancounter_purchases(df: pd.DataFrame) -> pd.DataFrame:
     return purchases
 
 
-@check_input(schema.beancounter_data_raw_schema)
-@check_output(schema.beancounter_posted_schema)
+@check_input(schema.beancounter_raw_schema)
+@check_output(schema.bean_posted_schema)
 def clean_beancounter_posted(df: pd.DataFrame) -> pd.DataFrame:
     """Further processing of posted auction beancounter data."""
     posted = df[df[0] == "postedAuctions"]
@@ -322,7 +334,7 @@ def clean_beancounter_posted(df: pd.DataFrame) -> pd.DataFrame:
         "buyout",
         "bid",
         "duration",
-        "deposit",
+        "item_deposit",
         "timestamp",
         "drop_9",
         "drop_10",
@@ -336,7 +348,7 @@ def clean_beancounter_posted(df: pd.DataFrame) -> pd.DataFrame:
     posted["buyout"] = posted["buyout"].astype(float)
     posted["bid"] = posted["bid"].astype(int)
     posted["duration"] = posted["duration"].astype(int)
-    posted["deposit"] = posted["deposit"].replace("", 0).astype(int)
+    posted["item_deposit"] = posted["item_deposit"].replace("", 0).astype(int)
 
     posted["buyout_per"] = posted["buyout"] / posted["qty"]
     posted["bid_per"] = posted["bid"] / posted["qty"]
@@ -345,9 +357,9 @@ def clean_beancounter_posted(df: pd.DataFrame) -> pd.DataFrame:
     return posted
 
 
-@check_input(schema.beancounter_data_raw_schema)
-@check_output(schema.beancounter_failed_schema)
-def clean_beancounter_failed(df: pd.DataFrame) -> pd.DataFrame:
+@check_input(schema.beancounter_raw_schema)
+@check_output(schema.bean_failed_schema)
+def _clean_beancounter_failed(df: pd.DataFrame) -> pd.DataFrame:
     """Further processing of failed auction beancounter data."""
     failed = df[df[0] == "failedAuctions"]
 
@@ -357,7 +369,7 @@ def clean_beancounter_failed(df: pd.DataFrame) -> pd.DataFrame:
         "seller",
         "qty",
         "drop_4",
-        "deposit",
+        "item_deposit",
         "drop_6",
         "buyout",
         "bid",
@@ -369,7 +381,7 @@ def clean_beancounter_failed(df: pd.DataFrame) -> pd.DataFrame:
     failed.columns = columns
     failed = failed.drop([col for col in columns if "drop_" in col], axis=1)
 
-    col = ["qty", "deposit", "buyout", "bid"]
+    col = ["qty", "item_deposit", "buyout", "bid"]
     failed[col] = failed[col].replace("", 0).astype(int)
 
     failed["buyout_per"] = failed["buyout"] / failed["qty"]
@@ -379,9 +391,9 @@ def clean_beancounter_failed(df: pd.DataFrame) -> pd.DataFrame:
     return failed
 
 
-@check_input(schema.beancounter_data_raw_schema)
-@check_output(schema.beancounter_success_schema)
-def clean_beancounter_success(df: pd.DataFrame) -> pd.DataFrame:
+@check_input(schema.beancounter_raw_schema)
+@check_output(schema.bean_success_schema)
+def _clean_beancounter_success(df: pd.DataFrame) -> pd.DataFrame:
     """Further processing of successful auction beancounter data."""
     success = df[df[0] == "completedAuctions"]
 
@@ -391,7 +403,7 @@ def clean_beancounter_success(df: pd.DataFrame) -> pd.DataFrame:
         "seller",
         "qty",
         "received",
-        "deposit",
+        "item_deposit",
         "ah_cut",
         "buyout",
         "bid",
@@ -403,7 +415,7 @@ def clean_beancounter_success(df: pd.DataFrame) -> pd.DataFrame:
     success.columns = columns
     success = success.drop([col for col in columns if "drop_" in col], axis=1)
 
-    col = ["qty", "received", "deposit", "ah_cut", "buyout", "bid"]
+    col = ["qty", "received", "item_deposit", "ah_cut", "buyout", "bid"]
     success[col] = success[col].replace("", 0).astype(int)
 
     success["received_per"] = success["received"] / success["qty"]
@@ -435,7 +447,7 @@ def get_auctioneer_data() -> None:
 
 @check_input(schema.auc_listings_raw_schema)
 @check_output(schema.auc_listings_schema)
-def process_auctioneer_data(df: pd.DataFrame) -> pd.DataFrame:
+def _process_auctioneer_data(df: pd.DataFrame) -> pd.DataFrame:
     """Performs processing of auctioneer data."""
     auction_timing: Dict[int, int] = {1: 30, 2: 60 * 2, 3: 60 * 12, 4: 60 * 24}
 
@@ -460,7 +472,7 @@ def clean_auctioneer_data() -> None:
     aucscan_data = io.reader("raw", "aucscan_data", "json")
 
     auc_listings_raw = pd.DataFrame(aucscan_data)
-    auc_listings = process_auctioneer_data(auc_listings_raw)
+    auc_listings = _process_auctioneer_data(auc_listings_raw)
 
     # Saves latest scan to intermediate (immediate)
     io.writer(auc_listings, "cleaned", "auc_listings", "parquet")
@@ -468,41 +480,51 @@ def clean_auctioneer_data() -> None:
 
 @check_input(schema.item_skeleton_raw_schema)
 @check_output(schema.item_skeleton_schema)
-def process_item_skeleton(df: pd.DataFrame) -> pd.DataFrame:
+def _process_item_skeleton(df: pd.DataFrame) -> pd.DataFrame:
     """Make transformation to item skeleton."""
-    df["made_from"] = df["made_from"] == df["made_from"]
-
-    int_cols = ["min_holding", "max_holding", "vendor_price"]
+    int_cols = ["user_min_holding", "user_max_holding", "user_vendor_price"]
     df[int_cols] = df[int_cols].fillna(0).astype(int)
 
-    # df["max_sell"] = df["max_sell"].fillna(df["max_holding"]).astype(int)
+    df["user_std_holding"] = (df["user_max_holding"] - df["user_min_holding"]) / cfg.us[
+        "analysis"
+    ]["USER_STD_SPREAD"]
+    df["user_mean_holding"] = (
+        df[["user_min_holding", "user_max_holding"]].mean(axis=1).astype(int)
+    )
 
-    df["std_holding"] = (df["max_holding"] - df["min_holding"]) / 7
-    df["mean_holding"] = df[["min_holding", "max_holding"]].mean(axis=1).astype(int)
+    df["user_Make"] = (df["user_made_from"] == df["user_made_from"]) & (
+        df["user_make_pass"] == 0
+    )
+    df = df.drop("user_made_from", axis=1)
 
-    bool_cols = ["Buy", "Sell", "make_pass"]
+    bool_cols = ["user_Buy", "user_Sell", "user_Make", "user_make_pass"]
     df[bool_cols] = df[bool_cols].fillna(False).astype(int)
     return df
 
 
-def create_item_skeleton() -> None:
+def clean_item_skeleton() -> None:
     """Creates basic dataframe from user items information."""
     user_items = cfg.ui.copy()
     item_skeleton_raw = pd.DataFrame(user_items).T
 
-    for col in [
-        "min_holding",
-        "max_holding",
-        "max_sell",
-        "Buy",
-        "Sell",
-        "made_from",
-        "make_pass",
-        "vendor_price",
-    ]:
+    item_skeleton_raw.columns = ["user_" + x for x in item_skeleton_raw.columns]
+
+    user_items_ensure_columns = [
+        "user_min_holding",
+        "user_max_holding",
+        "user_max_sell",
+        "user_Buy",
+        "user_Sell",
+        "user_Make",
+        "user_made_from",
+        "user_make_pass",
+        "user_vendor_price",
+    ]
+
+    for col in user_items_ensure_columns:
         if col not in item_skeleton_raw:
             item_skeleton_raw[col] = nan
 
-    item_skeleton = process_item_skeleton(item_skeleton_raw)
-
-    io.writer(item_skeleton, "intermediate", "item_skeleton", "parquet")
+    item_skeleton = _process_item_skeleton(item_skeleton_raw)
+    item_skeleton.index.name = "item"
+    io.writer(item_skeleton, "cleaned", "item_skeleton", "parquet")

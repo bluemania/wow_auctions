@@ -23,23 +23,26 @@ def run_analytics(stack: int = 5, max_sell: int = 20, duration: str = "m") -> No
     """Run the main analytics pipeline."""
     run_dt = dt.now().replace(microsecond=0)
     # TODO remove this run_dt crap
+    sources.get_arkinventory_data()
+    sources.get_beancounter_data()
+    sources.get_auctioneer_data()
 
     sources.clean_bb_data()
-    sources.get_arkinventory_data()
     sources.clean_arkinventory_data(run_dt)
-    sources.get_beancounter_data()
     sources.clean_beancounter_data()
-    sources.get_auctioneer_data()
     sources.clean_auctioneer_data()
-    sources.create_item_skeleton()
+    sources.clean_item_skeleton()
+
+    analysis.create_item_inventory()
+    analysis.create_item_facts()
 
     analysis.predict_item_prices()
-    analysis.analyse_listing_minprice()
+    analysis.analyse_rolling_buyout()
     analysis.analyse_material_cost()
-    analysis.create_item_inventory()
     analysis.analyse_listings()
     analysis.analyse_replenishment()
-    analysis.create_item_table()
+
+    analysis.merge_item_table()
     analysis.predict_volume_sell_probability(duration)
 
     campaign.analyse_buy_policy()
@@ -69,6 +72,8 @@ def main() -> None:
     parser.add_argument("-f", help="Start flask webserver", action="store_true")
     parser.add_argument("-n", help="No analysis, skip", action="store_true")
 
+    parser.add_argument("-t", help="Run on test data", action="store_true")
+
     parser.add_argument("-v", help="Verbose mode (info)", action="store_true")
     parser.add_argument("-vv", help="Verbose mode (debug)", action="store_true")
     args = parser.parse_args()
@@ -81,6 +86,11 @@ def main() -> None:
         sources.get_bb_data()
     if args.i:
         sources.get_item_icons()
+    if args.t:
+        """Test environment."""
+        cfg.env = {"basepath": "data/_test"}
+        test_items = ["Mighty Rage Potion", "Gromsblood", "Crystal Vial"]
+        cfg.ui = {k: v for k, v in cfg.ui.items() if k in test_items}
 
     if not args.n:
         run_analytics(stack=args.s, max_sell=args.m, duration=args.d)

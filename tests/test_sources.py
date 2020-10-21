@@ -1,40 +1,7 @@
 """Tests for source.py."""
-from numpy import nan
 import pandas as pd
 
 from pricer import sources
-
-
-def test_item_skeleton() -> None:
-    """It tests nothing useful."""
-    example = {
-        "Elixir of the Mongoose": {
-            "min_holding": nan,
-            "max_holding": 60,
-            "max_sell": nan,
-            "Buy": nan,
-            "Sell": True,
-            "made_from": {
-                "Crystal Vial": 1,
-                "Mountain Silversage": 2,
-                "Plaguebloom": 2,
-            },
-            "make_pass": nan,
-            "vendor_price": nan,
-        },
-        "Sungrass": {
-            "min_holding": nan,
-            "max_holding": 100,
-            "max_sell": nan,
-            "Buy": True,
-            "Sell": True,
-            "made_from": nan,
-            "make_pass": nan,
-            "vendor_price": nan,
-        },
-    }
-    example_df = pd.DataFrame.from_dict(example, orient="index")
-    sources.process_item_skeleton(example_df)
 
 
 def test_auctioneer_data() -> None:
@@ -132,7 +99,7 @@ def test_auctioneer_data() -> None:
         },
     }
     example_df = pd.DataFrame.from_dict(example, orient="index")
-    sources.process_auctioneer_data(example_df)
+    sources._process_auctioneer_data(example_df)
 
 
 def test_clean_beancounter_purchases() -> None:
@@ -185,7 +152,7 @@ def test_clean_beancounter_purchases() -> None:
         },
     }
     example_df = pd.DataFrame.from_dict(example, orient="index")
-    sources.clean_beancounter_purchases(example_df)
+    sources._clean_beancounter_purchases(example_df)
 
 
 def test_clean_beancounter_posted() -> None:
@@ -238,7 +205,7 @@ def test_clean_beancounter_posted() -> None:
         },
     }
     example_df = pd.DataFrame.from_dict(example, orient="index")
-    sources.clean_beancounter_purchases(example_df)
+    sources._clean_beancounter_purchases(example_df)
 
 
 def test_clean_beancounter_failed() -> None:
@@ -291,7 +258,7 @@ def test_clean_beancounter_failed() -> None:
         },
     }
     example_df = pd.DataFrame.from_dict(example, orient="index")
-    sources.clean_beancounter_purchases(example_df)
+    sources._clean_beancounter_purchases(example_df)
 
 
 def test_clean_beancounter_success() -> None:
@@ -344,4 +311,4 @@ def test_clean_beancounter_success() -> None:
         },
     }
     example_df = pd.DataFrame.from_dict(example, orient="index")
-    sources.clean_beancounter_purchases(example_df)
+    sources._clean_beancounter_purchases(example_df)
