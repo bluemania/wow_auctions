@@ -493,7 +493,7 @@ def _process_item_skeleton(df: pd.DataFrame) -> pd.DataFrame:
     )
 
     df["user_Make"] = (df["user_made_from"] == df["user_made_from"]) & (
-        df["user_make_pass"] == 0
+        df["user_make_pass"] != True
     )
     df = df.drop("user_made_from", axis=1)
 
