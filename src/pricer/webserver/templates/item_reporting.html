@@ -116,12 +116,11 @@
 </div>
 
 <div class="row">	
-
-
-	<div class="col-lg-4">
+	<div class="col-lg-6">
+	<img src="{{ url_for('item_listing_plot', item_name=item_name) }}" width="480">
 	</div>
-	<div class="col-lg-4">
-	<img src="{{ url_for('item_plot_profit', item_name=item_name) }}">
+	<div class="col-lg-6">
+	<img src="{{ url_for('item_plot_profit', item_name=item_name) }}" width="480">
 	</div>
 </div>
 {% endblock %}

@@ -3,10 +3,12 @@ import logging
 
 import matplotlib.pyplot as plt  # type: ignore
 import pandas as pd
+import seaborn as sns
 
 from pricer import config as cfg, io
 
 logger = logging.getLogger(__name__)
+sns.set()
 
 
 def have_in_bag() -> str:
@@ -94,13 +96,19 @@ def produce_item_reporting() -> None:
 def produce_listing_items() -> None:
     """Generte the item listing on current AH."""
     listing_each = io.reader("intermediate", "listing_each", "parquet")
-    item_buys = [k for k, v in cfg.ui.items() if v.get("Buy")]
+    item_info = io.reader("reporting", "item_info", "parquet")
 
-    for item_buy in item_buys:
+    for item in cfg.ui:
         plt.figure()
-        listing_item = listing_each[listing_each["item"] == item_buy][
-            "price_per"
-        ].sort_values()
-        listing_item.reset_index(drop=True).plot(title=item_buy)
-        plt.savefig(f"data/reporting/listing_item/{item_buy}.png")
+        list_item = listing_each[
+            (listing_each["item"] == item) & (listing_each["list_price_z"] < 10)
+        ]
+        list_item = list_item["list_price_per"].sort_values().reset_index(drop=True)
+        list_item.plot(title=item)
+
+        pd.Series(
+            [item_info.loc[item, "material_make_cost"]] * list_item.shape[0]
+        ).plot()
+
+        plt.savefig(f"data/reporting/listing_item/{item}.png")
         plt.close()
