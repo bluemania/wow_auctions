@@ -44,6 +44,7 @@ def run_analytics(stack: int = 5, max_sell: int = 20, duration: str = "m") -> No
 
     analysis.merge_item_table()
     analysis.predict_volume_sell_probability(duration)
+    analysis.report_profits()
 
     campaign.analyse_buy_policy()
     campaign.write_buy_policy()
