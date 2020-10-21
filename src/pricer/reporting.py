@@ -15,11 +15,11 @@ def have_in_bag() -> str:
     sell_policy = sell_policy.set_index("item")
 
     sell_policy = sell_policy[
-        sell_policy["estimated_profit"] > sell_policy["feasible_profit"]
+        sell_policy["sell_estimated_profit"] > sell_policy["profit_feasible"]
     ]
 
-    print(sell_policy["estimated_profit"])
-    return sell_policy[["estimated_profit"]].astype(int).to_html()
+    print(sell_policy["sell_estimated_profit"])
+    return sell_policy[["sell_estimated_profit"]].astype(int).to_html()
 
 
 def make_missing() -> str:
@@ -86,7 +86,7 @@ def produce_item_reporting() -> None:
     for item in listing_profits.columns:
         plt.figure()
         listing_profits[item].plot(title=item)
-        pd.Series([sell_policy.loc[item, "feasible_profit"]] * MAX_LISTINGS).plot()
+        pd.Series([sell_policy.loc[item, "profit_feasible"]] * MAX_LISTINGS).plot()
         plt.savefig(f"data/reporting/feasible/{item}.png")
         plt.close()
 
