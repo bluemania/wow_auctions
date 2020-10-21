@@ -1,0 +1,136 @@
+{% extends "template.html" %}
+{% block content %}
+
+
+<h3>
+	<img src="{{ url_for('item_icons', filename=item_name) }}" width="24">
+	{{ item_name }}
+
+</h3>
+<h4>
+	{% if item_report['user_Buy'] %} Buy, {% endif %}
+	{% if item_report['user_Sell'] %} Sell, {% endif %}
+	{% if item_report['user_Make'] %} Make {% endif %}		
+</h4>
+<div class="row">
+	<div class="col-lg-4">
+		<table class="table table-sm">
+			<tr>
+				<td></td>
+				<td>AH main</td>
+				<td>Mule</td>
+				<td>Chars</td>		
+			</tr>
+			{% for location in ['bag', 'bank', 'mail', 'auc'] %}
+			<tr>
+				<td>
+					{{location}}
+				</td>
+				{% for player in ['ahm', 'mule', 'char'] %}
+				<td>
+					{{ item_report["inv_"+player+"_"+location] }}
+				</td>
+				{% endfor %}
+
+			</tr>
+			{% endfor %}
+			<tr>
+				<td>Totals</td>
+				<td>{{item_report['inv_total_ahm']}}</td>
+				<td>{{item_report['inv_total_hold']}}</td>
+				<td><strong>{{item_report['inv_total_all']}}</strong></td>
+			</tr>		
+		</table>
+	</div>
+	<div class="col-lg-2">
+		<table class="table table-sm">
+			<tr>
+				<td>Max sell</td>
+				<td>{{item_report['user_max_sell']}}</td>
+			</tr>
+			<tr>
+				<td>Min hold</td>
+				<td>{{item_report['user_min_holding']}}</td>
+			</tr>
+			<tr>				
+				<td>Mean hold</td>
+				<td>{{item_report['user_mean_holding']}}</td>
+			</tr>
+			<tr>				
+				<td>Max hold</td>
+				<td>{{item_report['user_max_holding']}}</td>
+			</tr>
+			<tr>				
+				<td>Replenish qty</td>
+				<td><strong>{{item_report['replenish_qty']}}</strong></td>
+			</tr>
+			<tr>
+				<td>Replenish Z</td>
+				<td>{{ "%.2f"|format(item_report['replenish_z']) }}</td>
+			</tr>
+		</table>
+	</div>
+	<div class="col-lg-6">
+		<table class="table table-sm">
+			<tr>
+				<td>material_make_cost</td>
+				<td>{{item_report['material_make_cost']}}</td>
+				<td>bbpred_price</td>
+				<td>{{item_report['bbpred_price']}}</td>
+			</tr>
+			<tr>
+				<td>profit_feasible</td>
+				<td>{{item_report['profit_feasible']}}</td>
+				<td>bbpred_quantity</td>
+				<td>{{item_report['bbpred_quantity']}}</td>
+			</tr>
+			<tr>
+				<td>sell_rank</td>
+				<td>{{item_report['sell_rank']}}</td>
+				<td>bbpred_std</td>
+				<td>{{item_report['bbpred_std']}}</td>
+			</tr>
+			<tr>
+				<td>sell_probability</td>
+				<td>{{ "%.2f"|format(item_report['sell_probability'] * 100) }}%</td>
+				<td>list_price_per</td>
+				<td>{{item_report['list_price_per']}}</td>								
+			</tr>
+			<tr>
+				<td>sell_estimated_profit</td>
+				<td>{{ "%.2f"|format(item_report['sell_estimated_profit']) }}</td>
+				<td>list_price_z</td>
+				<td>{{ "%.2f"|format(item_report['list_price_z']) }}</td>				
+			</tr>
+			<tr>
+				<td>sell_bid</td>
+				<td>{{ "%.2f"|format(item_report['sell_bid']) }}</td>
+				<td></td>
+				<td></td>
+			</tr>
+			<tr>
+				<td>sell_buyout</td>
+				<td><strong>{{item_report['sell_buyout']}}</strong></td>
+				<td>buy_price_cap</td>
+				<td><strong>{{item_report['buy_price_cap']}}</strong></td>
+			</tr>
+		</table>
+	</div>
+</div>
+
+<div class="row">	
+	<div class="col-lg-3"><h4>Historic profit</h4>
+	<img src="{{ url_for('item_profit_plot', item_name=item_name) }}">
+	</div>
+	<div class="col-lg-3"><h4>Activity</h4>
+	<img src="{{ url_for('item_activity_plot', item_name=item_name) }}">
+	</div>
+	<div class="col-lg-3"><h4>Sell liklihood</h4>
+	<img src="{{ url_for('item_plot_profit', item_name=item_name) }}">
+	</div>
+	<div class="col-lg-3"><h4>Current AH</h4>
+	<img src="{{ url_for('item_listing_plot', item_name=item_name) }}">
+	</div>
+
+</div>
+{% endblock %}

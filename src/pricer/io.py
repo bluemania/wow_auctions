@@ -8,20 +8,27 @@ import pandas as pd
 from slpp import slpp as lua
 import yaml
 
-from pricer import config as cfg, utils
+from pricer import config as cfg, schema, utils
 
 logger = logging.getLogger(__name__)
 pd.options.mode.chained_assignment = None  # default='warn'
 
 
-def reader(schema: str = "", name: str = "", ftype: str = "", custom: str = "") -> Any:
+def reader(
+    folder: str = "",
+    name: str = "",
+    ftype: str = "",
+    custom: str = "",
+    self_schema: bool = False,
+) -> Any:
     """Standard program writer, allows pathing extensibility i.e. testing or S3."""
     if ftype == "yaml":
         base_path = ""
     else:
         base_path = cfg.env["basepath"]
-    path = Path(base_path, schema, name + "." + ftype)
+    path = Path(base_path, folder, name + "." + ftype)
     logger.debug(f"Reading {name} {ftype} from {path}")
+
     if ftype == "parquet":
         data = pd.read_parquet(path)
     elif ftype == "csv":
@@ -49,15 +56,27 @@ def reader(schema: str = "", name: str = "", ftype: str = "", custom: str = "") 
         with open(path, "r") as yaml_r:
             data = yaml.safe_load(yaml_r)
 
+    if self_schema:
+        getattr(schema, f"{name}_schema").validate(data)
+
     return data
 
 
 def writer(
-    data: Any, schema: str = "", name: str = "", ftype: str = "", custom: str = ""
+    data: Any,
+    folder: str = "",
+    name: str = "",
+    ftype: str = "",
+    custom: str = "",
+    self_schema: bool = False,
 ) -> None:
     """Standard program writer, allows pathing extensibility i.e. testing or S3."""
-    path = Path(cfg.env["basepath"], schema, name + "." + ftype)
+    path = Path(cfg.env["basepath"], folder, name + "." + ftype)
     logger.debug(f"Writing {name} {ftype} to {path}")
+
+    if self_schema:
+        getattr(schema, f"{name}_schema").validate(data)
+
     if ftype == "parquet":
         data.to_parquet(path, compression="gzip")
     elif ftype == "json":
@@ -70,3 +89,6 @@ def writer(
         else:
             with open(path, "w") as lua_w:
                 lua_w.write(utils.dict_to_lua(data))
+    elif ftype == "jpg":
+        with open(path, "wb") as jpg_wb:
+            jpg_wb.write(data)

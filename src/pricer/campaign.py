@@ -17,40 +17,42 @@ def analyse_buy_policy(MAX_BUY_STD: int = 2) -> None:
 
     item_table = io.reader("intermediate", "item_table", "parquet")
 
-    buy_policy = item_table[item_table["Buy"] == True]
+    buy_policy = item_table[item_table["user_Buy"] == True]
     subset_cols = [
-        "pred_price",
-        "pred_std",
+        "bbpred_price",
+        "bbpred_std",
         "inv_total_all",
         "replenish_qty",
-        "std_holding",
+        "user_std_holding",
         "replenish_z",
     ]
     buy_policy = buy_policy[subset_cols]
 
     listing_each = io.reader("intermediate", "listing_each", "parquet")
 
-    listing_each = listing_each.sort_values("price_per")
+    listing_each = listing_each.sort_values("list_price_per")
 
     rank_list = listing_each.join(buy_policy, on="item").dropna()
 
-    rank_list["rank"] = rank_list.groupby("item")["price_per"].rank(method="max")
+    rank_list["sell_rank"] = rank_list.groupby("item")["list_price_per"].rank(
+        method="max"
+    )
 
     rank_list = rank_list.drop_duplicates()
-    rank_list["updated_rank"] = rank_list["replenish_qty"] - rank_list["rank"]
+    rank_list["updated_rank"] = rank_list["replenish_qty"] - rank_list["sell_rank"]
     rank_list["updated_replenish_z"] = (
-        rank_list["updated_rank"] / rank_list["std_holding"]
+        rank_list["updated_rank"] / rank_list["user_std_holding"]
     )
 
     rank_list["updated_replenish_z"] = rank_list["updated_replenish_z"].clip(
         upper=MAX_BUY_STD
     )
 
-    rank_list = rank_list[rank_list["updated_replenish_z"] > rank_list["pred_z"]]
+    rank_list = rank_list[rank_list["updated_replenish_z"] > rank_list["list_price_z"]]
     io.writer(rank_list, "reporting", "buy_rank", "parquet")
 
-    buy_policy["buy_price"] = rank_list.groupby("item")["price_per"].max()
-    buy_policy["buy_price"] = buy_policy["buy_price"].fillna(1).astype(int)
+    buy_policy["buy_price_cap"] = rank_list.groupby("item")["list_price_per"].max()
+    buy_policy["buy_price_cap"] = buy_policy["buy_price_cap"].fillna(1).astype(int)
 
     buy_policy.index.name = "item"
     buy_policy = buy_policy.reset_index()
@@ -59,7 +61,7 @@ def analyse_buy_policy(MAX_BUY_STD: int = 2) -> None:
 
 def encode_buy_campaign(buy_policy: pd.DataFrame) -> Dict[str, Dict[str, Any]]:
     """Encodes buy campaign dataframe into dictionary."""
-    cols = ["item", "buy_price"]
+    cols = ["item", "buy_price_cap"]
     assert (buy_policy.columns == cols).all(), "Buy policy incorrectly formatted"
     buy_policy = buy_policy.set_index("item")
 
@@ -70,7 +72,7 @@ def encode_buy_campaign(buy_policy: pd.DataFrame) -> Dict[str, Dict[str, Any]]:
         item_id = item_ids.get(item, None)
         if item_id:
             snatch_item: Dict[str, Any] = {}
-            snatch_item["price"] = int(b["buy_price"])
+            snatch_item["price"] = int(b["buy_price_cap"])
             link_text = f"|cffffffff|Hitem:{item_id}::::::::39:::::::|h[{item}]|h|r"
             snatch_item["link"] = link_text
             new_snatch[f"{item_id}:0:0"] = snatch_item
@@ -82,7 +84,7 @@ def write_buy_policy() -> None:
     """Writes the buy policy to all accounts."""
     buy_policy = io.reader("outputs", "buy_policy", "parquet")
 
-    cols = ["item", "buy_price"]
+    cols = ["item", "buy_price_cap"]
     new_snatch = encode_buy_campaign(buy_policy[cols])
 
     # Read client lua, replace with
@@ -101,7 +103,14 @@ def write_buy_policy() -> None:
 
 def encode_sell_campaign(sell_policy: pd.DataFrame) -> Dict[str, Any]:
     """Encode sell policy dataframe into dictionary."""
-    cols = ["item", "proposed_buy", "proposed_bid", "sell_count", "stack", "duration"]
+    cols = [
+        "item",
+        "sell_buyout",
+        "sell_bid",
+        "sell_count",
+        "sell_stack",
+        "sell_duration",
+    ]
     assert (sell_policy.columns == cols).all(), "Sell policy incorrectly formatted"
     sell_policy = sell_policy.set_index("item")
 
@@ -120,14 +129,14 @@ def encode_sell_campaign(sell_policy: pd.DataFrame) -> Dict[str, Any]:
         code = item_ids[item]
 
         try:
-            new_appraiser[f"item.{code}.fixed.bid"] = int(d["proposed_bid"])
+            new_appraiser[f"item.{code}.fixed.bid"] = int(d["sell_bid"])
         except ValueError:
             raise ValueError(f"{code} for {item} not present")
 
-        new_appraiser[f"item.{code}.fixed.buy"] = int(d["proposed_buy"])
-        new_appraiser[f"item.{code}.duration"] = int(d["duration"])
+        new_appraiser[f"item.{code}.fixed.buy"] = int(d["sell_buyout"])
+        new_appraiser[f"item.{code}.duration"] = int(d["sell_duration"])
         new_appraiser[f"item.{code}.number"] = int(d["sell_count"])
-        new_appraiser[f"item.{code}.stack"] = int(d["stack"])
+        new_appraiser[f"item.{code}.stack"] = int(d["sell_stack"])
 
         new_appraiser[f"item.{code}.bulk"] = True
         new_appraiser[f"item.{code}.match"] = False
@@ -140,7 +149,14 @@ def write_sell_policy() -> None:
     """Writes the sell policy to accounts."""
     sell_policy = io.reader("outputs", "sell_policy", "parquet")
 
-    cols = ["item", "proposed_buy", "proposed_bid", "sell_count", "stack", "duration"]
+    cols = [
+        "item",
+        "sell_buyout",
+        "sell_bid",
+        "sell_count",
+        "sell_stack",
+        "sell_duration",
+    ]
     new_appraiser = encode_sell_campaign(sell_policy[cols])
 
     # Read client lua, replace with
@@ -169,101 +185,110 @@ def analyse_sell_policy(
     )
 
     cols = [
-        "deposit",
-        "material_costs",
-        "pred_std",
-        "pred_price",
-        "max_sell",
+        "item_deposit",
+        "material_make_cost",
+        "bbpred_std",
+        "bbpred_price",
+        "user_max_sell",
         "inv_ahm_bag",
         "replenish_qty",
         "replenish_z",
     ]
-    sell_items = item_table[item_table["Sell"] == True][cols]
-    sell_items["deposit"] = sell_items["deposit"] * (
+    sell_items = item_table[item_table["user_Sell"] == True][cols]
+    sell_items["item_deposit"] = sell_items["item_deposit"] * (
         utils.duration_str_to_mins(duration) / (60 * 24)
     )
 
-    sell_items["exponential_percent"] = 2 - sell_items["replenish_z"].apply(
+    sell_items["sell_exp_decay"] = 2 - sell_items["replenish_z"].apply(
         lambda x: norm.cdf(x)
     )
 
-    listing_each = listing_each[listing_each["pred_z"] < MAX_STD]
-    listing_each = listing_each.sort_values(["item", "price_per"])
-    listing_each["rank"] = (
-        listing_each.groupby("item")["pred_z"].rank(method="first").astype(int) - 1
+    listing_each = listing_each[listing_each["list_price_z"] < MAX_STD]
+    listing_each = listing_each.sort_values(["item", "list_price_per"])
+    listing_each["sell_rank"] = (
+        listing_each.groupby("item")["list_price_z"].rank(method="first").astype(int)
+        - 1
     )
 
     listing_each = pd.merge(
-        item_volume_change_probability, listing_each, how="left", on=["item", "rank"]
+        item_volume_change_probability,
+        listing_each,
+        how="left",
+        on=["item", "sell_rank"],
     )
     listing_each = listing_each.set_index(["item"])
-    listing_each["pred_z"] = listing_each["pred_z"].fillna(MAX_STD)
+    listing_each["list_price_z"] = listing_each["list_price_z"].fillna(MAX_STD)
 
-    gouge_price = sell_items["pred_price"] + (sell_items["pred_std"] * MAX_STD)
+    gouge_price = sell_items["bbpred_price"] + (sell_items["bbpred_std"] * MAX_STD)
 
-    listing_each["price_per"] = (
-        listing_each["price_per"].fillna(gouge_price).astype(int)
+    listing_each["list_price_per"] = (
+        listing_each["list_price_per"].fillna(gouge_price).astype(int)
     )
-    listing_each = listing_each.reset_index().sort_values(["item", "rank"])
+    listing_each = listing_each.reset_index().sort_values(["item", "sell_rank"])
 
     listing_profits = pd.merge(
         listing_each, sell_items, how="left", left_on="item", right_index=True
     )
 
-    listing_profits["proposed_buy"] = listing_profits["price_per"] - 9
+    listing_profits["sell_buyout"] = listing_profits["list_price_per"] - 9
 
-    listing_profits["estimated_profit"] = (
-        (listing_profits["proposed_buy"] * 0.95 - listing_profits["material_costs"])
-        * (listing_profits["probability"] ** listing_profits["exponential_percent"])
-    ) - (listing_profits["deposit"] * (1 - listing_profits["probability"]))
+    listing_profits["sell_estimated_profit"] = (
+        (listing_profits["sell_buyout"] * 0.95 - listing_profits["material_make_cost"])
+        * (listing_profits["sell_probability"] ** listing_profits["sell_exp_decay"])
+    ) - (listing_profits["item_deposit"] * (1 - listing_profits["sell_probability"]))
 
-    best_profits_ind = listing_profits.groupby("item")["estimated_profit"].idxmax()
+    best_profits_ind = listing_profits.groupby("item")["sell_estimated_profit"].idxmax()
     sell_policy = listing_profits.loc[best_profits_ind]
 
-    sell_policy["min_profit"] = MIN_PROFIT
-    sell_policy["profit_pct"] = MIN_PROFIT_PCT * sell_policy["pred_price"]
-    sell_policy["feasible_profit"] = sell_policy[["min_profit", "profit_pct"]].max(
+    sell_policy["profit_min"] = MIN_PROFIT
+    sell_policy["profit_pct"] = MIN_PROFIT_PCT * sell_policy["bbpred_price"]
+    sell_policy["profit_feasible"] = sell_policy[["profit_min", "profit_pct"]].max(
         axis=1
     )
-    sell_policy["infeasible"] = (
-        sell_policy["feasible_profit"] > sell_policy["estimated_profit"]
-    )
+    # sell_policy["profit_infeasible"] = (
+    #     sell_policy["profit_feasible"] > sell_policy["sell_estimated_profit"]
+    # )
 
     # Shows the amount required to be profitable
-    sell_policy["proposed_bid"] = (
-        sell_policy["proposed_buy"]
-        - sell_policy["estimated_profit"]
-        + sell_policy["feasible_profit"]
+    sell_policy["sell_bid"] = (
+        sell_policy["sell_buyout"]
+        - sell_policy["sell_estimated_profit"]
+        + sell_policy["profit_feasible"]
     )
 
     low_bid_ind = sell_policy[
-        sell_policy["proposed_bid"] < sell_policy["proposed_buy"]
+        sell_policy["sell_bid"] < sell_policy["sell_buyout"]
     ].index
-    sell_policy.loc[low_bid_ind, "proposed_bid"] = sell_policy.loc[
-        low_bid_ind, "proposed_buy"
+    sell_policy.loc[low_bid_ind, "sell_bid"] = sell_policy.loc[
+        low_bid_ind, "sell_buyout"
     ]
 
-    sell_policy["duration"] = utils.duration_str_to_mins(duration)
-    sell_policy = sell_policy.sort_values("estimated_profit", ascending=False)
+    sell_policy["sell_duration"] = utils.duration_str_to_mins(duration)
+    sell_policy = sell_policy.sort_values("sell_estimated_profit", ascending=False)
 
-    sell_policy["stack"] = stack
-    sell_policy["max_sell"] = sell_policy["max_sell"].replace(0, max_sell)
-    sell_policy["sell_count"] = sell_policy[["inv_ahm_bag", "max_sell"]].min(axis=1)
+    sell_policy["sell_stack"] = stack
+    sell_policy["user_max_sell"] = sell_policy["user_max_sell"].replace(0, max_sell)
+    sell_policy["sell_count"] = sell_policy[["inv_ahm_bag", "user_max_sell"]].min(
+        axis=1
+    )
     sell_policy["sell_count"] = (
-        sell_policy["sell_count"] / sell_policy["stack"]
+        sell_policy["sell_count"] / sell_policy["sell_stack"]
     ).astype(int)
 
-    sell_policy["min_sell"] = sell_policy[["max_sell", "inv_ahm_bag"]].min(axis=1)
-    adjust_stack = sell_policy[sell_policy["min_sell"] < sell_policy["stack"]].index
-    sell_policy.loc[adjust_stack, "stack"] = 1
+    # TODO Here is likely where we can make it respect min_holding
+    sell_policy["sell_min"] = sell_policy[["user_max_sell", "inv_ahm_bag"]].min(axis=1)
+    adjust_stack = sell_policy[
+        sell_policy["sell_min"] < sell_policy["sell_stack"]
+    ].index
+    sell_policy.loc[adjust_stack, "sell_stack"] = 1
     sell_policy.loc[adjust_stack, "sell_count"] = sell_policy.loc[
-        adjust_stack, "min_sell"
+        adjust_stack, "sell_min"
     ]
 
     io.writer(sell_policy, "outputs", "sell_policy", "parquet")
 
-    listing_profits = listing_profits.set_index(["rank", "item"])[
-        "estimated_profit"
+    listing_profits = listing_profits.set_index(["sell_rank", "item"])[
+        "sell_estimated_profit"
     ].unstack()
     io.writer(listing_profits, "reporting", "listing_profits", "parquet")
 
@@ -275,18 +300,18 @@ def analyse_make_policy() -> None:
 
     cols = [
         "item_id",
-        "made_from",
-        "make_pass",
+        "user_Make",
+        "user_Sell",
+        "user_make_pass",
+        "user_mean_holding",
         "inv_total_all",
-        "mean_holding",
         "inv_ahm_bag",
         "inv_ahm_bank",
-        "Sell",
     ]
     make_policy = item_table[cols]
 
     make_policy["make_ideal"] = (
-        make_policy["mean_holding"] - make_policy["inv_total_all"]
+        make_policy["user_mean_holding"] - make_policy["inv_total_all"]
     )
     make_policy["make_counter"] = make_policy["make_ideal"].apply(lambda x: max(x, 0))
     make_policy["make_mat_available"] = (
@@ -309,9 +334,9 @@ def analyse_make_policy() -> None:
 
             made_from = user_items[item].get("made_from", {})
             under_counter = row["make_actual"] < row["make_counter"]
-            make_pass = row["make_pass"]
+            user_make_pass = row["user_make_pass"]
 
-            if made_from and under_counter and not (make_pass):
+            if made_from and under_counter and not (user_make_pass):
                 item_increment = True
                 for material, qty in made_from.items():
                     if "Vial" not in material:
@@ -337,12 +362,12 @@ def encode_make_policy(
     make_policy = io.reader("outputs", "make_policy", "parquet")
 
     new_craft_queue = make_policy[
-        (make_policy["make_pass"] == 0) & (make_policy["make_actual"] > 0)
+        (make_policy["user_make_pass"] == 0) & (make_policy["make_actual"] > 0)
     ]["make_actual"].to_dict()
 
     # Ordering important here for overwrites
     make_policy["group"] = "Other"
-    make_policy.loc[make_policy[make_policy["Sell"] == 1].index, "group"] = "Sell"
+    make_policy.loc[make_policy[make_policy["user_Sell"] == 1].index, "group"] = "Sell"
     make_policy.loc[
         make_policy[make_policy["make_mat_flag"] == 1].index, "group"
     ] = "Materials"
