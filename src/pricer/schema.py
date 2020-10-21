@@ -2,22 +2,36 @@
 import pandera as pa
 from pandera import Column, Index
 
-
-ark_inventory_schema = pa.DataFrameSchema(
+item_skeleton_raw_schema = pa.DataFrameSchema(
     columns={
-        "character": Column(pa.String),
-        "location": Column(pa.String),
-        "item": Column(pa.String),
-        "count": Column(pa.Int),
-        "timestamp": Column(pa.DateTime),
+        "min_holding": Column(pa.Int, nullable=True),
+        "max_holding": Column(pa.Int, nullable=True),
+        "max_sell": Column(pa.Int, nullable=True),
+        "Buy": Column(nullable=True),
+        "Sell": Column(nullable=True),
+        "made_from": Column(pa.Object, nullable=True),
+        "make_pass": Column(pa.Int, nullable=True),
+        "vendor_price": Column(pa.Int, nullable=True),
     },
     strict=True,
+    index=Index(pa.String),
 )
 
-ark_monies_schema = pa.DataFrameSchema(
-    columns={"monies": Column(pa.Int), "timestamp": Column(pa.DateTime)},
+item_skeleton_schema = pa.DataFrameSchema(
+    columns={
+        "min_holding": Column(pa.Int),
+        "max_holding": Column(pa.Int),
+        "max_sell": Column(pa.Int, nullable=True),
+        "Buy": Column(pa.Int),
+        "Sell": Column(pa.Int),
+        "made_from": Column(pa.Bool),
+        "make_pass": Column(pa.Int),
+        "vendor_price": Column(pa.Int),
+        "std_holding": Column(pa.Float),
+        "mean_holding": Column(pa.Int),
+    },
     strict=True,
-    index=Index(pa.String, name="character"),
+    index=Index(pa.String),
 )
 
 auc_listings_raw_schema = pa.DataFrameSchema(
@@ -61,56 +75,10 @@ auc_listings_schema = pa.DataFrameSchema(
         "sellername": Column(pa.String),
         "price_per": Column(pa.Int),
         "time_remaining": Column(pa.Int),
-    },
-    strict=True,
+    }
 )
 
-bb_alltime_schema = pa.DataFrameSchema(
-    columns={
-        "date": Column(pa.DateTime),
-        "silver": Column(pa.Int),
-        "quantity": Column(pa.Int),
-        "item": Column(pa.String),
-    },
-    strict=True,
-    index=Index(pa.Int),
-)
-
-bb_deposit_schema = pa.DataFrameSchema(
-    columns={"item_deposit": Column(pa.Int, nullable=True)},
-    strict=True,
-    index=Index(pa.String, name="item"),
-)
-
-bb_history_schema = pa.DataFrameSchema(
-    columns={
-        "date": Column(pa.DateTime),
-        "silvermin": Column(pa.Int),
-        "silveravg": Column(pa.Int),
-        "silvermax": Column(pa.Int),
-        "silverstart": Column(pa.Int),
-        "silverend": Column(pa.Int),
-        "quantitymin": Column(pa.Int),
-        "quantityavg": Column(pa.Int),
-        "quantitymax": Column(pa.Int),
-        "item": Column(pa.String),
-    },
-    strict=True,
-    index=Index(pa.Int),
-)
-
-bb_fortnight_schema = pa.DataFrameSchema(
-    columns={
-        "snapshot": Column(pa.DateTime),
-        "silver": Column(pa.Int),
-        "quantity": Column(pa.Int),
-        "item": Column(pa.String),
-    },
-    strict=True,
-    index=Index(pa.Int),
-)
-
-beancounter_raw_schema = pa.DataFrameSchema(
+beancounter_data_raw_schema = pa.DataFrameSchema(
     columns={
         0: Column(pa.String, nullable=True),
         1: Column(pa.String, nullable=True),
@@ -125,11 +93,10 @@ beancounter_raw_schema = pa.DataFrameSchema(
         10: Column(pa.String, nullable=True),
         11: Column(pa.String, nullable=True),
         12: Column(pa.String, nullable=True),
-    },
-    strict=True,
+    }
 )
 
-bean_purchases_schema = pa.DataFrameSchema(
+beancounter_purchases_schema = pa.DataFrameSchema(
     columns={
         "auction_type": Column(pa.String),
         "item": Column(pa.String),
@@ -141,50 +108,47 @@ bean_purchases_schema = pa.DataFrameSchema(
         "timestamp": Column(pa.DateTime),
         "buyout_per": Column(pa.Float),
         "bid_per": Column(pa.Float),
-    },
-    strict=True,
+    }
 )
 
-bean_posted_schema = pa.DataFrameSchema(
+beancounter_posted_schema = pa.DataFrameSchema(
     columns={
         "auction_type": Column(pa.String),
         "item": Column(pa.String),
         "seller": Column(pa.String),
         "qty": Column(pa.Int),
-        "item_deposit": Column(pa.Int),
+        "deposit": Column(pa.Int),
         "buyout": Column(pa.Int, nullable=True),
         "bid": Column(pa.Int),
         "timestamp": Column(pa.DateTime),
         "buyout_per": Column(pa.Float),
         "bid_per": Column(pa.Float),
-    },
-    strict=True,
+    }
 )
 
-bean_failed_schema = pa.DataFrameSchema(
+beancounter_failed_schema = pa.DataFrameSchema(
     columns={
         "auction_type": Column(pa.String),
         "item": Column(pa.String),
         "seller": Column(pa.String),
         "qty": Column(pa.Int),
-        "item_deposit": Column(pa.Int),
+        "deposit": Column(pa.Int),
         "buyout": Column(pa.Int, nullable=True),
         "bid": Column(pa.Int),
         "timestamp": Column(pa.DateTime),
         "buyout_per": Column(pa.Float),
         "bid_per": Column(pa.Float),
-    },
-    strict=True,
+    }
 )
 
-bean_success_schema = pa.DataFrameSchema(
+beancounter_success_schema = pa.DataFrameSchema(
     columns={
         "auction_type": Column(pa.String),
         "item": Column(pa.String),
         "seller": Column(pa.String),
         "qty": Column(pa.Int),
         "received": Column(pa.Int),
-        "item_deposit": Column(pa.Int),
+        "deposit": Column(pa.Int),
         "ah_cut": Column(pa.Int),
         "buyout": Column(pa.Int, nullable=True),
         "bid": Column(pa.Int),
@@ -193,60 +157,5 @@ bean_success_schema = pa.DataFrameSchema(
         "received_per": Column(pa.Float),
         "buyout_per": Column(pa.Float),
         "bid_per": Column(pa.Float),
-    },
-    strict=True,
-)
-
-bean_results_schema = pa.DataFrameSchema(
-    columns={
-        "auction_type": Column(pa.String),
-        "item": Column(pa.String),
-        "seller": Column(pa.String),
-        "qty": Column(pa.Int),
-        "received": Column(pa.Int, nullable=True),
-        "item_deposit": Column(pa.Int),
-        "ah_cut": Column(pa.Int, nullable=True),
-        "buyout": Column(pa.Int, nullable=True),
-        "bid": Column(pa.Int),
-        "buyer": Column(pa.String, nullable=True),
-        "timestamp": Column(pa.DateTime),
-        "received_per": Column(pa.Float, nullable=True),
-        "buyout_per": Column(pa.Float),
-        "bid_per": Column(pa.Float),
-        "success": pa.Column(pa.Int),
-    },
-    strict=True,
-)
-
-item_skeleton_raw_schema = pa.DataFrameSchema(
-    columns={
-        "user_min_holding": Column(pa.Int, nullable=True),
-        "user_max_holding": Column(pa.Int, nullable=True),
-        "user_max_sell": Column(pa.Int, nullable=True),
-        "user_Buy": Column(nullable=True),
-        "user_Sell": Column(nullable=True),
-        "user_Make": Column(nullable=True),
-        "user_made_from": Column(pa.Object, nullable=True),
-        "user_make_pass": Column(pa.Int, nullable=True),
-        "user_vendor_price": Column(pa.Int, nullable=True),
-    },
-    strict=True,
-    index=Index(pa.String),
-)
-
-item_skeleton_schema = pa.DataFrameSchema(
-    columns={
-        "user_min_holding": Column(pa.Int),
-        "user_max_holding": Column(pa.Int),
-        "user_max_sell": Column(pa.Int, nullable=True),
-        "user_Buy": Column(pa.Int),
-        "user_Sell": Column(pa.Int),
-        "user_Make": Column(pa.Int),
-        "user_make_pass": Column(pa.Int),
-        "user_vendor_price": Column(pa.Int),
-        "user_std_holding": Column(pa.Float),
-        "user_mean_holding": Column(pa.Int),
-    },
-    strict=True,
-    index=Index(pa.String),
+    }
 )
