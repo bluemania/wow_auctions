@@ -48,8 +48,8 @@ def home() -> Any:
 @app.route("/<path:item_name>")
 def item_report(item_name: str) -> Any:
     """Return info on an item."""
-    item_reporting = io.reader("reporting", "item_reporting", "json")
-    item_report = item_reporting.get(item_name, None)
+    item_info = io.reader("reporting", "item_info", "parquet")
+    item_report = item_info.loc[item_name].to_dict()
     return render_template(
         "item_reporting.html", item_name=item_name, item_report=item_report
     )

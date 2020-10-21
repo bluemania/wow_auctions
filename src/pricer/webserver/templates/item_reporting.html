@@ -5,10 +5,46 @@
 <h3>
 	<img src="{{ url_for('item_icons', filename=item_name) }}" width="24">
 	{{ item_name }}
+
 </h3>
+<h4>
+	{% if item_report['user_Buy'] %} Buy {% endif %}
+	{% if item_report['user_Sell'] %} Sell {% endif %}
+	{% if item_report['user_Make'] %} Make {% endif %}		
+</h4>
+<div class="row">
+	<table class="table table-dark">
+		<tr>
+			<td></td>
+			<td>AH main</td>
+			<td>Mule</td>
+			<td>Characters</td>		
+		</tr>
+		{% for location in ['bag', 'bank', 'mail', 'auc'] %}
+		<tr>
+			<td>
+				{{location}}
+			</td>
+			{% for player in ['ahm', 'mule', 'char'] %}
+			<td>
+				{{ item_report["inv_"+player+"_"+location] }}
+			</td>
+			{% endfor %}
+
+		</tr>
+		{% endfor %}
+		<tr>
+			<td>Totals</td>
+			<td>{{item_report['inv_total_ahm']}}</td>
+			<td>{{item_report['inv_total_hold']}}</td>
+			<td>{{item_report['inv_total_all']}}</td>
+		</tr>		
+	</table>
+</div>
 <div class="row">
 	<div class="col-lg-4">
-	{{ item_report|safe }}
+
+	{{ item_report['bbpred_price'] }}
 	</div>
 	<div class="col-lg-4">
 	<img src="{{ url_for('item_plot_profit', item_name=item_name) }}">

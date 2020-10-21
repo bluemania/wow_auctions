@@ -75,10 +75,10 @@ def produce_item_reporting() -> None:
 
     item_info = item_info[sorted(item_info.columns)]
 
-    item_reporting = {
-        item: pd.DataFrame(item_info.loc[item]).to_html() for item in item_info.index
-    }
-    io.writer(item_reporting, "reporting", "item_reporting", "json")
+    # item_reporting = {
+    #     item: pd.DataFrame(item_info.loc[item]).to_html() for item in item_info.index
+    # }
+    io.writer(item_info, "reporting", "item_info", "parquet")
 
     listing_profits = io.reader("reporting", "listing_profits", "parquet")
 
