@@ -34,8 +34,14 @@ def g() -> Dict[Any, Any]:
     def user_items() -> List[str]:
         return sorted(cfg.ui.keys())
 
+    def profit_per_item() -> str:
+        return reporting.profit_per_item()
+
     return dict(
-        item_profits=item_profits, user_items=user_items, make_missing=make_missing
+        item_profits=item_profits,
+        user_items=user_items,
+        make_missing=make_missing,
+        profit_per_item=profit_per_item,
     )
 
 
@@ -48,8 +54,8 @@ def home() -> Any:
 @app.route("/<path:item_name>")
 def item_report(item_name: str) -> Any:
     """Return info on an item."""
-    item_reporting = io.reader("reporting", "item_reporting", "json")
-    item_report = item_reporting.get(item_name, None)
+    item_info = io.reader("reporting", "item_info", "parquet")
+    item_report = item_info.loc[item_name].to_dict()
     return render_template(
         "item_reporting.html", item_name=item_name, item_report=item_report
     )
@@ -68,6 +74,27 @@ def item_icons(filename: str) -> Any:
 def item_plot_profit(item_name: str) -> Any:
     """Returns profit plot for items."""
     path = Path(app.config["data_path"]).joinpath("reporting", "feasible")
+    return send_from_directory(path, item_name + ".png")
+
+
+@app.route("/data_static/item_listing_plot/<path:item_name>")
+def item_listing_plot(item_name: str) -> Any:
+    """Returns profit plot for items."""
+    path = Path(app.config["data_path"]).joinpath("reporting", "listing_item")
+    return send_from_directory(path, item_name + ".png")
+
+
+@app.route("/data_static/item_activity_plot/<path:item_name>")
+def item_activity_plot(item_name: str) -> Any:
+    """Returns profit plot for items."""
+    path = Path(app.config["data_path"]).joinpath("reporting", "activity")
+    return send_from_directory(path, item_name + ".png")
+
+
+@app.route("/data_static/item_profit_plot/<path:item_name>")
+def item_profit_plot(item_name: str) -> Any:
+    """Returns profit plot for items."""
+    path = Path(app.config["data_path"]).joinpath("reporting", "profit")
     return send_from_directory(path, item_name + ".png")
 
 

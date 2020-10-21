@@ -44,6 +44,7 @@ def run_analytics(stack: int = 5, max_sell: int = 20, duration: str = "m") -> No
 
     analysis.merge_item_table()
     analysis.predict_volume_sell_probability(duration)
+    analysis.report_profits()
 
     campaign.analyse_buy_policy()
     campaign.write_buy_policy()
@@ -55,6 +56,9 @@ def run_analytics(stack: int = 5, max_sell: int = 20, duration: str = "m") -> No
     reporting.have_in_bag()
     reporting.make_missing()
     reporting.produce_item_reporting()
+    reporting.produce_listing_items()
+    reporting.produce_activity_tracking()
+    reporting.draw_profit_charts()
 
 
 def main() -> None:

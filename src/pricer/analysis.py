@@ -314,3 +314,83 @@ def predict_volume_sell_probability(dur_char: str = "m") -> None:
         "item_volume_change_probability",
         "parquet",
     )
+
+
+def report_profits() -> None:
+    """Compare purchases and sales to expected value to derive profit from action."""
+    bean_results = io.reader("cleaned", "bean_results", "parquet")
+    bean_purchases = io.reader("cleaned", "bean_purchases", "parquet")
+    bb_history = io.reader("cleaned", "bb_history", "parquet")
+
+    bean_results["date"] = bean_results["timestamp"].dt.date.astype("datetime64")
+    bean_results["profit"] = bean_results["received"].fillna(
+        -bean_results["item_deposit"]
+    )
+    bean_results["qty_change"] = bean_results.apply(
+        lambda x: -x["qty"] if x["auction_type"] == "completedAuctions" else 0, axis=1
+    )
+
+    bean_purchases["date"] = bean_purchases["timestamp"].dt.date.astype("datetime64")
+    bean_purchases["qty_change"] = bean_purchases["qty"]
+    bean_purchases["profit"] = -bean_purchases["buyout"]
+
+    purchase_change = bean_purchases.groupby(["item", "date"])[
+        ["qty_change", "profit"]
+    ].sum()
+    purchase_change.columns = ["purchase_qty_change", "purchase_profit"]
+
+    result_change = bean_results.groupby(["auction_type", "item", "date"])[
+        ["qty_change", "profit"]
+    ].sum()
+    completed_change = result_change.loc["completedAuctions"]
+    completed_change.columns = ["completed_qty_change", "completed_profit"]
+    failed_change = result_change.loc["failedAuctions"]
+    failed_change.columns = ["failed_qty_change", "failed_profit"]
+
+    bb_history = bb_history[bb_history["date"] >= bean_results["date"].min()]
+    bb_history = bb_history.set_index(["item", "date"])
+
+    profits = (
+        bb_history.join(purchase_change)
+        .join(completed_change)
+        .join(failed_change)
+        .fillna(0)
+        .astype(int)
+    )
+
+    profits["total_action"] = profits[[x for x in profits if "_profit" in x]].sum(
+        axis=1
+    )
+    profits["total_qty"] = profits[[x for x in profits if "_qty_change" in x]].sum(
+        axis=1
+    )
+
+    # vector style material cost calculation
+    material_update = []
+    for item_name, item_details in cfg.ui.items():
+        if item_name in profits.index:
+            material_cost = pd.Series(
+                0, index=profits.loc[item_name].index, name="silveravg"
+            )
+            user_made_from = item_details.get("made_from", {})
+            if user_made_from:
+                for ingredient, count in user_made_from.items():
+                    if ingredient in profits.index:
+                        material_cost += profits.loc[ingredient, "silveravg"] * count
+                    else:
+                        material_cost += cfg.ui[ingredient]["vendor_price"] * count
+            else:
+                material_cost = profits.loc[item_name, "silveravg"]
+            material_cost = material_cost.reset_index()
+            material_cost["item"] = item_name
+            material_update.append(material_cost)
+
+    material_updates = pd.concat(material_update)
+
+    profits = profits.join(
+        material_updates.set_index(["item", "date"])["silveravg"], rsuffix="_cost"
+    )
+    profits["total_materials"] = -profits["silveravg_cost"] * profits["total_qty"]
+    profits["total_profit"] = profits["total_action"] - profits["total_materials"]
+
+    io.writer(profits, "reporting", "profits", "parquet")
