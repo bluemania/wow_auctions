@@ -56,6 +56,7 @@ def run_analytics(stack: int = 5, max_sell: int = 20, duration: str = "m") -> No
     reporting.make_missing()
     reporting.produce_item_reporting()
     reporting.produce_listing_items()
+    reporting.produce_activity_tracking()
 
 
 def main() -> None:

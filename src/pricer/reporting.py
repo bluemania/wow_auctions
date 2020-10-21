@@ -112,3 +112,30 @@ def produce_listing_items() -> None:
 
         plt.savefig(f"data/reporting/listing_item/{item}.png")
         plt.close()
+
+
+def produce_activity_tracking() -> None:
+    """Produce chart of item prices, sold and bought for."""
+    bean_results = io.reader("cleaned", "bean_results", "parquet")
+    bean_results["date"] = bean_results["timestamp"].dt.date.astype("datetime64")
+    bean_sales = bean_results.groupby(["item", "date"])["buyout_per"].mean()
+    bean_sales.name = "sell_price"
+
+    bean_purchases = io.reader("cleaned", "bean_purchases", "parquet")
+    bean_purchases["date"] = bean_purchases["timestamp"].dt.date.astype("datetime64")
+    bean_buys = bean_purchases.groupby(["item", "date"])["buyout_per"].mean()
+    bean_buys.name = "buy_price"
+
+    bb_history = io.reader("cleaned", "bb_history", "parquet")
+    bb_history = bb_history[bb_history["date"] >= bean_results["date"].min()]
+    bb_history = bb_history.set_index(["item", "date"])
+
+    activity = bb_history.join(bean_buys).join(bean_sales)
+    cols = ["silveravg", "buy_price", "sell_price"]
+
+    for item in cfg.ui:
+        if item in activity.index:
+            plt.figure()
+            activity.loc[item][cols].plot(title=item)
+            plt.savefig(f"data/reporting/activity/{item}.png")
+            plt.close()

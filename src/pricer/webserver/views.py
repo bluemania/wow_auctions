@@ -78,6 +78,13 @@ def item_listing_plot(item_name: str) -> Any:
     return send_from_directory(path, item_name + ".png")
 
 
+@app.route("/data_static/item_activity_plot/<path:item_name>")
+def item_activity_plot(item_name: str) -> Any:
+    """Returns profit plot for items."""
+    path = Path(app.config["data_path"]).joinpath("reporting", "activity")
+    return send_from_directory(path, item_name + ".png")
+
+
 @app.route("/trigger_booty_bay")
 def trigger_booty_bay() -> Any:
     """Return homepage."""
