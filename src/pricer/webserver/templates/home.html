@@ -1,0 +1,23 @@
+{% extends "template.html" %}
+{% block content %}
+<div class='row'>
+
+<div class="col-lg-6">
+	<div class='row'>
+		<img src="{{ url_for('item_profit_plot', item_name='_alltime_profits') }}" width="480">
+	</div>
+	<div class='row'>
+		{{ make_missing()|safe }}
+	</div>
+	<div class='row'>
+		{{ item_profits()|safe }}
+	</div>
+
+</div>
+<div class="col-lg-6">
+	{{ profit_per_item()|safe }}
+</div>
+</div>
+
+
+{% endblock %}

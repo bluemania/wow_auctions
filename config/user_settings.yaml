@@ -25,3 +25,10 @@ booty:
   base: "https://www.bootybaygazette.com/#us/"
   api: "https://www.bootybaygazette.com/api/item.php?house="
   PAGE_WAIT: 1
+
+analysis:
+  USER_STD_SPREAD: 7
+  ITEM_PRICE_OUTLIER_CAP: 0.025
+  ROLLING_BUYOUT_SPAN: 100
+  BB_MAT_PRICE_RATIO: 0.5
+  MAX_LISTINGS_PROBABILITY: 500
