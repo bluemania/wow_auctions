@@ -318,7 +318,6 @@ def predict_volume_sell_probability(dur_char: str = "m") -> None:
 
 def report_profits() -> None:
     """Compare purchases and sales to expected value to derive profit from action."""
-
     bean_results = io.reader("cleaned", "bean_results", "parquet")
     bean_purchases = io.reader("cleaned", "bean_purchases", "parquet")
     bb_history = io.reader("cleaned", "bb_history", "parquet")
@@ -370,7 +369,9 @@ def report_profits() -> None:
     material_update = []
     for item_name, item_details in cfg.ui.items():
         if item_name in profits.index:
-            material_cost = 0
+            material_cost = pd.Series(
+                0, index=profits.loc[item_name].index, name="silveravg"
+            )
             user_made_from = item_details.get("made_from", {})
             if user_made_from:
                 for ingredient, count in user_made_from.items():
@@ -384,10 +385,10 @@ def report_profits() -> None:
             material_cost["item"] = item_name
             material_update.append(material_cost)
 
-    material_update = pd.concat(material_update)
+    material_updates = pd.concat(material_update)
 
     profits = profits.join(
-        material_update.set_index(["item", "date"])["silveravg"], rsuffix="_cost"
+        material_updates.set_index(["item", "date"])["silveravg"], rsuffix="_cost"
     )
     profits["total_materials"] = -profits["silveravg_cost"] * profits["total_qty"]
     profits["total_profit"] = profits["total_action"] - profits["total_materials"]

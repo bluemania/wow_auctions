@@ -8,7 +8,7 @@ import seaborn as sns
 from pricer import config as cfg, io
 
 logger = logging.getLogger(__name__)
-sns.set()
+sns.set(rc={"figure.figsize": (3, 3)})
 
 
 def have_in_bag() -> str:
@@ -87,7 +87,7 @@ def produce_item_reporting() -> None:
     MAX_LISTINGS = cfg.us["analysis"]["MAX_LISTINGS_PROBABILITY"]
     for item in listing_profits.columns:
         plt.figure()
-        listing_profits[item].plot(title=item)
+        listing_profits[item].plot(title=f"List profit {item}")
         pd.Series([sell_policy.loc[item, "profit_feasible"]] * MAX_LISTINGS).plot()
         plt.savefig(f"data/reporting/feasible/{item}.png")
         plt.close()
@@ -104,7 +104,7 @@ def produce_listing_items() -> None:
             (listing_each["item"] == item) & (listing_each["list_price_z"] < 10)
         ]
         list_item = list_item["list_price_per"].sort_values().reset_index(drop=True)
-        list_item.plot(title=item)
+        list_item.plot(title=f"Current AH listings {item}")
 
         pd.Series(
             [item_info.loc[item, "material_make_cost"]] * list_item.shape[0]
@@ -136,6 +136,46 @@ def produce_activity_tracking() -> None:
     for item in cfg.ui:
         if item in activity.index:
             plt.figure()
-            activity.loc[item][cols].plot(title=item)
+            activity.loc[item][cols].plot(title=f"Historic activity {item}")
             plt.savefig(f"data/reporting/activity/{item}.png")
+            plt.close()
+
+
+def profit_per_item() -> str:
+    """Profits per item as HTML."""
+    profits = io.reader("reporting", "profits", "parquet")
+
+    item_profits = (
+        (profits.groupby("item")[["total_profit"]].sum() / 10000)
+        .astype(int)
+        .sort_values(by="total_profit", ascending=False)
+    )
+    return item_profits.to_html()
+
+
+def draw_profit_charts() -> None:
+    """Create charts of alltime and individual item profits."""
+    profits = io.reader("reporting", "profits", "parquet")
+
+    alltime_profit = (
+        profits.reset_index().groupby("date")["total_profit"].sum().cumsum() / 10000
+    )
+
+    tot = int(alltime_profit[-1])
+    daily = int(tot / alltime_profit.shape[0])
+
+    plt.figure()
+    alltime_profit.plot(
+        title=f"Total profit over all items ({tot} gold, {daily} per day)"
+    )
+    plt.savefig("data/reporting/profit/_alltime_profits.png")
+    plt.close()
+
+    for item in cfg.ui:
+        if item in profits.index:
+            plt.figure()
+            (profits.loc[item, "total_profit"].cumsum() / 10000).plot(
+                title=f"Profit {item}"
+            )
+            plt.savefig(f"data/reporting/profit/{item}.png")
             plt.close()
