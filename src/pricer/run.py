@@ -44,7 +44,6 @@ def run_analytics(stack: int = 5, max_sell: int = 20, duration: str = "m") -> No
 
     analysis.merge_item_table()
     analysis.predict_volume_sell_probability(duration)
-    analysis.report_profits()
 
     campaign.analyse_buy_policy()
     campaign.write_buy_policy()
@@ -52,6 +51,11 @@ def run_analytics(stack: int = 5, max_sell: int = 20, duration: str = "m") -> No
     campaign.write_sell_policy()
     campaign.analyse_make_policy()
     campaign.write_make_policy()
+
+
+def run_reporting() -> None:
+    """Run steps to create plots and insights."""
+    analysis.report_profits()
 
     reporting.have_in_bag()
     reporting.make_missing()
@@ -76,6 +80,8 @@ def main() -> None:
     parser.add_argument("-f", help="Start flask webserver", action="store_true")
     parser.add_argument("-n", help="No analysis, skip", action="store_true")
 
+    parser.add_argument("-r", help="Generate reporting and plots", action="store_true")
+
     parser.add_argument("-t", help="Run on test data", action="store_true")
 
     parser.add_argument("-v", help="Verbose mode (info)", action="store_true")
@@ -98,6 +104,9 @@ def main() -> None:
 
     if not args.n:
         run_analytics(stack=args.s, max_sell=args.m, duration=args.d)
+
+    if args.r:
+        run_reporting()
 
     logger.info(f"Program end, seconds {(dt.now() - run_dt).total_seconds()}")
 
