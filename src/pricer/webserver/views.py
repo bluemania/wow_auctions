@@ -109,4 +109,5 @@ def trigger_booty_bay() -> Any:
 def run_analytics() -> Any:
     """Return homepage."""
     run.run_analytics()
+    run.run_reporting()
     return redirect(url_for("home"))
