@@ -1,5 +1,5 @@
 """Sphinx configuration."""
-import sphinx_rtd_theme
+import sphinx_rtd_theme  # noqa: F401
 
 project = "pricer"
 author = "bluemania"
@@ -12,4 +12,4 @@ extensions = [
     "sphinx_rtd_theme",
 ]
 source_suffix = [".rst", ".md"]
-html_theme= "sphinx_rtd_theme"
+html_theme = "sphinx_rtd_theme"
