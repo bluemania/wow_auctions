@@ -95,6 +95,7 @@ def run_analytics(stack: int = 5, max_sell: int = 20, duration: str = "m") -> No
         campaign.write_make_policy()
         pbar.update(10)
 
+
 def run_reporting() -> None:
     """Run steps to create plots and insights."""
     analysis.report_profits()

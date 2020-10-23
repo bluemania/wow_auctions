@@ -1,6 +1,3 @@
-Pricer for WoW auctioning tool
-==============================
-
 .. toctree::
    :hidden:
    :maxdepth: 1
