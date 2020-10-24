@@ -11,6 +11,8 @@ from datetime import datetime as dt
 import logging
 import warnings
 
+from tqdm import tqdm
+
 from . import analysis, campaign, config as cfg, reporting, sources
 from .webserver.views import app
 
@@ -21,37 +23,82 @@ logger = logging.getLogger(__name__)
 
 def run_analytics(stack: int = 5, max_sell: int = 20, duration: str = "m") -> None:
     """Run the main analytics pipeline."""
-    run_dt = dt.now().replace(microsecond=0)
-    # TODO remove this run_dt crap
-    sources.get_arkinventory_data()
-    sources.get_beancounter_data()
-    sources.get_auctioneer_data()
+    with tqdm(total=220) as pbar:
+        run_dt = dt.now().replace(microsecond=0)
+        # TODO remove this run_dt crap
+        sources.get_arkinventory_data()
+        pbar.update(10)
 
-    sources.clean_bb_data()
-    sources.clean_arkinventory_data(run_dt)
-    sources.clean_beancounter_data()
-    sources.clean_auctioneer_data()
-    sources.clean_item_skeleton()
+        sources.get_beancounter_data()
+        pbar.update(10)
 
-    analysis.create_item_inventory()
-    analysis.create_item_facts()
+        sources.get_auctioneer_data()
+        pbar.update(10)
 
-    analysis.predict_item_prices()
-    analysis.analyse_rolling_buyout()
-    analysis.analyse_material_cost()
-    analysis.analyse_listings()
-    analysis.analyse_replenishment()
+        sources.clean_bb_data()
+        pbar.update(10)
 
-    analysis.merge_item_table()
-    analysis.predict_volume_sell_probability(duration)
+        sources.clean_arkinventory_data(run_dt)
+        pbar.update(10)
+
+        sources.clean_beancounter_data()
+        pbar.update(10)
+
+        sources.clean_auctioneer_data()
+        pbar.update(10)
+
+        sources.clean_item_skeleton()
+        pbar.update(10)
+
+        analysis.create_item_inventory()
+        pbar.update(10)
+
+        analysis.create_item_facts()
+        pbar.update(10)
+
+        analysis.predict_item_prices()
+        pbar.update(10)
+
+        analysis.analyse_rolling_buyout()
+        pbar.update(10)
+
+        analysis.analyse_material_cost()
+        pbar.update(10)
+
+        analysis.analyse_listings()
+        pbar.update(10)
+
+        analysis.analyse_replenishment()
+        pbar.update(10)
+
+        analysis.merge_item_table()
+        pbar.update(10)
+
+        analysis.predict_volume_sell_probability(duration)
+        pbar.update(10)
+
+        campaign.analyse_buy_policy()
+        pbar.update(10)
+
+        campaign.write_buy_policy()
+        pbar.update(10)
+
+        campaign.analyse_sell_policy(stack=stack, max_sell=max_sell, duration=duration)
+        pbar.update(10)
+
+        campaign.write_sell_policy()
+        pbar.update(10)
+
+        campaign.analyse_make_policy()
+        pbar.update(10)
+
+        campaign.write_make_policy()
+        pbar.update(10)
+
+
+def run_reporting() -> None:
+    """Run steps to create plots and insights."""
     analysis.report_profits()
-
-    campaign.analyse_buy_policy()
-    campaign.write_buy_policy()
-    campaign.analyse_sell_policy(stack=stack, max_sell=max_sell, duration=duration)
-    campaign.write_sell_policy()
-    campaign.analyse_make_policy()
-    campaign.write_make_policy()
 
     reporting.have_in_bag()
     reporting.make_missing()
@@ -76,6 +123,8 @@ def main() -> None:
     parser.add_argument("-f", help="Start flask webserver", action="store_true")
     parser.add_argument("-n", help="No analysis, skip", action="store_true")
 
+    parser.add_argument("-r", help="Generate reporting and plots", action="store_true")
+
     parser.add_argument("-t", help="Run on test data", action="store_true")
 
     parser.add_argument("-v", help="Verbose mode (info)", action="store_true")
@@ -98,6 +147,9 @@ def main() -> None:
 
     if not args.n:
         run_analytics(stack=args.s, max_sell=args.m, duration=args.d)
+
+    if args.r:
+        run_reporting()
 
     logger.info(f"Program end, seconds {(dt.now() - run_dt).total_seconds()}")
 
