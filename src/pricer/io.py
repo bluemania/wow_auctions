@@ -25,7 +25,7 @@ def reader(
     if ftype == "yaml":
         base_path = Path(__file__).parent
     else:
-        base_path = cfg.env["basepath"]
+        base_path = Path(cfg.env["basepath"])
     path = Path(base_path, folder, name + "." + ftype)
     logger.debug(f"Reading {name} {ftype} from {path}")
 
