@@ -19,8 +19,6 @@ def have_in_bag() -> str:
     sell_policy = sell_policy[
         sell_policy["sell_estimated_profit"] > sell_policy["profit_feasible"]
     ]
-
-    print(sell_policy["sell_estimated_profit"])
     return sell_policy[["sell_estimated_profit"]].astype(int).to_html()
 
 
@@ -32,13 +30,11 @@ def make_missing() -> str:
         (make_policy["user_make_pass"] == 0) & (make_policy["make_actual"] > 0)
     ]["make_actual"]
     make_me.name = "Automake"
-    print(make_me)
 
     make_main = make_policy[
         (make_policy["user_make_pass"] == 1) & (make_policy["make_ideal"] > 0)
     ]["make_ideal"]
     make_main.name = "Make on main"
-    print(make_main)
 
     make_should = make_policy[
         (
@@ -48,7 +44,6 @@ def make_missing() -> str:
         )
     ]["make_ideal"]
     make_should.name = "Missing mats"
-    print(make_should)
 
     making_html = pd.DataFrame(index=pd.concat([make_me, make_main, make_should]).index)
     making_html = (
