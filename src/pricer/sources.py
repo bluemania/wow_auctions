@@ -42,10 +42,15 @@ def get_bb_item_page(driver: webdriver, item_id: int) -> Dict[Any, Any]:
 
 def start_driver() -> webdriver:
     """Spin up selenium driver for Booty Bay scraping."""
-    account = cfg.secrets.get("account", getpass.getpass("Account:"))
-    password = cfg.secrets.get("password", getpass.getpass("Password:"))
+    account = cfg.secrets.get("account")
+    password = cfg.secrets.get("password")
 
     url = f'{cfg.us["booty"]["base"]}{cfg.us["server"].lower()}-a/item/6049'
+
+    if not account:
+        account = getpass.getpass("Account:")
+    if not password:
+        password = getpass.getpass("Password:")
     try:
         driver = webdriver.Chrome(cfg.us["booty"]["CHROMEDRIVER_PATH"])
         driver.implicitly_wait(cfg.us["booty"]["PAGE_WAIT"])
