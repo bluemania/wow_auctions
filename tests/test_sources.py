@@ -1,9 +1,10 @@
 """Tests for source.py."""
 import mock
+import pytest
 
 import pandas as pd
 
-from pricer import sources
+from pricer import config as cfg, sources
 
 
 def test_auctioneer_data() -> None:
@@ -333,3 +334,12 @@ def test_get_bb_item_page(input) -> None:
 
     response = sources.get_bb_item_page(driver, 1)
     assert response == {'captcha': 1}
+
+
+@mock.patch('getpass.getpass', side_effect=['11','22'])
+@mock.patch.dict(cfg.us["booty"], values={'CHROMEDRIVER_PATH': 'fakepath'})
+@mock.patch.dict(cfg.secrets, values={'account': None, 'password': None})
+def test_start_driver(getpass) -> None:
+    """Start driver."""    
+    with pytest.raises(SystemError):
+        sources.start_driver()
