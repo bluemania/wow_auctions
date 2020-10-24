@@ -23,7 +23,7 @@ def reader(
 ) -> Any:
     """Standard program writer, allows pathing extensibility i.e. testing or S3."""
     if ftype == "yaml":
-        base_path = ""
+        base_path = Path(__file__).parent
     else:
         base_path = cfg.env["basepath"]
     path = Path(base_path, folder, name + "." + ftype)
