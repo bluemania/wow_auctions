@@ -319,7 +319,7 @@ def test_clean_beancounter_success() -> None:
 
 
 @mock.patch("builtins.input", side_effect=["11"])
-def test_get_bb_item_page(input: mock) -> None:
+def test_get_bb_item_page(input: Any) -> None:
     """Monkey and test."""
 
     class MockDriver:
@@ -337,7 +337,7 @@ def test_get_bb_item_page(input: mock) -> None:
 @mock.patch("getpass.getpass", side_effect=["11", "22"])
 @mock.patch.dict(cfg.us["booty"], values={"CHROMEDRIVER_PATH": "fakepath"})
 @mock.patch.dict(cfg.secrets, values={"account": None, "password": None})
-def test_start_driver(getpass: mock) -> None:
+def test_start_driver(getpass: Any) -> None:
     """Start driver."""
     with pytest.raises(SystemError):
         sources.start_driver()
