@@ -25,7 +25,7 @@ def run_analytics(
     stack: int = 5, max_sell: int = 20, duration: str = "m", test: bool = False
 ) -> None:
     """Run the main analytics pipeline."""
-    with tqdm(total=1000, desc='Analytics') as pbar:
+    with tqdm(total=1000, desc="Analytics") as pbar:
         run_dt = dt.now().replace(microsecond=0)
         # TODO remove this run_dt crap
         if not test:
@@ -97,7 +97,7 @@ def run_analytics(
 
 def run_reporting() -> None:
     """Run steps to create plots and insights."""
-    with tqdm(total=1000, desc='Reporting') as pbar:
+    with tqdm(total=1000, desc="Reporting") as pbar:
         analysis.report_profits()
         pbar.update(11)
 
