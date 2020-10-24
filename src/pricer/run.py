@@ -21,7 +21,9 @@ warnings.simplefilter(action="ignore")
 logger = logging.getLogger(__name__)
 
 
-def run_analytics(stack: int = 5, max_sell: int = 20, duration: str = "m", test: bool = False) -> None:
+def run_analytics(
+    stack: int = 5, max_sell: int = 20, duration: str = "m", test: bool = False
+) -> None:
     """Run the main analytics pipeline."""
     with tqdm(total=220) as pbar:
         run_dt = dt.now().replace(microsecond=0)
