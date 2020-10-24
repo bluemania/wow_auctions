@@ -1,4 +1,6 @@
 """Tests for source.py."""
+import mock
+
 import pandas as pd
 
 from pricer import sources
@@ -312,3 +314,22 @@ def test_clean_beancounter_success() -> None:
     }
     example_df = pd.DataFrame.from_dict(example, orient="index")
     sources._clean_beancounter_purchases(example_df)
+
+
+@mock.patch('builtins.input', side_effect=['11'])
+def test_get_bb_item_page(input) -> None:
+    """Monkey and test."""
+    class MockDriver:
+        def __init__(self, page_source):
+            self.page_source = page_source
+
+        def get(self, str):
+            pass
+
+    driver = MockDriver('<html><body>{"captcha": 1}</body></html>')
+
+    def some_input(str):
+        pass
+
+    response = sources.get_bb_item_page(driver, 1)
+    assert response == {'captcha': 1}
