@@ -21,18 +21,17 @@ warnings.simplefilter(action="ignore")
 logger = logging.getLogger(__name__)
 
 
-def run_analytics(stack: int = 5, max_sell: int = 20, duration: str = "m") -> None:
+def run_analytics(
+    stack: int = 5, max_sell: int = 20, duration: str = "m", test: bool = False
+) -> None:
     """Run the main analytics pipeline."""
     with tqdm(total=220) as pbar:
         run_dt = dt.now().replace(microsecond=0)
         # TODO remove this run_dt crap
-        sources.get_arkinventory_data()
-        pbar.update(10)
-
-        sources.get_beancounter_data()
-        pbar.update(10)
-
-        sources.get_auctioneer_data()
+        if not test:
+            sources.get_arkinventory_data()
+            sources.get_beancounter_data()
+            sources.get_auctioneer_data()
         pbar.update(10)
 
         sources.clean_bb_data()
@@ -146,7 +145,7 @@ def main() -> None:
         cfg.ui = {k: v for k, v in cfg.ui.items() if k in test_items}
 
     if not args.n:
-        run_analytics(stack=args.s, max_sell=args.m, duration=args.d)
+        run_analytics(stack=args.s, max_sell=args.m, duration=args.d, test=args.t)
 
     if args.r:
         run_reporting()
