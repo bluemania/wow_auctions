@@ -1,8 +1,9 @@
 """Tests for source.py."""
-import mock
-import pytest
+from typing import Any
 
+import mock
 import pandas as pd
+import pytest
 
 from pricer import config as cfg, sources
 
@@ -317,29 +318,26 @@ def test_clean_beancounter_success() -> None:
     sources._clean_beancounter_purchases(example_df)
 
 
-@mock.patch('builtins.input', side_effect=['11'])
-def test_get_bb_item_page(input) -> None:
+@mock.patch("builtins.input", side_effect=["11"])
+def test_get_bb_item_page(input: mock) -> None:
     """Monkey and test."""
+
     class MockDriver:
-        def __init__(self, page_source):
+        def __init__(self: Any, page_source: str) -> None:
             self.page_source = page_source
 
-        def get(self, str):
+        def get(self: Any, x: str) -> None:
             pass
 
     driver = MockDriver('<html><body>{"captcha": 1}</body></html>')
-
-    def some_input(str):
-        pass
-
     response = sources.get_bb_item_page(driver, 1)
-    assert response == {'captcha': 1}
+    assert response == {"captcha": 1}
 
 
-@mock.patch('getpass.getpass', side_effect=['11','22'])
-@mock.patch.dict(cfg.us["booty"], values={'CHROMEDRIVER_PATH': 'fakepath'})
-@mock.patch.dict(cfg.secrets, values={'account': None, 'password': None})
-def test_start_driver(getpass) -> None:
-    """Start driver."""    
+@mock.patch("getpass.getpass", side_effect=["11", "22"])
+@mock.patch.dict(cfg.us["booty"], values={"CHROMEDRIVER_PATH": "fakepath"})
+@mock.patch.dict(cfg.secrets, values={"account": None, "password": None})
+def test_start_driver(getpass: mock) -> None:
+    """Start driver."""
     with pytest.raises(SystemError):
         sources.start_driver()
