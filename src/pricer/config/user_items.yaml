@@ -23,8 +23,8 @@ Arcanite Bar:
     TRANSMUTE_TIME: 90000
   make_pass: True
 Thorium Bar:
-  min_holding: 8
-  max_holding: 28
+  min_holding: 10
+  max_holding: 40
   Buy: True
   Sell: True
 Black Lotus:
@@ -38,7 +38,7 @@ Black Lotus:
 # Roughly 304 stacks of materials
 Flask of the Titans:
   min_holding: 2
-  max_holding: 16
+  max_holding: 20
   max_sell: 3
   Sell: True
   made_from:
@@ -71,7 +71,8 @@ Elixir of Greater Agility:
     Goldthorn: 1
     Sungrass: 1
 Elixir of Superior Defense:
-  max_holding: 60
+  min_holding: 10
+  max_holding: 40
   Sell: True
   made_from:
     Crystal Vial: 1
@@ -93,7 +94,8 @@ Free Action Potion:
     Blackmouth Oil: 2
     Stranglekelp: 1
 Greater Stoneshield Potion:
-  max_holding: 60
+  min_holding: 10
+  max_holding: 40
   Sell: True
   made_from:
     Crystal Vial: 1
@@ -127,7 +129,8 @@ Swiftness Potion:
     Empty Vial: 1
     Swiftthistle: 1
 Greater Arcane Protection Potion:
-  max_holding: 40
+  min_holding: 10
+  max_holding: 50
   Sell: True
   made_from:
     Crystal Vial: 1
@@ -135,8 +138,8 @@ Greater Arcane Protection Potion:
     Dreamfoil: 1
   make_pass: True
 Greater Nature Protection Potion:
-  min_holding: 5
-  max_holding: 60
+  min_holding: 10
+  max_holding: 70
   Sell: True
   made_from:
     Crystal Vial: 1
@@ -145,7 +148,7 @@ Greater Nature Protection Potion:
   make_pass: True
 Greater Shadow Protection Potion:
   min_holding: 5
-  max_holding: 60
+  max_holding: 40
   Sell: True
   made_from:
     Crystal Vial: 1
@@ -166,13 +169,13 @@ Blackmouth Oil:
     Empty Vial: 1
     Oily Blackmouth: 2
 Stonescale Oil:
-  max_holding: 380
+  max_holding: 180
   made_from:
     Leaded Vial: 1
     Stonescale Eel: 1
 Shadow Oil:
   min_holding: 5
-  max_holding: 60
+  max_holding: 40
   made_from:
     Leaded Vial: 1
     Fadeleaf: 4
@@ -215,7 +218,7 @@ Goldthorn:
   Buy: True
   Sell: True
 Gromsblood:
-  max_holding: 100
+  max_holding: 200
   Buy: True
   Sell: True
 Mountain Silversage:
@@ -280,7 +283,7 @@ Major Healing Potion:
   Buy: True
   Sell: True
 Heavy Runecloth Bandage:
-  max_holding: 100
+  max_holding: 120
   Sell: True
   made_from:
     Runecloth: 2
