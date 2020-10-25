@@ -14,8 +14,7 @@ Essence of Water:
   make_pass: True
   max_holding: 20
 Arcanite Bar:
-  min_holding: 4
-  max_holding: 24
+  max_holding: 30
   max_sell: 8
   Sell: True
   made_from:
@@ -29,8 +28,8 @@ Thorium Bar:
   Sell: True
 Black Lotus:
   min_holding: 2
-  max_holding: 12
-  max_sell: 2
+  max_holding: 15
+  max_sell: 3
   Buy: True
   Sell: True
 
@@ -49,7 +48,7 @@ Flask of the Titans:
   make_pass: True
 Elixir of Fortitude:
   min_holding: 20
-  max_holding: 120
+  max_holding: 100
   Sell: True
   made_from:
     Goldthorn: 1
@@ -57,7 +56,7 @@ Elixir of Fortitude:
     Wild Steelbloom: 1
 Elixir of Giants:
   min_holding: 20
-  max_holding: 120
+  max_holding: 100
   Sell: True
   made_from:
     Crystal Vial: 1
@@ -102,14 +101,14 @@ Greater Stoneshield Potion:
     Stonescale Oil: 3
     Thorium Ore: 1
 Invisibility Potion:
-  max_holding: 60
+  max_holding: 40
   Sell: True
   made_from:
     Crystal Vial: 1
     Ghost Mushroom: 1
     Sungrass: 1
 Limited Invulnerability Potion:
-  max_holding: 60
+  max_holding: 80
   Sell: True
   made_from:
     Blindweed: 2
@@ -122,7 +121,7 @@ Mighty Rage Potion:
     Crystal Vial: 1
     Gromsblood: 3
 Swiftness Potion:
-  max_holding: 30
+  max_holding: 40
   Sell: True
   made_from:
     Briarthorn: 1
@@ -169,7 +168,7 @@ Blackmouth Oil:
     Empty Vial: 1
     Oily Blackmouth: 2
 Stonescale Oil:
-  max_holding: 180
+  max_holding: 140
   made_from:
     Leaded Vial: 1
     Stonescale Eel: 1
@@ -198,7 +197,7 @@ Briarthorn:
   Buy: True
   Sell: True
 Dream Dust:
-  max_holding: 100
+  max_holding: 80
   Buy: True
   Sell: True
 Dreamfoil:
@@ -206,7 +205,7 @@ Dreamfoil:
   Buy: True
   Sell: True
 Swiftthistle:
-  max_holding: 100
+  max_holding: 120
   Buy: True
   Sell: True
 Ghost Mushroom:
@@ -222,7 +221,7 @@ Gromsblood:
   Buy: True
   Sell: True
 Mountain Silversage:
-  max_holding: 100
+  max_holding: 120
   Buy: True
   Sell: True
 Plaguebloom:
@@ -238,7 +237,7 @@ Sungrass:
   Buy: True
   Sell: True
 Thorium Ore:
-  max_holding: 100
+  max_holding: 40
   Buy: True
   Sell: True
 Wild Steelbloom:
@@ -246,15 +245,15 @@ Wild Steelbloom:
   Buy: True
   Sell: True
 Fadeleaf:
-  max_holding: 60
+  max_holding: 40
   Buy: True
   Sell: True
 Grave Moss:
-  max_holding: 60
+  max_holding: 40
   Buy: True
   Sell: True
 Elemental Earth:
-  max_holding: 40
+  max_holding: 60
   Buy: True
   Sell: True
 
@@ -265,7 +264,7 @@ Fire Oil:
 
 Essence of Undeath:
   Buy: True
-  max_holding: 10
+  max_holding: 20
   make_pass: True
 # Gear for characters
 Winterfall Firewater:
@@ -283,7 +282,7 @@ Major Healing Potion:
   Buy: True
   Sell: True
 Heavy Runecloth Bandage:
-  max_holding: 120
+  max_holding: 100
   Sell: True
   made_from:
     Runecloth: 2
@@ -291,17 +290,13 @@ Heavy Runecloth Bandage:
 Runecloth:
   Buy: True
 Spider Sausage:
-  max_holding: 100
+  max_holding: 80
   made_from:
     White Spider Meat: 2
   make_pass: True    
 White Spider Meat:
   Buy: True
   make_pass: True
-Dense Sharpening Stone:
-  max_holding: 120
-White Spider Meat:
-  Buy: True
 Dense Sharpening Stone:
   max_holding: 80
   Buy: True
