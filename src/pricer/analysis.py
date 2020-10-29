@@ -394,3 +394,19 @@ def report_profits() -> None:
     profits["total_profit"] = profits["total_action"] - profits["total_materials"]
 
     io.writer(profits, "reporting", "profits", "parquet")
+
+
+def calculate_inventory_valuation() -> None:
+    """Get total inventory value based on current market price."""
+    item_inventory = io.reader("intermediate", "item_inventory", "parquet")
+    predicted_prices = io.reader("intermediate", "predicted_prices", "parquet")
+
+    item_trade = item_inventory.loc[item_inventory.index.isin(cfg.ui)]
+
+    bbpred_price = predicted_prices["bbpred_price"]
+    bbpred_price.name = "item"
+
+    inventory_valuation = item_trade.multiply(bbpred_price, axis=0)
+    inventory_valuation = inventory_valuation.fillna(0).astype(int)
+
+    io.writer(inventory_valuation, "reporting", "inventory_valuation", "parquet")

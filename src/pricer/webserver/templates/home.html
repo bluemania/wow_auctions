@@ -4,18 +4,29 @@
 
 <div class="col-lg-6">
 	<div class='row'>
+		<div class="col-lg-12">
 		<img src="{{ url_for('item_profit_plot', item_name='_alltime_profits') }}" width="480">
+		</div>
 	</div>
 	<div class='row'>
-		{{ make_missing()|safe }}
+		<div class="col-lg-12">
+			{{ make_missing()|safe }}
+		</div>
 	</div>
 	<div class='row'>
-		{{ item_profits()|safe }}
+		<div class="col-lg-12">
+			{{ item_profits()|safe }}
+		</div>
 	</div>
 
 </div>
 <div class="col-lg-6">
-	{{ profit_per_item()|safe }}
+	<div class="col-lg-12">
+		{{ inventory_valuation()|safe }}
+	</div>
+	<div class="col-lg-12">
+		{{ profit_per_item()|safe }}
+	</div>	
 </div>
 </div>
 
