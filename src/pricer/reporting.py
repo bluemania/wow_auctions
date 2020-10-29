@@ -8,7 +8,7 @@ import seaborn as sns
 from pricer import config as cfg, io
 
 logger = logging.getLogger(__name__)
-sns.set(rc={"figure.figsize": (3, 3)})
+sns.set(rc={"figure.figsize": (6, 6)})
 
 
 def have_in_bag() -> str:

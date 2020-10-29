@@ -71,8 +71,7 @@ Elixir of Greater Agility:
     Sungrass: 1
 Elixir of Superior Defense:
   min_holding: 10
-  max_holding: 40
-  Sell: True
+  max_holding: 15
   made_from:
     Crystal Vial: 1
     Stonescale Oil: 2
@@ -86,16 +85,15 @@ Elixir of the Mongoose:
     Mountain Silversage: 2
     Plaguebloom: 2
 Free Action Potion:
-  max_holding: 60
-  Sell: True
+  min_holding: 10
+  max_holding: 15
   made_from:
     Leaded Vial: 1
     Blackmouth Oil: 2
     Stranglekelp: 1
 Greater Stoneshield Potion:
   min_holding: 10
-  max_holding: 40
-  Sell: True
+  max_holding: 15
   made_from:
     Crystal Vial: 1
     Stonescale Oil: 3
@@ -147,7 +145,7 @@ Greater Nature Protection Potion:
   make_pass: True
 Greater Shadow Protection Potion:
   min_holding: 5
-  max_holding: 40
+  max_holding: 25
   Sell: True
   made_from:
     Crystal Vial: 1
@@ -163,7 +161,7 @@ Fire Protection Potion:
 
 
 Blackmouth Oil:
-  max_holding: 80
+  max_holding: 40
   made_from:
     Empty Vial: 1
     Oily Blackmouth: 2
@@ -174,7 +172,7 @@ Stonescale Oil:
     Stonescale Eel: 1
 Shadow Oil:
   min_holding: 5
-  max_holding: 40
+  max_holding: 25
   made_from:
     Leaded Vial: 1
     Fadeleaf: 4
