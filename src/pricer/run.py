@@ -99,7 +99,8 @@ def run_reporting() -> None:
     """Run steps to create plots and insights."""
     with tqdm(total=1000, desc="Reporting") as pbar:
         analysis.report_profits()
-        pbar.update(11)
+        analysis.calculate_inventory_valuation()
+        pbar.update(61)
 
         reporting.have_in_bag()
         reporting.make_missing()
@@ -110,10 +111,10 @@ def run_reporting() -> None:
         pbar.update(141)
 
         reporting.produce_activity_tracking()
-        pbar.update(365)
+        pbar.update(335)
 
         reporting.draw_profit_charts()
-        pbar.update(367)
+        pbar.update(347)
 
 
 def main() -> None:

@@ -148,6 +148,12 @@ def profit_per_item() -> str:
     return item_profits.to_html()
 
 
+def inventory_valuation() -> str:
+    """Profits per item as HTML."""
+    inventory_valuation = io.reader("reporting", "inventory_valuation", "parquet")
+    return inventory_valuation.to_html()
+
+
 def draw_profit_charts() -> None:
     """Create charts of alltime and individual item profits."""
     profits = io.reader("reporting", "profits", "parquet")
