@@ -40,12 +40,16 @@ def g() -> Dict[Any, Any]:
     def inventory_valuation() -> str:
         return reporting.inventory_valuation()
 
+    def grand_total() -> Dict[str, int]:
+        return reporting.grand_total()
+
     return dict(
         item_profits=item_profits,
         user_items=user_items,
         make_missing=make_missing,
         profit_per_item=profit_per_item,
         inventory_valuation=inventory_valuation,
+        grand_total=grand_total,
     )
 
 

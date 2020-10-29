@@ -409,13 +409,4 @@ def calculate_inventory_valuation() -> None:
     inventory_valuation = item_trade.multiply(bbpred_price, axis=0)
     inventory_valuation = inventory_valuation.fillna(0).astype(int)
 
-    inventory_valuation = (
-        (inventory_valuation["inv_total_all"] / 10000)
-        .round(0)
-        .astype(int)
-        .sort_values(ascending=False)
-    )
-    inventory_valuation.name = "inventory_valuation"
-    inventory_valuation = pd.DataFrame(inventory_valuation)
-
     io.writer(inventory_valuation, "reporting", "inventory_valuation", "parquet")

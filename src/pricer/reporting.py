@@ -1,5 +1,6 @@
 """Produces reporting to help interpret analysis and campaigns."""
 import logging
+from typing import Dict
 
 import matplotlib.pyplot as plt  # type: ignore
 import pandas as pd
@@ -151,7 +152,36 @@ def profit_per_item() -> str:
 def inventory_valuation() -> str:
     """Profits per item as HTML."""
     inventory_valuation = io.reader("reporting", "inventory_valuation", "parquet")
+    inventory_valuation = (
+        (inventory_valuation["inv_total_all"] / 10000)
+        .round(0)
+        .astype(int)
+        .sort_values(ascending=False)
+    )
+    inventory_valuation.name = "inventory_valuation"
+    inventory_valuation = pd.DataFrame(inventory_valuation)
+
     return inventory_valuation.to_html()
+
+
+def grand_total() -> Dict[str, int]:
+    """Returns total inventory and money value."""
+    ark_monies = io.reader("cleaned", "ark_monies", "parquet")
+    inventory_valuation = io.reader("reporting", "inventory_valuation", "parquet")
+
+    inventory_value_total = (
+        (inventory_valuation["inv_total_all"].sum() / 10000).round(0).astype(int)
+    )
+    money_total = (ark_monies["monies"].sum() / 10000).round(0).astype(int)
+
+    grand_total = inventory_value_total + money_total
+
+    total_holdings = {
+        "Inventory": inventory_value_total,
+        "Money": money_total,
+        "Grand Total": grand_total,
+    }
+    return total_holdings
 
 
 def draw_profit_charts() -> None:
