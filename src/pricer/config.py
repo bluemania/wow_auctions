@@ -2,9 +2,20 @@
 import logging
 from typing import Any, Dict
 
+import tqdm
+
 from pricer import io
 
 logger = logging.getLogger(__name__)
+
+
+class TqdmStream(object):
+    """Allows for writing tqdm alongside logging."""
+
+    @classmethod
+    def write(cls: Any, msg: Any) -> Any:
+        """Writer method."""
+        tqdm.tqdm.write(msg, end="")
 
 
 def set_loggers(
@@ -43,7 +54,7 @@ def set_loggers(
         file_handler.setLevel(10)
         file_handler.setFormatter(formatter)
 
-        stream_handler = logging.StreamHandler()
+        stream_handler = logging.StreamHandler(stream=TqdmStream)  # type: ignore
         stream_handler.setFormatter(formatter)
 
         logger.addHandler(file_handler)  # type: ignore

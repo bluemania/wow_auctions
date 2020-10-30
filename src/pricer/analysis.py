@@ -1,6 +1,6 @@
 """Analyses cleaned data sources to form intermediate tables."""
 import logging
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 from numpy import inf
 import pandas as pd
@@ -49,6 +49,7 @@ def _predict_item_prices(
                     f"""Price prediction problem for {item_name}.
                     Did you add something and not use booty bay?"""
                 )
+                raise
 
     qty_df = bb_fortnight[bb_fortnight["snapshot"] == bb_fortnight["snapshot"].max()]
     qty_df = qty_df.set_index("item")["quantity"]
@@ -185,6 +186,8 @@ def analyse_replenishment() -> None:
                 replenish.loc[ingredient, "replenish_qty"] += (
                     count * row["replenish_qty"]
                 )
+        else:  # pragma: no cover
+            pass
 
     replenish["replenish_z"] = (
         replenish["replenish_qty"] / replenish["user_std_holding"]
@@ -257,12 +260,10 @@ def analyse_listings() -> None:
     io.writer(listing_each, "intermediate", "listing_each", "parquet")
 
 
-def predict_volume_sell_probability(dur_char: str = "m") -> None:
-    """Expected volume changes as a probability of sale given BB recent history."""
-    bb_fortnight = io.reader("cleaned", "bb_fortnight", "parquet")
-    user_sells = utils.user_item_filter("Sell")
-    MAX_LISTINGS = cfg.us["analysis"]["MAX_LISTINGS_PROBABILITY"]
-
+def _predict_volume_sell_probability(
+    bb_fortnight: pd.DataFrame, user_sells: List[str], MAX_LISTINGS: int, dur_char: str,
+) -> pd.DataFrame:
+    """Calculated volume sell probability."""
     duration_mins = utils.duration_str_to_mins(dur_char)
     polls = int(duration_mins / 60 / 2)
     logger.debug(f"Analysing volume sell prob based on {polls} snapshot periods")
@@ -307,6 +308,17 @@ def predict_volume_sell_probability(dur_char: str = "m") -> None:
     item_volume_change_probability = item_volume_change_probability.stack()
     item_volume_change_probability.name = "sell_probability"
     item_volume_change_probability = item_volume_change_probability.reset_index()
+    return item_volume_change_probability
+
+
+def predict_volume_sell_probability(dur_char: str = "m") -> None:
+    """Expected volume changes as a probability of sale given BB recent history."""
+    bb_fortnight = io.reader("cleaned", "bb_fortnight", "parquet")
+    user_sells = utils.user_item_filter("Sell")
+    MAX_LISTINGS = cfg.us["analysis"]["MAX_LISTINGS_PROBABILITY"]
+    item_volume_change_probability = _predict_volume_sell_probability(
+        bb_fortnight, user_sells, MAX_LISTINGS, dur_char
+    )
 
     io.writer(
         item_volume_change_probability,
@@ -316,12 +328,10 @@ def predict_volume_sell_probability(dur_char: str = "m") -> None:
     )
 
 
-def report_profits() -> None:
-    """Compare purchases and sales to expected value to derive profit from action."""
-    bean_results = io.reader("cleaned", "bean_results", "parquet")
-    bean_purchases = io.reader("cleaned", "bean_purchases", "parquet")
-    bb_history = io.reader("cleaned", "bb_history", "parquet")
-
+def _report_profits(
+    bean_results: pd.DataFrame, bean_purchases: pd.DataFrame, bb_history: pd.DataFrame
+) -> pd.DataFrame:
+    """Internal report profits."""
     bean_results["date"] = bean_results["timestamp"].dt.date.astype("datetime64")
     bean_results["profit"] = bean_results["received"].fillna(
         -bean_results["item_deposit"]
@@ -392,5 +402,31 @@ def report_profits() -> None:
     )
     profits["total_materials"] = -profits["silveravg_cost"] * profits["total_qty"]
     profits["total_profit"] = profits["total_action"] - profits["total_materials"]
+    return profits
+
+
+def report_profits() -> None:
+    """Compare purchases and sales to expected value to derive profit from action."""
+    bean_results = io.reader("cleaned", "bean_results", "parquet")
+    bean_purchases = io.reader("cleaned", "bean_purchases", "parquet")
+    bb_history = io.reader("cleaned", "bb_history", "parquet")
+
+    profits = _report_profits(bean_results, bean_purchases, bb_history)
 
     io.writer(profits, "reporting", "profits", "parquet")
+
+
+def calculate_inventory_valuation() -> None:
+    """Get total inventory value based on current market price."""
+    item_inventory = io.reader("intermediate", "item_inventory", "parquet")
+    predicted_prices = io.reader("intermediate", "predicted_prices", "parquet")
+
+    item_trade = item_inventory.loc[item_inventory.index.isin(cfg.ui)]
+
+    bbpred_price = predicted_prices["bbpred_price"]
+    bbpred_price.name = "item"
+
+    inventory_valuation = item_trade.multiply(bbpred_price, axis=0)
+    inventory_valuation = inventory_valuation.fillna(0).astype(int)
+
+    io.writer(inventory_valuation, "reporting", "inventory_valuation", "parquet")

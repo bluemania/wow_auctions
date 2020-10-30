@@ -30,15 +30,14 @@ def get_bb_item_page(driver: webdriver, item_id: int) -> Dict[Any, Any]:
     driver.get(url)
     soup = BeautifulSoup(driver.page_source)
     text = soup.find("body").text
-    if "captcha" in text:
+    if "captcha" in text:  # pragma: no cover
         driver.get(backup_url)
         input("User action required")
-
-        # Redo
         driver.get(url)
         soup = BeautifulSoup(driver.page_source)
         text = soup.find("body").text
-    return json.loads(text)
+    clean_text = json.loads(text)
+    return clean_text
 
 
 def start_driver() -> webdriver:
@@ -195,7 +194,7 @@ def clean_arkinventory_data(run_dt: dt) -> None:
 
         for lkey in location_slots:
             items: Dict[str, int] = defaultdict(int)
-            if str(lkey) not in cfg.gs["location_info"]:
+            if str(lkey) not in cfg.gs["location_info"]:  # pragma: no cover
                 continue
             else:
                 loc_name = cfg.gs["location_info"][str(lkey)]
