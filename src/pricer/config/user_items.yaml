@@ -154,10 +154,19 @@ Greater Shadow Protection Potion:
   make_pass: True
 Fire Protection Potion:
   Sell: True
+  max_holding: 30
   made_from:
     Leaded Vial: 1
     Small Flame Sac: 1
     Fire Oil: 1
+Frost Oil:
+  Sell: True
+  max_holding: 30
+  made_from:
+    Leaded Vial: 1
+    Khadgar's Whiskers: 1
+    Wintersbite: 1
+
 
 
 Blackmouth Oil:
@@ -257,7 +266,17 @@ Elemental Earth:
 
 Small Flame Sac:
   Sell: True
+  Buy: True
+  max_holding: 20
 Fire Oil:
+  Sell: True
+Khadgar's Whiskers:
+  max_holding: 40
+  Buy: True
+  Sell: True
+Wintersbite:
+  max_holding: 60
+  Buy: True
   Sell: True
 
 Essence of Undeath:
