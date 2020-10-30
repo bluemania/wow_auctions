@@ -32,3 +32,4 @@ def test_e2e() -> None:
     campaign.analyse_sell_policy(stack=5, max_sell=5, duration="m")
 
     reporting.have_in_bag()
+    analysis.report_profits()
