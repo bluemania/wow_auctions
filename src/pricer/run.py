@@ -79,20 +79,17 @@ def run_analytics(
         campaign.analyse_buy_policy()
         pbar.update(7)
 
-        campaign.write_buy_policy()
-        pbar.update(4)
-
         campaign.analyse_sell_policy(stack=stack, max_sell=max_sell, duration=duration)
         pbar.update(14)
-
-        campaign.write_sell_policy()
-        pbar.update(5)
 
         campaign.analyse_make_policy()
         pbar.update(3)
 
-        campaign.write_make_policy()
-        pbar.update(11)
+        if not test:
+            campaign.write_sell_policy()
+            campaign.write_buy_policy()
+            campaign.write_make_policy()
+        pbar.update(20)
 
 
 def run_reporting() -> None:
