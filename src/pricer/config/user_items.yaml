@@ -189,8 +189,6 @@ Shadow Oil:
 
 Oily Blackmouth:
   max_holding: 80
-  Buy: True
-  Sell: True
 Stonescale Eel:
   max_holding: 80
   Buy: True
@@ -245,8 +243,6 @@ Sungrass:
   Sell: True
 Thorium Ore:
   max_holding: 40
-  Buy: True
-  Sell: True
 Wild Steelbloom:
   max_holding: 100
   Buy: True
