@@ -256,12 +256,13 @@ def clean_beancounter_data() -> None:
             for item_id, listings in item_listings.items():
                 for _, listing in listings.items():
                     for auction in listing:
-                        parsed.append(
-                            [auction_type]
-                            + [item_names[int(item_id)]]
-                            + [character]
-                            + auction.split(";")
-                        )
+                        if int(item_id) in item_names:  # bugfix #145
+                            parsed.append(
+                                [auction_type]
+                                + [item_names[int(item_id)]]
+                                + [character]
+                                + auction.split(";")
+                            )
 
     # Setup as pandas dataframe, remove irrelevant columns
     df = pd.DataFrame(parsed)
