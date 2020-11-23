@@ -9,7 +9,7 @@ import tqdm
 from pricer import io
 
 logger = logging.getLogger(__name__)
-pricer_config = Path.home().joinpath('.pricer')
+pricer_config = Path.home().joinpath(".pricer")
 
 
 class TqdmStream(object):
@@ -66,19 +66,19 @@ def set_loggers(
 
 def set_path(path):
     config = {"WOWPATH": path}
-    pricer_config = Path.home().joinpath('.pricer')
-    with open(pricer_config, 'w') as f:
+    pricer_config = Path.home().joinpath(".pricer")
+    with open(pricer_config, "w") as f:
         json.dump(config, f)
 
 
 def get_path():
-    pricer_config = Path.home().joinpath('.pricer')
+    pricer_config = Path.home().joinpath(".pricer")
     try:
-        with open(pricer_config, 'r') as f:
+        with open(pricer_config, "r") as f:
             path_config = json.load(f)
     except FileNotFoundError:
         pass
-    return path_config.get('WOWPATH', '')
+    return path_config.get("WOWPATH", "")
 
 
 us = io.reader("config", "user_settings", "yaml")

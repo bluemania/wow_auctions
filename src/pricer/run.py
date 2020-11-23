@@ -122,13 +122,21 @@ def main() -> None:
     run_dt = dt.now().replace(microsecond=0)
 
     parser = argparse.ArgumentParser(description="WoW Auctions")
-    
-    subparsers = parser.add_subparsers(dest='command')
-    install_parser = subparsers.add_parser('install')
-    install_parser.add_argument("-p", "--path", help="Install pricer by attaching to WoW path", type=str, default="/Applications/World of Warcraft/_classic_/")
+
+    subparsers = parser.add_subparsers(dest="command")
+    install_parser = subparsers.add_parser("install")
+    install_parser.add_argument(
+        "-p",
+        "--path",
+        help="Install pricer by attaching to WoW path",
+        type=str,
+        default="/Applications/World of Warcraft/_classic_/",
+    )
 
     parser.add_argument("-b", help="Update web booty bay analysis", action="store_true")
-    parser.add_argument("-icons", help="Get item icons for webserver", action="store_true")
+    parser.add_argument(
+        "-icons", help="Get item icons for webserver", action="store_true"
+    )
 
     parser.add_argument("-s", type=int, default=5, help="Stack size")
     parser.add_argument("-m", type=int, default=20, help="Max sell")
