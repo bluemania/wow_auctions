@@ -122,8 +122,13 @@ def main() -> None:
     run_dt = dt.now().replace(microsecond=0)
 
     parser = argparse.ArgumentParser(description="WoW Auctions")
+    
+    subparsers = parser.add_subparsers(dest='command')
+    install_parser = subparsers.add_parser('install')
+    install_parser.add_argument("-p", "--path", help="Install pricer by attaching to WoW path", type=str, default="/Applications/World of Warcraft/_classic_/")
+
     parser.add_argument("-b", help="Update web booty bay analysis", action="store_true")
-    parser.add_argument("-i", help="Get item icons for webserver", action="store_true")
+    parser.add_argument("-icons", help="Get item icons for webserver", action="store_true")
 
     parser.add_argument("-s", type=int, default=5, help="Stack size")
     parser.add_argument("-m", type=int, default=20, help="Max sell")
@@ -144,27 +149,37 @@ def main() -> None:
     logger.info("Program started, arguments parsed")
     logger.debug(args)
 
-    if args.b:
-        sources.get_bb_data()
-    if args.i:
-        sources.get_item_icons()
-    if args.t:
-        """Test environment."""
-        cfg.env = {"basepath": "data/_test"}
-        test_items = ["Mighty Rage Potion", "Gromsblood", "Crystal Vial"]
-        cfg.ui = {k: v for k, v in cfg.ui.items() if k in test_items}
+    if args.command == "install":
+        """
+        Expected process:
+        1. pip install pricer
+        2. pricer install (path)
+        3. Test/show correctly installed
+        4. Create .pricer file in ~/ with wow directory
+        """
+        cfg.set_path(args.path)
+    else:
+        if args.b:
+            sources.get_bb_data()
+        if args.icons:
+            sources.get_item_icons()
+        if args.t:
+            """Test environment."""
+            cfg.env = {"basepath": "data/_test"}
+            test_items = ["Mighty Rage Potion", "Gromsblood", "Crystal Vial"]
+            cfg.ui = {k: v for k, v in cfg.ui.items() if k in test_items}
 
-    if not args.n:
-        run_analytics(stack=args.s, max_sell=args.m, duration=args.d, test=args.t)
+        if not args.n:
+            run_analytics(stack=args.s, max_sell=args.m, duration=args.d, test=args.t)
 
-    if args.r:
-        run_reporting()
+        if args.r:
+            run_reporting()
 
-    logger.info(f"Program end, seconds {(dt.now() - run_dt).total_seconds()}")
+        logger.info(f"Program end, seconds {(dt.now() - run_dt).total_seconds()}")
 
-    if args.f:
-        logger.info("Starting webserver")
-        app.run(debug=True, threaded=True)
+        if args.f:
+            logger.info("Starting webserver")
+            app.run(debug=True, threaded=True)
 
 
 if __name__ == "__main__":

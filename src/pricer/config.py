@@ -1,5 +1,7 @@
 """It collates and loads user specified configuration for data pipeline."""
+import json
 import logging
+from pathlib import Path
 from typing import Any, Dict
 
 import tqdm
@@ -7,6 +9,7 @@ import tqdm
 from pricer import io
 
 logger = logging.getLogger(__name__)
+pricer_config = Path.home().joinpath('.pricer')
 
 
 class TqdmStream(object):
@@ -61,6 +64,23 @@ def set_loggers(
         logger.addHandler(stream_handler)  # type: ignore
 
 
+def set_path(path):
+    config = {"WOWPATH": path}
+    pricer_config = Path.home().joinpath('.pricer')
+    with open(pricer_config, 'w') as f:
+        json.dump(config, f)
+
+
+def get_path():
+    pricer_config = Path.home().joinpath('.pricer')
+    try:
+        with open(pricer_config, 'r') as f:
+            path_config = json.load(f)
+    except FileNotFoundError:
+        pass
+    return path_config.get('WOWPATH', '')
+
+
 us = io.reader("config", "user_settings", "yaml")
 ui = io.reader("config", "user_items", "yaml")
 gs = io.reader("config", "general_settings", "yaml")
@@ -68,5 +88,3 @@ try:
     secrets = io.reader(name="SECRETS", ftype="yaml")
 except FileNotFoundError:
     secrets = {"username": None, "password": None}
-
-env: Dict[str, str] = {"basepath": "data"}
