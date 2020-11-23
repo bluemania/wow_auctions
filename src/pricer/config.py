@@ -72,7 +72,7 @@ def set_path(path: str) -> None:
         json.dump(config, f)
 
 
-def get_path() -> str:
+def get_path() -> Any:
     """Gets the pricer config file."""
     pricer_config = Path.home().joinpath(".pricer")
     try:
