@@ -173,7 +173,7 @@ def main() -> None:
             sources.get_item_icons()
         if args.t:
             """Test environment."""
-            cfg.env = {"basepath": "data/_test"}
+            cfg.get_path = cfg.get_test_path
             test_items = ["Mighty Rage Potion", "Gromsblood", "Crystal Vial"]
             cfg.ui = {k: v for k, v in cfg.ui.items() if k in test_items}
 

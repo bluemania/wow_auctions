@@ -2,7 +2,7 @@
 import json
 import logging
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 
 import tqdm
 
@@ -64,21 +64,28 @@ def set_loggers(
         logger.addHandler(stream_handler)  # type: ignore
 
 
-def set_path(path):
+def set_path(path: str) -> None:
+    """If not present, create a pricer config file."""
     config = {"WOWPATH": path}
     pricer_config = Path.home().joinpath(".pricer")
     with open(pricer_config, "w") as f:
         json.dump(config, f)
 
 
-def get_path():
+def get_path() -> str:
+    """Gets the pricer config file."""
     pricer_config = Path.home().joinpath(".pricer")
     try:
         with open(pricer_config, "r") as f:
             path_config = json.load(f)
     except FileNotFoundError:
         pass
-    return path_config.get("WOWPATH", "")
+    return Path(path_config.get("WOWPATH", "")).joinpath("pricer_data")
+
+
+def get_test_path() -> str:
+    """Used to overwrite test path for testing."""
+    return "data/_test"
 
 
 us = io.reader("config", "user_settings", "yaml")
