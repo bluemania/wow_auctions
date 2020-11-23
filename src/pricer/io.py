@@ -25,7 +25,7 @@ def reader(
     if ftype == "yaml":
         base_path = Path(__file__).parent
     else:
-        base_path = Path(cfg.env["basepath"])
+        base_path = Path(cfg.get_path())
     path = Path(base_path, folder, name + "." + ftype)
     logger.debug(f"Reading {name} {ftype} from {path}")
 
@@ -71,7 +71,7 @@ def writer(
     self_schema: bool = False,
 ) -> None:
     """Standard program writer, allows pathing extensibility i.e. testing or S3."""
-    path = Path(cfg.env["basepath"], folder, name + "." + ftype)
+    path = Path(cfg.get_path(), folder, name + "." + ftype)
     logger.debug(f"Writing {name} {ftype} to {path}")
 
     if self_schema:
