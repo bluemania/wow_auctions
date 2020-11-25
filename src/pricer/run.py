@@ -134,7 +134,6 @@ def main() -> None:
     )
     install_parser.add_argument("-v", help="Verbose mode (info)", action="store_true")
     install_parser.add_argument("-vv", help="Verbose mode (debug)", action="store_true")
-    
 
     parser.add_argument("-b", help="Update web booty bay analysis", action="store_true")
     parser.add_argument(

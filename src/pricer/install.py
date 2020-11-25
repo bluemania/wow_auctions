@@ -1,21 +1,24 @@
-import logging
-from typing import Any, Dict, List
-from pathlib import Path
+"""Installation related activities."""
 import json
+import logging
+from pathlib import Path
 import sys
+from typing import Any, Dict, List
 
 logger = logging.getLogger(__name__)
 
+
 def start(default_path: str) -> None:
-    """Prompts user for WoW directory, checks and saves reference to home"""
+    """Prompts user for WoW directory, checks and saves reference to home."""
     wow_folder = input("Please specify the full path to your WoW classic folder: ")
-    if wow_folder == '':
+    if wow_folder == "":
         wow_folder = default_path
 
     check_wow_folders(wow_folder)
     accounts = get_characters(wow_folder)
     config = {"base": wow_folder, "accounts": accounts}
     create_config(config)
+    make_data_folders(wow_folder)
 
 
 def check_wow_folders(wow_folder: str) -> None:
@@ -28,7 +31,7 @@ def check_wow_folders(wow_folder: str) -> None:
         logger.error(f"Specified folder '{path}' does not exist - exiting")
         sys.exit(1)
 
-    addon_path = path.joinpath('Interface').joinpath('Addons')
+    addon_path = path.joinpath("Interface").joinpath("Addons")
     for addon in ["ArkInventory", "BeanCounter", "Auc-ScanData"]:
         check = addon_path.joinpath(addon)
         if check.is_dir():
@@ -38,15 +41,19 @@ def check_wow_folders(wow_folder: str) -> None:
             sys.exit(1)
 
 
-def get_characters(path: str) -> Dict[str, Dict[str, List[str]]]:    
+def get_characters(path: str) -> Dict[str, Any]:
+    """Parse wow folder for accounts, servers and characters."""
+
     def _parse_wow_path(path: Any) -> List[str]:
         excluded_folders = [".DS_Store", "SavedVariables"]
         path_ends = [child.parts[-1] for child in path.iterdir()]
-        path_ends_clean = [pe for pe in path_ends if pe not in excluded_folders and '.' not in pe]
+        path_ends_clean = [
+            pe for pe in path_ends if pe not in excluded_folders and "." not in pe
+        ]
         return path_ends_clean
 
     acc_path = Path(path).joinpath("WTF").joinpath("Account")
-    resources = {}
+    resources: Dict[str, Any] = {}
 
     for account in _parse_wow_path(acc_path):
         account_path = Path(acc_path).joinpath(account)
@@ -58,10 +65,21 @@ def get_characters(path: str) -> Dict[str, Dict[str, List[str]]]:
 
             for char in _parse_wow_path(server_path):
                 resources[account]["servers"][server]["characters"].append(char)
-    return {"accounts" : resources}
+    return {"accounts": resources}
 
 
 def create_config(config: Dict[str, Any]) -> None:
+    """Writes config."""
     pricer_config = Path.home().joinpath(".pricer")
     with open(pricer_config, "w") as f:
         json.dump(config, f, indent=2)
+
+
+def make_data_folders(path: str) -> None:
+    """Create data folders if they don't exist."""
+    pass
+
+
+def check() -> None:
+    """Check Pricer is installed."""
+    pass

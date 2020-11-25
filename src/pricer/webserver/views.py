@@ -19,6 +19,7 @@ app.config["data_path"] = Path(app.root_path).parents[2].joinpath("data")
 
 # except FileNotFoundError:
 #     logger.exception("Reporting files not present, unable to start webserver")
+item_icon_manifest: Dict = {}
 
 
 @app.context_processor
