@@ -5,6 +5,8 @@ from pathlib import Path
 import sys
 from typing import Any, Dict, List
 
+from selenium import webdriver
+
 logger = logging.getLogger(__name__)
 
 
@@ -14,17 +16,22 @@ def start(default_path: str) -> None:
     if wow_folder == "":
         wow_folder = default_path
 
-    check_wow_folders(wow_folder)
-    accounts = get_characters(wow_folder)
-    config = {"base": wow_folder, "accounts": accounts}
-    create_config(config)
-    make_data_folders(wow_folder)
-
-
-def check_wow_folders(wow_folder: str) -> None:
-    """Checks wow folder and required addons exist."""
     path = Path(wow_folder)
+    check_wow_folders(path)
+    make_data_folders(path)
 
+    config = {"base": wow_folder, "accounts": get_account_info(path)}
+    create_wow_config(config)
+
+    input(
+        f"Please download the latest Chromedriver and add to {path.joinpath('pricer_data')}. (Press Enter to continue)... "
+    )
+    check_chromedriver(path)
+    print("Installation complete!")
+
+
+def check_wow_folders(path: Path) -> None:
+    """Checks wow folder and required addons exist."""
     if path.is_dir():
         logger.debug(f"Specified folder '{path}' exists")
     else:
@@ -41,7 +48,7 @@ def check_wow_folders(wow_folder: str) -> None:
             sys.exit(1)
 
 
-def get_characters(path: str) -> Dict[str, Any]:
+def get_account_info(path: Path) -> Dict[str, Any]:
     """Parse wow folder for accounts, servers and characters."""
 
     def _parse_wow_path(path: Any) -> List[str]:
@@ -52,7 +59,7 @@ def get_characters(path: str) -> Dict[str, Any]:
         ]
         return path_ends_clean
 
-    acc_path = Path(path).joinpath("WTF").joinpath("Account")
+    acc_path = path.joinpath("WTF").joinpath("Account")
     resources: Dict[str, Any] = {}
 
     for account in _parse_wow_path(acc_path):
@@ -68,18 +75,37 @@ def get_characters(path: str) -> Dict[str, Any]:
     return {"accounts": resources}
 
 
-def create_config(config: Dict[str, Any]) -> None:
+def create_wow_config(config: Dict[str, Any]) -> None:
     """Writes config."""
-    pricer_config = Path.home().joinpath(".pricer")
-    with open(pricer_config, "w") as f:
+    config_path = Path.home().joinpath(".pricer")
+    logger.debug(f"Writing config to {config_path}")
+    with open(config_path, "w") as f:
         json.dump(config, f, indent=2)
 
 
-def make_data_folders(path: str) -> None:
+def make_data_folders(path: Path) -> None:
     """Create data folders if they don't exist."""
-    pass
+    subdirs = ["cleaned", "intermediate", "item_icons", "outputs", "raw", "reporting"]
+
+    data_path = path.joinpath("pricer_data")
+    if not data_path.is_dir():
+        logger.debug(f"Creating directory {data_path}")
+        data_path.mkdir()
+
+    for subdir in subdirs:
+        sub_path = data_path.joinpath(subdir)
+        if not sub_path.is_dir():
+            logger.debug(f"Creating directory {sub_path}")
+            sub_path.mkdir()
 
 
-def check() -> None:
-    """Check Pricer is installed."""
-    pass
+def check_chromedriver(path: Path) -> None:
+    """Checks Chromedriver file is in directory and works."""
+    chromedriver_path = path.joinpath("pricer_data").joinpath("chromedriver")
+    if chromedriver_path.exists():
+        logger.debug(f"Chromedriver present")
+        driver = webdriver.Chrome(chromedriver_path)
+        driver.close()
+    else:
+        logger.error(f"Chromedriver does not exist in directory, please download")
+        sys.exit(1)

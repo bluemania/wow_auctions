@@ -63,24 +63,17 @@ def set_loggers(
         logger.addHandler(stream_handler)  # type: ignore
 
 
-def set_path(path: str) -> None:
-    """If not present, create a pricer config file."""
-    config = {"WOWPATH": path}
-    pricer_config = Path.home().joinpath(".pricer")
-    with open(pricer_config, "w") as f:
-        json.dump(config, f)
-
-
-def get_path() -> Any:
+def get_wow_config() -> Any:
     """Gets the pricer config file."""
-    pricer_config = Path.home().joinpath(".pricer")
+    pricer_path = Path.home().joinpath(".pricer")
     try:
-        with open(pricer_config, "r") as f:
+        with open(pricer_path, "r") as f:
             path_config = json.load(f)
     except FileNotFoundError as e:
         raise FileNotFoundError("Pricer is not installed; run `pricer install`") from e
 
-    return Path(path_config.get("WOWPATH", "")).joinpath("pricer_data")
+    path_config["base"] = Path(path_config["base"])
+    return path_config
 
 
 def get_test_path() -> str:
@@ -90,8 +83,32 @@ def get_test_path() -> str:
 
 us = io.reader("config", "user_settings", "yaml")
 ui = io.reader("config", "user_items", "yaml")
-gs = io.reader("config", "general_settings", "yaml")
+
 try:
     secrets = io.reader(name="SECRETS", ftype="yaml")
 except FileNotFoundError:
     secrets = {"username": None, "password": None}
+wow = get_wow_config()
+
+location_info = {"0": "Inventory", "2": "Bank", "5": "Mailbox", "10": "Auctions"}
+auction_type_labels = {
+    "completedAuctions": "sell_price",
+    "completedBidsBuyouts": "buy_price",
+    "failedAuctions": "failed",
+}
+flask = {"CUSTOM_STATIC_PATH": wow["base"].joinpath("pricer_data")}
+
+booty = {
+    "CHROMEDRIVER_PATH": wow["base"].joinpath("pricer_data").joinpath("chromedriver"),
+    "base": "https://www.bootybaygazette.com/#us/",
+    "api": "https://www.bootybaygazette.com/api/item.php?house=",
+    "PAGE_WAIT": 1,
+}
+
+analysis = {
+    "USER_STD_SPREAD": 7,
+    "ITEM_PRICE_OUTLIER_CAP": 0.025,
+    "ROLLING_BUYOUT_SPAN": 100,
+    "BB_MAT_PRICE_RATIO": 0.5,
+    "MAX_LISTINGS_PROBABILITY": 500,
+}
