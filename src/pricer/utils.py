@@ -54,16 +54,21 @@ def source_merge(a: dict, b: dict, path: list = None) -> Dict[Any, Any]:
 
 def make_lua_path(account_name: str = "", datasource: str = "") -> str:
     """Forms a path to a lua file."""
-    warcraft_path = cfg.us.get("warcraft_path").rstrip("/")
     path = (
-        f"{warcraft_path}/WTF/Account/{account_name}/" + f"SavedVariables/{datasource}"
+        cfg.wow["base"]
+        .joinpath("WTF")
+        .joinpath("Account")
+        .joinpath(account_name)
+        .joinpath("SavedVariables")
+        .joinpath(datasource)
     )
     return path
 
 
 def get_item_ids() -> Dict[str, int]:
     """Read item id database."""
-    item_codes = io.reader("static", "items", "csv")
+
+    item_codes = pd.read_csv('items.csv')
     return item_codes.set_index("name")["entry"].to_dict()
 
 

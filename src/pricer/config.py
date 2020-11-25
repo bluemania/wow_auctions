@@ -6,8 +6,6 @@ from typing import Any, Dict
 
 import tqdm
 
-from pricer import io
-
 logger = logging.getLogger(__name__)
 
 
@@ -80,14 +78,6 @@ def get_test_path() -> str:
     return "data/_test"
 
 
-us = io.reader("config", "user_settings", "yaml")
-ui = io.reader("config", "user_items", "yaml")
-
-try:
-    secrets = io.reader(name="SECRETS", ftype="yaml")
-except FileNotFoundError:
-    secrets = {"username": None, "password": None}
-
 pricer_path = Path.home().joinpath(".pricer")
 wow = get_wow_config(pricer_path)
 
@@ -115,6 +105,7 @@ analysis = {
 }
 required_addons = ["ArkInventory", "BeanCounter", "Auc-ScanData", "TradeSkillMaster"]
 pricer_subdirs = [
+    "config",
     "cleaned",
     "intermediate",
     "item_icons",
@@ -123,3 +114,10 @@ pricer_subdirs = [
     "reporting",
     "logs",
 ]
+
+from . import io
+try:
+    us = io.reader("config", "user_settings", "yaml")
+    ui = io.reader("config", "user_items", "yaml")
+except:
+    pass

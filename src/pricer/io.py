@@ -8,7 +8,7 @@ import pandas as pd
 from slpp import slpp as lua
 import yaml
 
-from pricer import config as cfg, schema, utils
+from . import config as cfg, schema, utils
 
 logger = logging.getLogger(__name__)
 pd.options.mode.chained_assignment = None  # default='warn'
@@ -22,11 +22,9 @@ def reader(
     self_schema: bool = False,
 ) -> Any:
     """Standard program writer, allows pathing extensibility i.e. testing or S3."""
-    if ftype == "yaml":
-        base_path = Path(__file__).parent
-    else:
-        base_path = Path(cfg.get_path())
-    path = Path(base_path, folder, name + "." + ftype)
+    base_path = Path(cfg.wow['base'])
+    filename = str(name) + "." + ftype
+    path = base_path.joinpath(Path('pricer_data', folder, filename))
     logger.debug(f"Reading {name} {ftype} from {path}")
 
     if ftype == "parquet":
@@ -71,7 +69,9 @@ def writer(
     self_schema: bool = False,
 ) -> None:
     """Standard program writer, allows pathing extensibility i.e. testing or S3."""
-    path = Path(cfg.get_path(), folder, name + "." + ftype)
+    base_path = cfg.wow['base']
+    filename = str(name) + "." + ftype
+    path = base_path.joinpath(Path('pricer_data', folder, filename))
     logger.debug(f"Writing {name} {ftype} to {path}")
 
     if self_schema:

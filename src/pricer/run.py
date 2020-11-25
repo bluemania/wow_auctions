@@ -13,7 +13,8 @@ import warnings
 
 from tqdm import tqdm
 
-from . import analysis, campaign, config as cfg, install, reporting, sources
+from . import config as cfg
+from . import analysis, campaign, install, reporting, sources
 from .webserver.views import app
 
 

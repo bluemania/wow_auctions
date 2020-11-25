@@ -40,7 +40,11 @@ def start(default_path: str) -> None:
     check_wow_folders(path)
     make_data_folders(path)
 
-    config = {"base": wow_folder, "accounts": get_account_info(path)}
+    username = input("OPTIONAL: Enter account username for Booty Bay: ")
+    password = input("OPTIONAL: Enter account password for Booty Bay: ")    
+
+    config = {"base": wow_folder, "accounts": get_account_info(path), 
+              "booty_acc": {"username": username, "password": password}}
     create_wow_config(config)
 
     input(
@@ -92,7 +96,7 @@ def get_account_info(path: Path) -> Dict[str, Any]:
 
             for char in _parse_wow_path(server_path):
                 resources[account]["servers"][server]["characters"].append(char)
-    return {"accounts": resources}
+    return resources
 
 
 def create_wow_config(config: Dict[str, Any]) -> None:
