@@ -9,7 +9,6 @@ import tqdm
 from pricer import io
 
 logger = logging.getLogger(__name__)
-pricer_config = Path.home().joinpath(".pricer")
 
 
 class TqdmStream(object):
@@ -78,8 +77,9 @@ def get_path() -> Any:
     try:
         with open(pricer_config, "r") as f:
             path_config = json.load(f)
-    except FileNotFoundError:
-        pass
+    except FileNotFoundError as e:
+        raise FileNotFoundError("Pricer is not installed; run `pricer install`") from e
+
     return Path(path_config.get("WOWPATH", "")).joinpath("pricer_data")
 
 

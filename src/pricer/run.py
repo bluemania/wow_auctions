@@ -13,7 +13,7 @@ import warnings
 
 from tqdm import tqdm
 
-from . import analysis, campaign, config as cfg, reporting, sources
+from . import analysis, campaign, config as cfg, install, reporting, sources
 from .webserver.views import app
 
 
@@ -128,10 +128,13 @@ def main() -> None:
     install_parser.add_argument(
         "-p",
         "--path",
-        help="Install pricer by attaching to WoW path",
+        help="Install pricer by attaching to WoW path and checking files",
         type=str,
         default="/Applications/World of Warcraft/_classic_/",
     )
+    install_parser.add_argument("-v", help="Verbose mode (info)", action="store_true")
+    install_parser.add_argument("-vv", help="Verbose mode (debug)", action="store_true")
+    
 
     parser.add_argument("-b", help="Update web booty bay analysis", action="store_true")
     parser.add_argument(
@@ -158,15 +161,9 @@ def main() -> None:
     logger.debug(args)
 
     if args.command == "install":
-        """
-        Expected process:
-        1. pip install pricer
-        2. pricer install (path)
-        3. Test/show correctly installed
-        4. Create .pricer file in ~/ with wow directory
-        """
-        cfg.set_path(args.path)
+        install.start(args.path)
     else:
+        install.check()
         if args.b:
             sources.get_bb_data()
         if args.icons:
