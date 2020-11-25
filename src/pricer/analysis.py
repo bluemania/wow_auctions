@@ -32,7 +32,7 @@ def _predict_item_prices(
             item_prices.loc[item_name, "bbpred_price"] = user_vendor_price
             item_prices.loc[item_name, "bbpred_std"] = 0
         else:
-            q = cfg.us["analysis"]["ITEM_PRICE_OUTLIER_CAP"]
+            q = cfg.analysis["ITEM_PRICE_OUTLIER_CAP"]
             df = bb_fortnight[bb_fortnight["item"] == item_name]
             df["silver"] = df["silver"].clip(
                 lower=df["silver"].quantile(q), upper=df["silver"].quantile(1 - q),
@@ -72,7 +72,7 @@ def analyse_rolling_buyout() -> None:
     # Needed to ensure that groupby will work for a single item
     purchase_each.loc[purchase_each.index.max() + 1] = ("dummy", 0)
 
-    SPAN = cfg.us["analysis"]["ROLLING_BUYOUT_SPAN"]
+    SPAN = cfg.analysis["ROLLING_BUYOUT_SPAN"]
     ewm = (
         purchase_each.groupby("item")
         .apply(lambda x: x["buyout_per"].ewm(span=SPAN).mean())
@@ -93,7 +93,7 @@ def analyse_material_cost() -> None:
     item_prices = io.reader("intermediate", "predicted_prices", "parquet")
     mat_prices = item_prices.join(bean_rolling_buyout)
 
-    r = cfg.us["analysis"]["BB_MAT_PRICE_RATIO"]
+    r = cfg.analysis["BB_MAT_PRICE_RATIO"]
 
     # Material costs are taken as a ratio of booty bay prices, and (recent) actual buyouts
     mat_prices["material_buyout_cost"] = (
@@ -315,7 +315,7 @@ def predict_volume_sell_probability(dur_char: str = "m") -> None:
     """Expected volume changes as a probability of sale given BB recent history."""
     bb_fortnight = io.reader("cleaned", "bb_fortnight", "parquet")
     user_sells = utils.user_item_filter("Sell")
-    MAX_LISTINGS = cfg.us["analysis"]["MAX_LISTINGS_PROBABILITY"]
+    MAX_LISTINGS = cfg.analysis["MAX_LISTINGS_PROBABILITY"]
     item_volume_change_probability = _predict_volume_sell_probability(
         bb_fortnight, user_sells, MAX_LISTINGS, dur_char
     )

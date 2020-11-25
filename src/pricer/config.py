@@ -116,6 +116,7 @@ pricer_subdirs = [
 ]
 
 from . import io
+
 try:
     us = io.reader("config", "user_settings", "yaml")
     ui = io.reader("config", "user_items", "yaml")

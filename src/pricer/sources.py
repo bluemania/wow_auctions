@@ -43,8 +43,8 @@ def get_bb_item_page(driver: webdriver, item_id: int) -> Dict[Any, Any]:
 
 def start_driver() -> webdriver:
     """Spin up selenium driver for Booty Bay scraping."""
-    username = cfg.wow['booty_acc'].get("username")
-    password = cfg.wow['booty_acc'].get("password")
+    username = cfg.wow["booty_acc"].get("username")
+    password = cfg.wow["booty_acc"].get("password")
 
     url = f'{cfg.booty["base"]}{cfg.us["server"].lower()}-a/item/6049'
 
@@ -199,10 +199,10 @@ def clean_arkinventory_data(run_dt: dt) -> None:
 
         for lkey in location_slots:
             items: Dict[str, int] = defaultdict(int)
-            if str(lkey) not in cfg.gs["location_info"]:  # pragma: no cover
+            if str(lkey) not in cfg.location_info:  # pragma: no cover
                 continue
             else:
-                loc_name = cfg.gs["location_info"][str(lkey)]
+                loc_name = cfg.location_info[str(lkey)]
 
             location_slot = location_slots[lkey]
             if location_slot:
@@ -490,9 +490,9 @@ def _process_item_skeleton(df: pd.DataFrame) -> pd.DataFrame:
     int_cols = ["user_min_holding", "user_max_holding", "user_vendor_price"]
     df[int_cols] = df[int_cols].fillna(0).astype(int)
 
-    df["user_std_holding"] = (df["user_max_holding"] - df["user_min_holding"]) / cfg.us[
-        "analysis"
-    ]["USER_STD_SPREAD"]
+    df["user_std_holding"] = (
+        df["user_max_holding"] - df["user_min_holding"]
+    ) / cfg.analysis["USER_STD_SPREAD"]
     df["user_mean_holding"] = (
         df[["user_min_holding", "user_max_holding"]].mean(axis=1).astype(int)
     )

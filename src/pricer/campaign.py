@@ -89,7 +89,7 @@ def write_buy_policy() -> None:
 
     # Read client lua, replace with
 
-    for account in cfg.us.get("accounts", []):
+    for account in cfg.wow.get("accounts", []):
         path = utils.make_lua_path(account_name=account, datasource="Auc-Advanced")
         data = io.reader(name=path, ftype="lua")
         snatch = data["AucAdvancedData"]["UtilSearchUiData"]["Current"]
@@ -160,7 +160,7 @@ def write_sell_policy() -> None:
     new_appraiser = encode_sell_campaign(sell_policy[cols])
 
     # Read client lua, replace with
-    for account in cfg.us.get("accounts", []):
+    for account in cfg.wow.get("accounts", []):
         path = utils.make_lua_path(account_name=account, datasource="Auc-Advanced")
         data = io.reader(name=path, ftype="lua")
         data["AucAdvancedConfig"]["profile.Default"]["util"][

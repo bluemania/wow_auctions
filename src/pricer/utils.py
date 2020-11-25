@@ -69,7 +69,7 @@ def make_lua_path(account_name: str = "", datasource: str = "") -> str:
 def get_item_ids() -> Dict[str, int]:
     """Read item id database."""
 
-    path = Path(__file__).joinpath('items.csv')
+    path = Path(__file__).parent.joinpath("items.csv")
     item_codes = pd.read_csv(path)
     return item_codes.set_index("name")["entry"].to_dict()
 

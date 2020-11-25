@@ -22,9 +22,9 @@ def reader(
     self_schema: bool = False,
 ) -> Any:
     """Standard program writer, allows pathing extensibility i.e. testing or S3."""
-    base_path = Path(cfg.wow['base'])
+    base_path = Path(cfg.wow["base"])
     filename = str(name) + "." + ftype
-    path = base_path.joinpath(Path('pricer_data', folder, filename))
+    path = base_path.joinpath(Path("pricer_data", folder, filename))
     logger.debug(f"Reading {name} {ftype} from {path}")
 
     if ftype == "parquet":
@@ -69,9 +69,9 @@ def writer(
     self_schema: bool = False,
 ) -> None:
     """Standard program writer, allows pathing extensibility i.e. testing or S3."""
-    base_path = cfg.wow['base']
+    base_path = cfg.wow["base"]
     filename = str(name) + "." + ftype
-    path = base_path.joinpath(Path('pricer_data', folder, filename))
+    path = base_path.joinpath(Path("pricer_data", folder, filename))
     logger.debug(f"Writing {name} {ftype} to {path}")
 
     if self_schema:

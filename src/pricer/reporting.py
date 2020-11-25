@@ -80,7 +80,7 @@ def produce_item_reporting() -> None:
 
     listing_profits = io.reader("reporting", "listing_profits", "parquet")
 
-    MAX_LISTINGS = cfg.us["analysis"]["MAX_LISTINGS_PROBABILITY"]
+    MAX_LISTINGS = cfg.analysis["MAX_LISTINGS_PROBABILITY"]
     for item in listing_profits.columns:
         plt.figure()
         listing_profits[item].plot(title=f"List profit {item}")

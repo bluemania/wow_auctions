@@ -42,10 +42,13 @@ def start(default_path: str) -> None:
     make_data_folders(path)
 
     username = input("OPTIONAL: Enter account username for Booty Bay: ")
-    password = getpass.getpass("OPTIONAL: Enter account password for Booty Bay: ")    
+    password = getpass.getpass("OPTIONAL: Enter account password for Booty Bay: ")
 
-    config = {"base": wow_folder, "accounts": get_account_info(path), 
-              "booty_acc": {"username": username, "password": password}}
+    config = {
+        "base": wow_folder,
+        "accounts": get_account_info(path),
+        "booty_acc": {"username": username, "password": password},
+    }
     create_wow_config(config)
 
     input(
