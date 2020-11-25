@@ -85,7 +85,7 @@ def create_wow_config(config: Dict[str, Any]) -> None:
 
 def make_data_folders(path: Path) -> None:
     """Create data folders if they don't exist."""
-    subdirs = ["cleaned", "intermediate", "item_icons", "outputs", "raw", "reporting"]
+    subdirs = ["cleaned", "intermediate", "item_icons", "outputs", "raw", "reporting", "logs"]
 
     data_path = path.joinpath("pricer_data")
     if not data_path.is_dir():
