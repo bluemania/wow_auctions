@@ -1,5 +1,6 @@
 """Contains helper functions to support data pipeline."""
 import logging
+from pathlib import Path
 from typing import Any, Dict, List, Tuple, Union
 
 import pandas as pd
@@ -68,7 +69,8 @@ def make_lua_path(account_name: str = "", datasource: str = "") -> str:
 def get_item_ids() -> Dict[str, int]:
     """Read item id database."""
 
-    item_codes = pd.read_csv('items.csv')
+    path = Path(__file__).joinpath('items.csv')
+    item_codes = pd.read_csv(path)
     return item_codes.set_index("name")["entry"].to_dict()
 
 
