@@ -2,7 +2,7 @@
 import json
 import logging
 from pathlib import Path
-from typing import Any
+from typing import Any, Dict
 
 import tqdm
 
@@ -63,15 +63,14 @@ def set_loggers(
         logger.addHandler(stream_handler)  # type: ignore
 
 
-def get_wow_config() -> Any:
+def get_wow_config(pricer_path: Path) -> Dict[str, Any]:
     """Gets the pricer config file."""
-    pricer_path = Path.home().joinpath(".pricer")
     try:
         with open(pricer_path, "r") as f:
             path_config = json.load(f)
-    except FileNotFoundError as e:
-        raise FileNotFoundError("Pricer is not installed; run `pricer install`") from e
-
+    except FileNotFoundError:
+        logger.error("Pricer config does not exist")
+        path_config = {"base": ""}
     path_config["base"] = Path(path_config["base"])
     return path_config
 
@@ -88,7 +87,9 @@ try:
     secrets = io.reader(name="SECRETS", ftype="yaml")
 except FileNotFoundError:
     secrets = {"username": None, "password": None}
-wow = get_wow_config()
+
+pricer_path = Path.home().joinpath(".pricer")
+wow = get_wow_config(pricer_path)
 
 location_info = {"0": "Inventory", "2": "Bank", "5": "Mailbox", "10": "Auctions"}
 auction_type_labels = {
@@ -112,3 +113,13 @@ analysis = {
     "BB_MAT_PRICE_RATIO": 0.5,
     "MAX_LISTINGS_PROBABILITY": 500,
 }
+required_addons = ["ArkInventory", "BeanCounter", "Auc-ScanData", "TradeSkillMaster"]
+pricer_subdirs = [
+    "cleaned",
+    "intermediate",
+    "item_icons",
+    "outputs",
+    "raw",
+    "reporting",
+    "logs",
+]

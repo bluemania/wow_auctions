@@ -162,6 +162,7 @@ def main() -> None:
     if args.command == "install":
         install.start(args.path)
     else:
+        install.check()
         if args.b:
             sources.get_bb_data()
         if args.icons:

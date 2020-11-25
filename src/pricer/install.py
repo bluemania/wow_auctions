@@ -7,7 +7,27 @@ from typing import Any, Dict, List
 
 from selenium import webdriver
 
+from . import config as cfg
+
 logger = logging.getLogger(__name__)
+
+
+def check() -> None:
+    """Checks if .pricer config file exists."""
+    try:
+        with open(cfg.pricer_path, "r") as f:
+            path_config = json.load(f)
+    except FileNotFoundError as e:
+        raise FileNotFoundError("Pricer is not installed; run `pricer install`") from e
+    try:
+        path_config["base"]
+    except KeyError as e:
+        raise KeyError(
+            "Base path not specified; try reinstall with `pricer install`"
+        ) from e
+    if not Path(path_config["base"]).exists():
+        raise KeyError("Wow path does not exist; try reinstall with `pricer install`")
+    logger.debug("Installation check passed")
 
 
 def start(default_path: str) -> None:
@@ -24,10 +44,10 @@ def start(default_path: str) -> None:
     create_wow_config(config)
 
     input(
-        f"Please download the latest Chromedriver and add to {path.joinpath('pricer_data')}. (Press Enter to continue)... "
+        f"Please download the latest Chromedriver and add to 'pricer_data' in WoW directory. (Press Enter to continue)... "
     )
     check_chromedriver(path)
-    print("Installation complete!")
+    print("⭐ Installation complete! ⭐")
 
 
 def check_wow_folders(path: Path) -> None:
@@ -39,7 +59,7 @@ def check_wow_folders(path: Path) -> None:
         sys.exit(1)
 
     addon_path = path.joinpath("Interface").joinpath("Addons")
-    for addon in ["ArkInventory", "BeanCounter", "Auc-ScanData"]:
+    for addon in cfg.required_addons:
         check = addon_path.joinpath(addon)
         if check.is_dir():
             logger.debug(f"Required addon {addon} folder exists")
@@ -85,14 +105,12 @@ def create_wow_config(config: Dict[str, Any]) -> None:
 
 def make_data_folders(path: Path) -> None:
     """Create data folders if they don't exist."""
-    subdirs = ["cleaned", "intermediate", "item_icons", "outputs", "raw", "reporting", "logs"]
-
     data_path = path.joinpath("pricer_data")
     if not data_path.is_dir():
         logger.debug(f"Creating directory {data_path}")
         data_path.mkdir()
 
-    for subdir in subdirs:
+    for subdir in cfg.pricer_subdirs:
         sub_path = data_path.joinpath(subdir)
         if not sub_path.is_dir():
             logger.debug(f"Creating directory {sub_path}")
@@ -103,9 +121,9 @@ def check_chromedriver(path: Path) -> None:
     """Checks Chromedriver file is in directory and works."""
     chromedriver_path = path.joinpath("pricer_data").joinpath("chromedriver")
     if chromedriver_path.exists():
-        logger.debug(f"Chromedriver present")
+        logger.debug("Chromedriver present")
         driver = webdriver.Chrome(chromedriver_path)
         driver.close()
     else:
-        logger.error(f"Chromedriver does not exist in directory, please download")
+        logger.error("Chromedriver does not exist in directory, please download")
         sys.exit(1)

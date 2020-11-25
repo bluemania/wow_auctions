@@ -28,10 +28,11 @@ Major frameworks include:
 * Nox - for CI/CD process
 * Poetry - For dependencies, virtual environment, versioning and packaging
 
-Requirements for World of Warcraft classic include:
+User requirements include:
 
-* An active World of Warcraft account
+* An active World of Warcraft account and installation
 * An active Booty Bay Gazette subscription
+* [Chromedriver](https://chromedriver.chromium.org/downloads) for Booty Bay parsing
 * ArkInventory addon - inventory tracking
 * Auctioneer addon - scanning auctions and enacting buy and sell policies
 * Beancounter addon - tracking player auction activity (comes with auctioneer)
