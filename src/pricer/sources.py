@@ -82,7 +82,7 @@ def get_bb_data() -> None:
     user_items = cfg.ui.copy()
     user_auc_items = {k: v for k, v in user_items.items() if "vendor_price" not in v}
 
-    item_ids = utils.get_item_ids()
+    item_ids = cfg.item_ids.copy()
     items_ids = {k: v for k, v in item_ids.items() if k in user_auc_items}
 
     # Get bb data from API
@@ -252,7 +252,7 @@ def clean_beancounter_data() -> None:
     """Reads Beancounter json and parses into tabular format."""
     data = io.reader("raw", "beancounter_data", "json")
 
-    item_names = {v: k for k, v in utils.get_item_ids().items()}
+    item_names = {v: k for k, v in cfg.item_ids.copy().items()}
 
     # Parses all listings into flat python list
     parsed = []

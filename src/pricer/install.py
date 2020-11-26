@@ -44,9 +44,11 @@ def start(default_path: str) -> None:
     username = input("OPTIONAL: Enter account username for Booty Bay: ")
     password = getpass.getpass("OPTIONAL: Enter account password for Booty Bay: ")
 
+    accounts = get_account_info(path)
+
     config = {
         "base": wow_folder,
-        "accounts": get_account_info(path),
+        "accounts": accounts,
         "booty_acc": {"username": username, "password": password},
     }
     create_wow_config(config)
@@ -55,7 +57,8 @@ def start(default_path: str) -> None:
         f"Please download the latest Chromedriver and add to 'pricer_data' in WoW directory. (Press Enter to continue)... "
     )
     check_chromedriver(path)
-    print("⭐ Installation complete! ⭐")
+    message = report_char_count(path)
+    print(f"⭐ Installation complete! ⭐ {message}")
 
 
 def check_wow_folders(path: Path) -> None:
@@ -118,11 +121,18 @@ def make_data_folders(path: Path) -> None:
         logger.debug(f"Creating directory {data_path}")
         data_path.mkdir()
 
-    for subdir in cfg.pricer_subdirs:
-        sub_path = data_path.joinpath(subdir)
+    for sub_dir in cfg.pricer_subdirs:
+        sub_path = data_path.joinpath(sub_dir)
         if not sub_path.is_dir():
             logger.debug(f"Creating directory {sub_path}")
             sub_path.mkdir()
+
+    reporting_path = data_path.joinpath("reporting")
+    for rep_dir in cfg.reporting_subfolders:
+        rep_path = reporting_path.joinpath(rep_dir)
+        if not rep_path.is_dir():
+            logger.debug(f"Creating directory {rep_path}")
+            rep_path.mkdir()
 
 
 def check_chromedriver(path: Path) -> None:
@@ -135,3 +145,20 @@ def check_chromedriver(path: Path) -> None:
     else:
         logger.error("Chromedriver does not exist in directory, please download")
         sys.exit(1)
+
+
+def report_char_count(path: Path) -> str:
+    """Produces a message with scanned account info."""
+    accounts = get_account_info(path)
+    account_num = len(accounts)
+
+    server_lists = [list(servers['servers'].keys()) for account, servers in accounts.items()]
+    flatten = lambda t: [item for sublist in t for item in sublist]
+    server_num = len(set(flatten(server_lists)))
+
+    character_servers = flatten([servers['servers'].values() for account, servers in accounts.items()])
+    characters = flatten([characters.values() for characters in character_servers])
+    character_num = len(flatten(characters))
+
+    message = f"Scanned {account_num} accounts, {server_num} servers, {character_num} characters"
+    return message

@@ -2,6 +2,7 @@
 import json
 import logging
 from pathlib import Path
+import pandas as pd
 from typing import Any, Dict
 
 import tqdm
@@ -61,7 +62,7 @@ def set_loggers(
         logger.addHandler(stream_handler)  # type: ignore
 
 
-def get_wow_config(pricer_path: Path) -> Dict[str, Any]:
+def get_wow_config(pricer_path: Path) -> Dict[str, Path]:
     """Gets the pricer config file."""
     try:
         with open(pricer_path, "r") as f:
@@ -78,8 +79,17 @@ def get_test_path() -> str:
     return "data/_test"
 
 
+def get_item_ids() -> Dict[str, int]:
+    """Read item id database."""
+    path = Path(__file__).parent.joinpath("data/items.csv")
+    item_codes = pd.read_csv(path)
+    return item_codes.set_index("name")["entry"].to_dict()
+    
+
 pricer_path = Path.home().joinpath(".pricer")
 wow = get_wow_config(pricer_path)
+
+item_ids = get_item_ids()
 
 location_info = {"0": "Inventory", "2": "Bank", "5": "Mailbox", "10": "Auctions"}
 auction_type_labels = {
@@ -114,6 +124,7 @@ pricer_subdirs = [
     "reporting",
     "logs",
 ]
+reporting_subfolders = ["activity", "feasible", "listing_item", "profit"]
 
 from . import io
 

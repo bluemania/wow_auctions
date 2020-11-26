@@ -66,14 +66,6 @@ def make_lua_path(account_name: str = "", datasource: str = "") -> str:
     return path
 
 
-def get_item_ids() -> Dict[str, int]:
-    """Read item id database."""
-
-    path = Path(__file__).parent.joinpath("items.csv")
-    item_codes = pd.read_csv(path)
-    return item_codes.set_index("name")["entry"].to_dict()
-
-
 def dict_to_lua(data: dict) -> str:
     """Converts python dict into long str."""
     lua_print = "\n"

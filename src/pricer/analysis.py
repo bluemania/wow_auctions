@@ -204,7 +204,7 @@ def create_item_facts() -> None:
     """Collate simple item facts."""
     item_skeleton = io.reader("cleaned", "item_skeleton", "parquet")
     bb_deposit = io.reader("cleaned", "bb_deposit", "parquet")
-    item_ids = utils.get_item_ids()
+    item_ids = cfg.item_ids.copy()
 
     item_facts = item_skeleton.join(bb_deposit)[["item_deposit"]].join(
         pd.Series(item_ids, name="item_id")

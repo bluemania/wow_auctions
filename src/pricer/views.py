@@ -12,14 +12,7 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__)
 if app.root_path is None:
     raise
-app.config["data_path"] = Path(app.root_path).parents[2].joinpath("data")
-
-# try:
-#     item_icon_manifest = io.reader("item_icons", "_manifest", "json")
-
-# except FileNotFoundError:
-#     logger.exception("Reporting files not present, unable to start webserver")
-item_icon_manifest: Dict = {}
+app.config["data_path"] = cfg.flask['CUSTOM_STATIC_PATH']
 
 
 @app.context_processor
@@ -73,10 +66,17 @@ def item_report(item_name: str) -> Any:
 @app.route("/data_static/item_icons/<path:filename>")
 def item_icons(filename: str) -> Any:
     """Returns image icon for items."""
-    icon = item_icon_manifest.get(filename, "inv_scroll_03") + ".jpg"
-    return send_from_directory(
-        Path(app.config["data_path"]).joinpath("item_icons"), icon
-    )
+    item_icon_manifest = {}
+    icon = item_icon_manifest.get(filename, False)
+
+    if icon == False:
+        path = Path('data')
+        filename = 'default_icon.jpg'
+    else:
+        path = Path(app.config["data_path"], "item_static")
+        filename = f"icon_{icon}.jpg"
+
+    return send_from_directory(path, filename)
 
 
 @app.route("/data_static/item_plot_profit/<path:item_name>")
@@ -120,3 +120,12 @@ def run_analytics() -> Any:
     run.run_analytics()
     run.run_reporting()
     return redirect(url_for("home"))
+
+
+@app.route('/favicon.ico') 
+def favicon(): 
+    path = Path('data')
+    filename = 'default_icon.jpg'
+    filename = 'favicon.ico'
+    mimetype = 'image/vnd.microsoft.icon'
+    return send_from_directory(path, filename, mimetype=mimetype)
