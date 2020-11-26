@@ -106,9 +106,9 @@ def run_analytics() -> Any:
 
 
 @app.route("/favicon.ico")
-def favicon():
+def favicon() -> Any:
+    """Return favicon."""
     path = Path("data")
-    filename = "default_icon.jpg"
     filename = "favicon.ico"
     mimetype = "image/vnd.microsoft.icon"
     return send_from_directory(path, filename, mimetype=mimetype)

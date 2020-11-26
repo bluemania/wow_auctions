@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Tuple, Union
 
 import pandas as pd
 
-from pricer import config as cfg, io
+from . import config as cfg
 
 logger = logging.getLogger(__name__)
 
@@ -53,11 +53,10 @@ def source_merge(a: dict, b: dict, path: list = None) -> Dict[Any, Any]:
     return a
 
 
-def make_lua_path(account_name: str = "", datasource: str = "") -> str:
+def make_lua_path(account_name: str = "", datasource: str = "") -> Path:
     """Forms a path to a lua file."""
     path = (
-        cfg.wow["base"]
-        .joinpath("WTF")
+        cfg.wow_path.joinpath("WTF")
         .joinpath("Account")
         .joinpath(account_name)
         .joinpath("SavedVariables")
@@ -143,3 +142,8 @@ def enumerate_quantities(
 def user_item_filter(field: str) -> List[str]:
     """Returns user items filtered by a field."""
     return [k for k, v in cfg.ui.items() if v.get(field)]
+
+
+def list_flatten(t: List[Any]) -> List[Any]:
+    """Simple list flatten."""
+    return [item for sublist in t for item in sublist]

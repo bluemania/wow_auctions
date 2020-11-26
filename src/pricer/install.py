@@ -1,6 +1,6 @@
 """Installation related activities."""
-import json
 import getpass
+import json
 import logging
 from pathlib import Path
 import sys
@@ -8,7 +8,7 @@ from typing import Any, Dict, List
 
 from selenium import webdriver
 
-from . import config as cfg
+from . import config as cfg, utils
 
 logger = logging.getLogger(__name__)
 
@@ -53,9 +53,12 @@ def start(default_path: str) -> None:
     }
     create_wow_config(config)
 
-    input(
-        f"Please download the latest Chromedriver and add to 'pricer_data' in WoW directory. (Press Enter to continue)... "
+    message = (
+        "Please download the latest Chromedriver"
+        " and add to 'pricer_data' in WoW directory."
+        " (Press Enter to continue)... "
     )
+    input(message)
     check_chromedriver(path)
     message = report_char_count(path)
     print(f"⭐ Installation complete! ⭐ {message}")
@@ -148,14 +151,21 @@ def report_char_count(path: Path) -> str:
     server_lists = [
         list(servers["servers"].keys()) for account, servers in accounts.items()
     ]
-    flatten = lambda t: [item for sublist in t for item in sublist]
-    server_num = len(set(flatten(server_lists)))
 
-    character_servers = flatten(
+    server_num = len(set(utils.list_flatten(server_lists)))
+
+    character_servers = utils.list_flatten(
         [servers["servers"].values() for account, servers in accounts.items()]
     )
-    characters = flatten([characters.values() for characters in character_servers])
-    character_num = len(flatten(characters))
+    characters = utils.list_flatten(
+        [characters.values() for characters in character_servers]
+    )
+    character_num = len(utils.list_flatten(characters))
 
-    message = f"Scanned {account_num} accounts, {server_num} servers, {character_num} characters"
+    message = (
+        "Scanned"
+        f" {account_num} accounts,"
+        f" {server_num} servers,"
+        f" {character_num} characters"
+    )
     return message

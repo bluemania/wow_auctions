@@ -2,10 +2,12 @@
 import json
 import logging
 from pathlib import Path
-import pandas as pd
 from typing import Any, Dict
 
+import pandas as pd
 import tqdm
+
+from . import io
 
 logger = logging.getLogger(__name__)
 
@@ -62,7 +64,7 @@ def set_loggers(
         logger.addHandler(stream_handler)  # type: ignore
 
 
-def get_wow_config(pricer_path: Path) -> Dict[str, Path]:
+def get_wow_config(pricer_path: Path) -> Dict[str, Any]:
     """Gets the pricer config file."""
     try:
         with open(pricer_path, "r") as f:
@@ -70,7 +72,6 @@ def get_wow_config(pricer_path: Path) -> Dict[str, Path]:
     except FileNotFoundError:
         logger.error("Pricer config does not exist")
         path_config = {"base": ""}
-    path_config["base"] = Path(path_config["base"])
     return path_config
 
 
@@ -91,7 +92,6 @@ wow = get_wow_config(pricer_path)
 
 wow_path = Path(wow["base"])
 data_path = wow_path.joinpath("pricer_data")
-plot_path = data_path.joinpath("plots")
 
 item_ids = get_item_ids()
 
@@ -104,7 +104,7 @@ auction_type_labels = {
 flask = {"CUSTOM_STATIC_PATH": data_path}
 
 booty = {
-    "CHROMEDRIVER_PATH": wow["base"].joinpath("pricer_data").joinpath("chromedriver"),
+    "CHROMEDRIVER_PATH": data_path.joinpath("chromedriver"),
     "base": "https://www.bootybaygazette.com/#us/",
     "api": "https://www.bootybaygazette.com/api/item.php?house=",
     "PAGE_WAIT": 1,
@@ -129,8 +129,6 @@ pricer_subdirs = [
     "logs",
     "plots",
 ]
-
-from . import io
 
 us = io.reader("config", "user_settings", "yaml")
 ui = io.reader("config", "user_items", "yaml")

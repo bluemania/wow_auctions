@@ -1,7 +1,6 @@
 """Responsible for reading and cleaning input data sources."""
 from collections import defaultdict
 from datetime import datetime as dt
-import getpass
 import json
 import logging
 from typing import Any, Dict, List

@@ -52,7 +52,6 @@ def reader(
     elif ftype == "yaml":
         with open(path, "r") as yaml_r:
             data = yaml.safe_load(yaml_r)
-
     if self_schema:
         getattr(schema, f"{name}_schema").validate(data)
 
@@ -90,3 +89,5 @@ def writer(
     elif ftype == "jpg":
         with open(path, "wb") as jpg_wb:
             jpg_wb.write(data)
+    elif ftype == "png":
+        data.savefig(path)

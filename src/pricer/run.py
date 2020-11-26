@@ -13,8 +13,8 @@ import warnings
 
 from tqdm import tqdm
 
-from . import config as cfg  # Important to import first
-from . import analysis, campaign, install, reporting, sources
+import pricer
+from . import analysis, campaign, config as cfg, install, reporting, sources
 from .views import app
 
 
@@ -122,7 +122,9 @@ def main() -> None:
     """Main program runner."""
     run_dt = dt.now().replace(microsecond=0)
 
-    parser = argparse.ArgumentParser(description="WoW Auctions")
+    parser = argparse.ArgumentParser(
+        description=f"Pricer for WoW Auctions v{pricer.__version__}"
+    )
 
     subparsers = parser.add_subparsers(dest="command")
     install_parser = subparsers.add_parser("install")
