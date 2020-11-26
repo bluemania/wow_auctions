@@ -1,6 +1,8 @@
+"""Produces logs for pricer including TQDM fix."""
+
 import logging
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 
 import tqdm
 
@@ -26,9 +28,12 @@ def set_loggers(
     """Sets up logging across modules in project.
 
     Uses arguments originally specified from command line to set
-    streaming logging level. Log files are written in debug mode.
+    streaming logging level.
+    Log files are written in debug mode.
+    If Log directory does not exist, will not attempt to write.
 
     Args:
+        log_path: Set location of log path, usually from cfg
         base_logger: base logger object instantiated at program run time.
             Used to find other log objects across modules.
         v: Run in verbose mode (INFO)
@@ -52,12 +57,21 @@ def set_loggers(
         logger.setLevel(log_level)  # type: ignore
         formatter = logging.Formatter("%(asctime)s:%(name)s:%(message)s")
 
-        file_handler = logging.FileHandler(log_path.joinpath(f"{logger.name}.log")) # type: ignore
-        file_handler.setLevel(10)
-        file_handler.setFormatter(formatter)
-
         stream_handler = logging.StreamHandler(stream=TqdmStream)  # type: ignore
         stream_handler.setFormatter(formatter)
-
-        logger.addHandler(file_handler)  # type: ignore
         logger.addHandler(stream_handler)  # type: ignore
+
+        if log_path.exists():
+            if logger:
+                name = logger.name
+            else:
+                name = ""
+            path = log_path.joinpath(f"{name}.log")
+            file_handler = logging.FileHandler(path)  # type: ignore
+            file_handler.setLevel(10)
+            file_handler.setFormatter(formatter)
+            logger.addHandler(file_handler)  # type: ignore
+
+    if not log_path.exists():
+        if logger:
+            logger.debug("Pricer log path does not exist")

@@ -1,7 +1,8 @@
 """Pricer performs data analysis on the WoW auction house."""
-from importlib_metadata import PackageNotFoundError, version
 import logging
 import warnings
+
+from importlib_metadata import PackageNotFoundError, version
 
 from . import config as cfg, logs
 
