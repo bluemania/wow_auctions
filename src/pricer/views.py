@@ -66,7 +66,7 @@ def item_report(item_name: str) -> Any:
 @app.route("/data_static/item_icons/<path:filename>")
 def item_icons(filename: str) -> Any:
     """Returns image icon for items."""
-    item_icon_manifest = {}
+    item_icon_manifest: Dict[Any, Any] = {}
     icon = item_icon_manifest.get(filename, False)
     if icon == False:
         path = Path("data")

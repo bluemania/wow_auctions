@@ -47,8 +47,8 @@ def start_driver() -> webdriver:
 
     url = f'{cfg.booty["base"]}{cfg.us["server"].lower()}-a/item/6049'
 
+    driver = webdriver.Chrome(cfg.booty["CHROMEDRIVER_PATH"])
     try:
-        driver = webdriver.Chrome(cfg.booty["CHROMEDRIVER_PATH"])
         driver.implicitly_wait(cfg.booty["PAGE_WAIT"])
         driver.get(url)
 
@@ -172,7 +172,7 @@ def get_item_icons() -> None:
 def get_arkinventory_data() -> None:
     """Reads WoW Addon Ark Inventory lua data and saves local copy as json."""
     acc_inv: dict = {}
-    for account_name in cfg.wow.get("accounts"):
+    for account_name in cfg.wow.get("accounts", {}):
         path = utils.make_lua_path(account_name, "ArkInventory")
         data = io.reader(name=path, ftype="lua")
         acc_inv = utils.source_merge(acc_inv, data).copy()
@@ -240,7 +240,7 @@ def get_beancounter_data() -> None:
     """Reads WoW Addon Beancounter lua and saves to local json."""
     """Reads Ark Inventory json and parses into tabular format."""
     beancounter_data: dict = {}
-    for account_name in cfg.wow.get("accounts"):
+    for account_name in cfg.wow.get("accounts", {}):
         path = utils.make_lua_path(account_name, "BeanCounter")
         bean = io.reader(name=path, ftype="lua")
         beancounter_data = utils.source_merge(beancounter_data, bean).copy()

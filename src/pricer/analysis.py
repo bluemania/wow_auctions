@@ -315,9 +315,11 @@ def predict_volume_sell_probability(dur_char: str = "m") -> None:
     """Expected volume changes as a probability of sale given BB recent history."""
     bb_fortnight = io.reader("cleaned", "bb_fortnight", "parquet")
     user_sells = utils.user_item_filter("Sell")
-    MAX_LISTINGS = cfg.analysis["MAX_LISTINGS_PROBABILITY"]
     item_volume_change_probability = _predict_volume_sell_probability(
-        bb_fortnight, user_sells, MAX_LISTINGS, dur_char
+        bb_fortnight,
+        user_sells,
+        int(cfg.analysis["MAX_LISTINGS_PROBABILITY"]),
+        dur_char,
     )
 
     io.writer(

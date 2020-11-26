@@ -2,7 +2,7 @@
 import json
 import logging
 from pathlib import Path
-from typing import Any, BinaryIO
+from typing import Any, BinaryIO, Union
 
 import pandas as pd
 from slpp import slpp as lua
@@ -16,13 +16,15 @@ pd.options.mode.chained_assignment = None  # default='warn'
 
 def reader(
     folder: str = "",
-    name: str = "",
+    name: Union[Path, str] = "",
     ftype: str = "",
     custom: str = "",
     self_schema: bool = False,
 ) -> Any:
     """Standard program writer, allows pathing extensibility i.e. testing or S3."""
     filename = str(name) + "." + ftype
+
+    # Defaults to data path. If filename is full path aka lua path, uses full path
     path = cfg.data_path.joinpath(Path(folder, filename))
     logger.debug(f"Reading {name} {ftype} from {path}")
 
@@ -61,7 +63,7 @@ def reader(
 def writer(
     data: Any,
     folder: str = "",
-    name: str = "",
+    name: Union[Path, str] = "",
     ftype: str = "",
     custom: str = "",
     self_schema: bool = False,

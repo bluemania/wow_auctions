@@ -1,9 +1,11 @@
 """Tests for source.py."""
+from pathlib import Path
 from typing import Any
 
 import mock
 import pandas as pd
 import pytest
+from selenium.common.exceptions import WebDriverException
 
 from pricer import config as cfg, sources
 
@@ -343,9 +345,9 @@ def test_get_bb_item_page(input: Any) -> None:
 
 
 @mock.patch("getpass.getpass", side_effect=["11", "22"])
-@mock.patch.dict(cfg.us["booty"], values={"CHROMEDRIVER_PATH": "fakepath"})
-@mock.patch.dict(cfg.secrets, values={"account": None, "password": None})
+@mock.patch.dict(cfg.booty, values={"CHROMEDRIVER_PATH": Path("fakepath")})
+@mock.patch.dict(cfg.wow["booty_acc"], values={"username": None, "password": None})
 def test_start_driver(getpass: Any) -> None:
     """Start driver."""
-    with pytest.raises(SystemError):
+    with pytest.raises(WebDriverException):
         sources.start_driver()

@@ -84,7 +84,7 @@ def produce_item_reporting() -> None:
     for item in listing_profits.columns:
         plt.figure()
         listing_profits[item].plot(title=f"List profit {item}")
-        pd.Series([sell_policy.loc[item, "profit_feasible"]] * MAX_LISTINGS).plot()
+        pd.Series([sell_policy.loc[item, "profit_feasible"] * MAX_LISTINGS]).plot()
         io.writer(plt, "plots", f"{item}_feasible", "png")
         plt.close()
 
