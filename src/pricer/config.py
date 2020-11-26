@@ -77,7 +77,7 @@ def get_wow_config(pricer_path: Path) -> Dict[str, Any]:
 
 def get_test_path() -> Path:
     """Used to overwrite test path for testing."""
-    return Path("data", "_test")
+    return Path("tests", "test_data")
 
 
 def get_item_ids() -> Dict[str, int]:
