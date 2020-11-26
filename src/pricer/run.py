@@ -15,7 +15,7 @@ from tqdm import tqdm
 
 from . import config as cfg
 from . import analysis, campaign, install, reporting, sources
-from .webserver.views import app
+from .views import app
 
 
 warnings.simplefilter(action="ignore")

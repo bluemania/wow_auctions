@@ -5,7 +5,7 @@ from typing import Any, Dict, List
 
 from flask import Flask, redirect, render_template, send_from_directory, url_for
 
-from .. import config as cfg, io, reporting, run, sources
+from . import config as cfg, io, reporting, run, sources
 
 
 logger = logging.getLogger(__name__)
