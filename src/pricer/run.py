@@ -9,16 +9,14 @@ First time running checklist
 import argparse
 from datetime import datetime as dt
 import logging
-import warnings
 
 from tqdm import tqdm
 
 import pricer
-from . import analysis, campaign, config as cfg, install, reporting, sources
+from . import analysis, campaign, config as cfg, install, logs, reporting, sources
 from .views import app
 
 
-warnings.simplefilter(action="ignore")
 logger = logging.getLogger(__name__)
 
 
@@ -160,7 +158,7 @@ def main() -> None:
     parser.add_argument("-vv", help="Verbose mode (debug)", action="store_true")
     args = parser.parse_args()
 
-    cfg.set_loggers(base_logger=logger, v=args.v, vv=args.vv)
+    logs.set_loggers(log_path=cfg.log_path, base_logger=logger, v=args.v, vv=args.vv)
     logger.info("Program started, arguments parsed")
     logger.debug(args)
 
