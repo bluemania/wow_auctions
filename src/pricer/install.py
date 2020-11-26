@@ -145,11 +145,15 @@ def report_char_count(path: Path) -> str:
     accounts = get_account_info(path)
     account_num = len(accounts)
 
-    server_lists = [list(servers['servers'].keys()) for account, servers in accounts.items()]
+    server_lists = [
+        list(servers["servers"].keys()) for account, servers in accounts.items()
+    ]
     flatten = lambda t: [item for sublist in t for item in sublist]
     server_num = len(set(flatten(server_lists)))
 
-    character_servers = flatten([servers['servers'].values() for account, servers in accounts.items()])
+    character_servers = flatten(
+        [servers["servers"].values() for account, servers in accounts.items()]
+    )
     characters = flatten([characters.values() for characters in character_servers])
     character_num = len(flatten(characters))
 

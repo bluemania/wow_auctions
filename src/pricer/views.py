@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__)
 if app.root_path is None:
     raise
-app.config["data_path"] = cfg.flask['CUSTOM_STATIC_PATH']
+app.config["data_path"] = cfg.flask["CUSTOM_STATIC_PATH"]
 
 
 @app.context_processor
@@ -69,8 +69,8 @@ def item_icons(filename: str) -> Any:
     item_icon_manifest = {}
     icon = item_icon_manifest.get(filename, False)
     if icon == False:
-        path = Path('data')
-        filename = 'default_icon.jpg'
+        path = Path("data")
+        filename = "default_icon.jpg"
     else:
         path = Path(app.config["data_path"]).joinpath("item_static")
         filename = f"icon_{icon}.jpg"
@@ -84,9 +84,9 @@ def item_plot(metric: str, item_name: str) -> Any:
     filename = f"{item_name}_{metric}.png"
 
     if not path.joinpath(filename).exists():
-        path = Path('data')
-        filename = 'default_icon.jpg'
-        
+        path = Path("data")
+        filename = "default_icon.jpg"
+
     return send_from_directory(path, filename)
 
 
@@ -105,10 +105,10 @@ def run_analytics() -> Any:
     return redirect(url_for("home"))
 
 
-@app.route('/favicon.ico') 
-def favicon(): 
-    path = Path('data')
-    filename = 'default_icon.jpg'
-    filename = 'favicon.ico'
-    mimetype = 'image/vnd.microsoft.icon'
+@app.route("/favicon.ico")
+def favicon():
+    path = Path("data")
+    filename = "default_icon.jpg"
+    filename = "favicon.ico"
+    mimetype = "image/vnd.microsoft.icon"
     return send_from_directory(path, filename, mimetype=mimetype)

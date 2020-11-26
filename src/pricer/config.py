@@ -84,7 +84,7 @@ def get_item_ids() -> Dict[str, int]:
     path = Path(__file__).parent.joinpath("data/items.csv")
     item_codes = pd.read_csv(path)
     return item_codes.set_index("name")["entry"].to_dict()
-    
+
 
 pricer_path = Path.home().joinpath(".pricer")
 wow = get_wow_config(pricer_path)
@@ -127,13 +127,10 @@ pricer_subdirs = [
     "raw",
     "reporting",
     "logs",
-    "plots"
+    "plots",
 ]
 
 from . import io
 
-try:
-    us = io.reader("config", "user_settings", "yaml")
-    ui = io.reader("config", "user_items", "yaml")
-except:
-    pass
+us = io.reader("config", "user_settings", "yaml")
+ui = io.reader("config", "user_items", "yaml")
