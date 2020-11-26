@@ -68,43 +68,26 @@ def item_icons(filename: str) -> Any:
     """Returns image icon for items."""
     item_icon_manifest = {}
     icon = item_icon_manifest.get(filename, False)
-
     if icon == False:
         path = Path('data')
         filename = 'default_icon.jpg'
     else:
-        path = Path(app.config["data_path"], "item_static")
+        path = Path(app.config["data_path"]).joinpath("item_static")
         filename = f"icon_{icon}.jpg"
-
     return send_from_directory(path, filename)
 
 
-@app.route("/data_static/item_plot_profit/<path:item_name>")
-def item_plot_profit(item_name: str) -> Any:
+@app.route("/data_static/<string:metric>/<string:item_name>")
+def item_plot(metric: str, item_name: str) -> Any:
     """Returns profit plot for items."""
-    path = Path(app.config["data_path"]).joinpath("reporting", "feasible")
-    return send_from_directory(path, item_name + ".png")
+    path = Path(app.config["data_path"]).joinpath("plots")
+    filename = f"{item_name}_{metric}.png"
 
-
-@app.route("/data_static/item_listing_plot/<path:item_name>")
-def item_listing_plot(item_name: str) -> Any:
-    """Returns profit plot for items."""
-    path = Path(app.config["data_path"]).joinpath("reporting", "listing_item")
-    return send_from_directory(path, item_name + ".png")
-
-
-@app.route("/data_static/item_activity_plot/<path:item_name>")
-def item_activity_plot(item_name: str) -> Any:
-    """Returns profit plot for items."""
-    path = Path(app.config["data_path"]).joinpath("reporting", "activity")
-    return send_from_directory(path, item_name + ".png")
-
-
-@app.route("/data_static/item_profit_plot/<path:item_name>")
-def item_profit_plot(item_name: str) -> Any:
-    """Returns profit plot for items."""
-    path = Path(app.config["data_path"]).joinpath("reporting", "profit")
-    return send_from_directory(path, item_name + ".png")
+    if not path.joinpath(filename).exists():
+        path = Path('data')
+        filename = 'default_icon.jpg'
+        
+    return send_from_directory(path, filename)
 
 
 @app.route("/trigger_booty_bay")

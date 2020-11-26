@@ -127,13 +127,6 @@ def make_data_folders(path: Path) -> None:
             logger.debug(f"Creating directory {sub_path}")
             sub_path.mkdir()
 
-    reporting_path = data_path.joinpath("reporting")
-    for rep_dir in cfg.reporting_subfolders:
-        rep_path = reporting_path.joinpath(rep_dir)
-        if not rep_path.is_dir():
-            logger.debug(f"Creating directory {rep_path}")
-            rep_path.mkdir()
-
 
 def check_chromedriver(path: Path) -> None:
     """Checks Chromedriver file is in directory and works."""

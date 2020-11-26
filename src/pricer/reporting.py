@@ -85,7 +85,7 @@ def produce_item_reporting() -> None:
         plt.figure()
         listing_profits[item].plot(title=f"List profit {item}")
         pd.Series([sell_policy.loc[item, "profit_feasible"]] * MAX_LISTINGS).plot()
-        plt.savefig(f"data/reporting/feasible/{item}.png")
+        plt.savefig(cfg.plot_path.joinpath(f"{item}_feasible.png"))
         plt.close()
 
 
@@ -106,7 +106,7 @@ def produce_listing_items() -> None:
             [item_info.loc[item, "material_make_cost"]] * list_item.shape[0]
         ).plot()
 
-        plt.savefig(f"data/reporting/listing_item/{item}.png")
+        plt.savefig(cfg.plot_path.joinpath(f"{item}_listing.png"))
         plt.close()
 
 
@@ -133,7 +133,7 @@ def produce_activity_tracking() -> None:
         if item in activity.index:
             plt.figure()
             activity.loc[item][cols].plot(title=f"Historic activity {item}")
-            plt.savefig(f"data/reporting/activity/{item}.png")
+            plt.savefig(cfg.plot_path.joinpath(f"{item}_activity.png"))
             plt.close()
 
 
@@ -199,7 +199,7 @@ def draw_profit_charts() -> None:
     alltime_profit.plot(
         title=f"Total profit over all items ({tot} gold, {daily} per day)"
     )
-    plt.savefig("data/reporting/profit/_alltime_profits.png")
+    plt.savefig(cfg.plot_path.joinpath("_alltime_profits.png"))
     plt.close()
 
     for item in cfg.ui:
@@ -208,5 +208,5 @@ def draw_profit_charts() -> None:
             (profits.loc[item, "total_profit"].cumsum() / 10000).plot(
                 title=f"Profit {item}"
             )
-            plt.savefig(f"data/reporting/profit/{item}.png")
+            plt.savefig(cfg.plot_path.joinpath(f"{item}_profit.png"))
             plt.close()

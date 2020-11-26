@@ -119,18 +119,17 @@
 </div>
 
 <div class="row">	
-	<div class="col-lg-3"><h4>Historic profit</h4>
-	<img src="{{ url_for('item_profit_plot', item_name=item_name) }}" class="img-fluid">
+	<div class="col-lg-3"><h4>Historic Profit</h4>
+	<img src="{{ url_for('item_plot', metric='profit', item_name=item_name) }}" class="img-fluid">
 	</div>
-	<div class="col-lg-3"><h4>Activity</h4>
-	<img src="{{ url_for('item_activity_plot', item_name=item_name) }}" class="img-fluid">
+	<div class="col-lg-3"><h4>Trade Activity</h4>
+	<img src="{{ url_for('item_plot', metric='activity', item_name=item_name) }}" class="img-fluid">
 	</div>
-	<div class="col-lg-3"><h4>Sell liklihood</h4>
-	<img src="{{ url_for('item_plot_profit', item_name=item_name) }}" class="img-fluid">
+	<div class="col-lg-3"><h4>Sell Feasibility</h4>
+	<img src="{{ url_for('item_plot', metric='feasible', item_name=item_name) }}" class="img-fluid">
 	</div>
-	<div class="col-lg-3"><h4>Current AH</h4>
-	<img src="{{ url_for('item_listing_plot', item_name=item_name) }}" class="img-fluid">
+	<div class="col-lg-3"><h4>Current Listing</h4>
+	<img src="{{ url_for('item_plot', metric='listing', item_name=item_name) }}" class="img-fluid">
 	</div>
-
 </div>
 {% endblock %}

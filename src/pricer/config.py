@@ -89,6 +89,10 @@ def get_item_ids() -> Dict[str, int]:
 pricer_path = Path.home().joinpath(".pricer")
 wow = get_wow_config(pricer_path)
 
+wow_path = Path(wow["base"])
+data_path = wow_path.joinpath("pricer_data")
+plot_path = data_path.joinpath("plots")
+
 item_ids = get_item_ids()
 
 location_info = {"0": "Inventory", "2": "Bank", "5": "Mailbox", "10": "Auctions"}
@@ -97,7 +101,7 @@ auction_type_labels = {
     "completedBidsBuyouts": "buy_price",
     "failedAuctions": "failed",
 }
-flask = {"CUSTOM_STATIC_PATH": wow["base"].joinpath("pricer_data")}
+flask = {"CUSTOM_STATIC_PATH": data_path}
 
 booty = {
     "CHROMEDRIVER_PATH": wow["base"].joinpath("pricer_data").joinpath("chromedriver"),
@@ -123,8 +127,8 @@ pricer_subdirs = [
     "raw",
     "reporting",
     "logs",
+    "plots"
 ]
-reporting_subfolders = ["activity", "feasible", "listing_item", "profit"]
 
 from . import io
 
