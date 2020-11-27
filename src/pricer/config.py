@@ -38,7 +38,7 @@ def get_servers() -> Dict[str, int]:
     """Get server_ids and info from booty bay"""
     path = Path(__file__).parent.joinpath("data", "servers.csv")
     servers = pd.read_csv(path)
-    return servers.set_index("server_id")[["server_url", "name"]].to_dict()
+    return servers.set_index("server_url")[["server_id", "name"]].to_dict()
 
 
 pricer_path = Path.home().joinpath(".pricer")
