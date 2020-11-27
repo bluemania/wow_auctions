@@ -67,11 +67,15 @@ def start(default_path: str) -> None:
     ), "incorrect region selection - installation failed"
     booty_server = server_lookup(primary_server, primary_faction, primary_region)
 
+    ahm = input("Which character is your auction house main for scans and craft?: ")
+    ahm_details = get_ahm_info(ahm, primary_server)
+
     config = {
         "base": wow_folder,
         "accounts": accounts,
         "booty_acc": {"username": username, "password": password},
         "booty_server": booty_server,
+        "ahm": ahm_details,
     }
     create_wow_config(config)
 
@@ -207,3 +211,15 @@ def server_lookup(
         "server_name": primary_server,
     }
     return server_details
+
+
+def get_ahm_info(ahm: str, primary_server: str) -> Dict[str, str]:
+    """Return information about the auction house main."""
+    for account, servers in cfg.wow["accounts"].items():
+        if ahm in servers["servers"][primary_server]["characters"]:
+            ahm_info: Dict[str, str] = {
+                "account": account,
+                "name": ahm,
+                "server": primary_server,
+            }
+    return ahm_info

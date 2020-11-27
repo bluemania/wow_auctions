@@ -96,5 +96,4 @@ pricer_subdirs: List[str] = [
     "plots",
 ]
 
-us = io.reader("config", "user_settings", "yaml")
 ui = io.reader("config", "user_items", "yaml")

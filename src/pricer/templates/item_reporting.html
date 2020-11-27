@@ -13,12 +13,11 @@
 	{% if item_report['user_Make'] %} Make {% endif %}		
 </h4>
 <div class="row">
-	<div class="col-lg-4">
+	<div class="col-lg-3">
 		<table class="table table-sm">
 			<tr>
 				<td></td>
 				<td>AH main</td>
-				<td>Mule</td>
 				<td>Chars</td>		
 			</tr>
 			{% for location in ['bag', 'bank', 'mail', 'auc'] %}
@@ -26,7 +25,7 @@
 				<td>
 					{{location}}
 				</td>
-				{% for player in ['ahm', 'mule', 'char'] %}
+				{% for player in ['ahm', 'char'] %}
 				<td>
 					{{ item_report["inv_"+player+"_"+location] }}
 				</td>
@@ -37,12 +36,11 @@
 			<tr>
 				<td>Totals</td>
 				<td>{{item_report['inv_total_ahm']}}</td>
-				<td>{{item_report['inv_total_hold']}}</td>
 				<td><strong>{{item_report['inv_total_all']}}</strong></td>
 			</tr>		
 		</table>
 	</div>
-	<div class="col-lg-2">
+	<div class="col-lg-3">
 		<table class="table table-sm">
 			<tr>
 				<td>Max sell</td>
