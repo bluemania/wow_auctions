@@ -4,7 +4,7 @@ import json
 import logging
 from pathlib import Path
 import sys
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Tuple
 
 from selenium import webdriver
 
@@ -45,15 +45,17 @@ def start(default_path: str) -> None:
     password = getpass.getpass("OPTIONAL: Enter account password for Booty Bay: ")
 
     accounts = get_account_info(path)
-    servers, message = report_accounts(path)
+    servers, accounts_report = report_accounts(path)
 
-    primary_server = input(f"Which is your primary server {', '.join(servers)}: ")
+    primary_server = input(f"Which is your primary server ({', '.join(servers)})?: ")
     assert primary_server in servers or primary_server == "", "Name does not match server list - installation failed"
     if primary_server == "" and len(servers)==1:
         primary_server = servers[0]
-    primary_faction = input(f"And is your primary faction (A)lliance or (H)orde: ").lower()
+    primary_faction = input(f"And is your primary faction (A)lliance or (H)orde?: ").lower()
     assert primary_faction=="h" or primary_faction=="a", "incorrect faction selection - installation failed"
-    booty_server = server_lookup(primary_server, primary_faction)
+    primary_region = input(f"And is your region US/Oceania (us) or Europe (eu)?: ").lower()
+    assert primary_region=="us" or primary_faction=="eu", "incorrect region selection - installation failed"
+    booty_server = server_lookup(primary_server, primary_faction, primary_region)
 
     config = {
         "base": wow_folder,
@@ -70,7 +72,7 @@ def start(default_path: str) -> None:
     )
     input(message)
     check_chromedriver(path)
-    print(f"⭐ Installation complete! ⭐ {message}")
+    print(f"⭐ Installation complete! ⭐ {accounts_report}")
 
 
 def check_wow_folders(path: Path) -> None:
@@ -152,7 +154,7 @@ def check_chromedriver(path: Path) -> None:
         sys.exit(1)
 
 
-def report_accounts(path: Path) -> List[str], str:
+def report_accounts(path: Path) -> Tuple[List[str], str]:
     """Produces a message with scanned account info."""
     accounts = get_account_info(path)
     account_num = len(accounts)
@@ -181,9 +183,9 @@ def report_accounts(path: Path) -> List[str], str:
     return servers, message
 
 
-def server_lookup(primary_server: str, primary_faction: str) -> Dict[str, Any]:
+def server_lookup(primary_server: str, primary_faction: str, primary_region: str) -> Dict[str, Any]:
     """Get the server details to use for booty bay."""
-    url_part = f"{primary_server.lower()}-{primary_faction}"
+    url_part = f"#{primary_region}/{primary_server.lower()}-{primary_faction}"
     assert url_part in cfg.servers["server_id"], f"Incorrectly formed wow server url {url_part}"
     server_details = {"server_url": url_part, "server_id": cfg.servers["server_id"][url_part], "server_name": primary_server}
     return server_details
