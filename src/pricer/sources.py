@@ -181,19 +181,19 @@ def get_arkinventory_data() -> None:
         path = utils.make_lua_path(account_name, "ArkInventory")
         data = io.reader(name=path, ftype="lua")
         player_data = data["ARKINVDB"]["global"]["player"]["data"]
-        
+
         # Ensure character data does belong to account
         character_match = []
-        for server, characters in cfg.wow['accounts'][account_name]['servers'].items():
-            for character in characters['characters']:
+        for server, characters in cfg.wow["accounts"][account_name]["servers"].items():
+            for character in characters["characters"]:
                 character_match.append(f"{character} - {server}")
-                
+
         for character in player_data.keys():
             if character in character_match:
                 acc_inv[character] = player_data[character]
-        
+
     io.writer(acc_inv, "raw", "arkinventory_data", "json")
-    
+
 
 def clean_arkinventory_data(run_dt: dt) -> None:
     """Reads Ark Inventory json and parses into tabular format."""
