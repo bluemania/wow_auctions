@@ -29,9 +29,16 @@ def get_test_path() -> Path:
 
 def get_item_ids() -> Dict[str, int]:
     """Read item id database."""
-    path = Path(__file__).parent.joinpath("data/items.csv")
+    path = Path(__file__).parent.joinpath("data", "items.csv")
     item_codes = pd.read_csv(path)
     return item_codes.set_index("name")["entry"].to_dict()
+
+
+def get_servers() -> Dict[str, int]:
+    """Get server_ids and info from booty bay"""
+    path = Path(__file__).parent.joinpath("data", "servers.csv")
+    servers = pd.read_csv(path)
+    return servers.set_index("server_id")[["server_url", "name"]].to_dict()
 
 
 pricer_path = Path.home().joinpath(".pricer")
@@ -42,6 +49,7 @@ data_path = wow_path.joinpath("pricer_data")
 log_path = data_path.joinpath("logs")
 
 item_ids = get_item_ids()
+servers = get_servers()
 
 location_info = {"0": "Inventory", "2": "Bank", "5": "Mailbox", "10": "Auctions"}
 auction_type_labels = {
