@@ -180,10 +180,19 @@ def get_arkinventory_data() -> None:
     for account_name in cfg.wow.get("accounts", {}):
         path = utils.make_lua_path(account_name, "ArkInventory")
         data = io.reader(name=path, ftype="lua")
-        acc_inv = utils.source_merge(acc_inv, data).copy()
+        player_data = data["ARKINVDB"]["global"]["player"]["data"]
 
-    arkinventory_data = acc_inv["ARKINVDB"]["global"]["player"]["data"]
-    io.writer(arkinventory_data, "raw", "arkinventory_data", "json")
+        # Ensure character data does belong to account
+        character_match = []
+        for server, characters in cfg.wow["accounts"][account_name]["servers"].items():
+            for character in characters["characters"]:
+                character_match.append(f"{character} - {server}")
+
+        for character in player_data.keys():
+            if character in character_match:
+                acc_inv[character] = player_data[character]
+
+    io.writer(acc_inv, "raw", "arkinventory_data", "json")
 
 
 def clean_arkinventory_data(run_dt: dt) -> None:
