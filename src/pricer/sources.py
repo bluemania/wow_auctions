@@ -226,15 +226,18 @@ def clean_arkinventory_data(run_dt: dt) -> None:
                     for item in bag.get("slot", []):
                         if item.get("h") and item.get("count"):
                             item_name = item.get("h").split("[")[1].split("]")[0]
-                            items[item_name] += item.get("count")
+                            item_id = int(item.get('h').split('Hitem:')[1].split(':')[0])
+                            items[f"{item_id}_{item_name}"] += item.get("count")
 
-            for item_name, item_count in items.items():
-                raw_data.append((character_name, loc_name, item_name, item_count))
+            for item_details, item_count in items.items():
+                item_id, item_name = item_details.split("_")
+                raw_data.append((character_name, loc_name, item_id, item_name, item_count))
 
     # Convert information to dataframe
-    cols = ["character", "location", "item", "count"]
+    cols = ["character", "location", "item_id", "item_name", "count"]
     ark_inventory = pd.DataFrame(raw_data)
     ark_inventory.columns = cols
+    ark_inventory["item_id"] = ark_inventory["item_id"].astype(int)
     ark_inventory["timestamp"] = run_dt
     io.writer(
         ark_inventory, "cleaned", "ark_inventory", "parquet", self_schema=True,

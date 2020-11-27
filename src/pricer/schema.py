@@ -7,7 +7,8 @@ ark_inventory_schema = pa.DataFrameSchema(
     columns={
         "character": Column(pa.String),
         "location": Column(pa.String),
-        "item": Column(pa.String),
+        "item_id": Column(pa.Int),
+        "item_name": Column(pa.String),
         "count": Column(pa.Int),
         "timestamp": Column(pa.DateTime),
     },
