@@ -3,6 +3,7 @@ from collections import defaultdict
 from datetime import datetime as dt
 import json
 import logging
+from pathlib import Path
 from typing import Any, Dict, List
 
 from bs4 import BeautifulSoup
@@ -24,8 +25,8 @@ logger = logging.getLogger(__name__)
 
 def get_bb_item_page(driver: webdriver, item_id: int) -> Dict[Any, Any]:
     """Get Booty Bay json info for a given item_id."""
-    url = f'{cfg.booty["api"]}{cfg.us["server_id"]}&item={item_id}'
-    backup_url = f'{cfg.booty["base"]}{cfg.us["server"].lower()}-a/item/6049'
+    url = f'{cfg.booty["api"]}{cfg.wow["booty_server"]["server_id"]}&item={item_id}'
+    backup_url = str(Path(cfg.booty["base"], cfg.wow["booty_server"]["server_url"], "item", "6049"))
 
     driver.get(url)
     soup = BeautifulSoup(driver.page_source)
@@ -45,7 +46,7 @@ def start_driver() -> webdriver:
     username = cfg.wow["booty_acc"].get("username")
     password = cfg.wow["booty_acc"].get("password")
 
-    url = f'{cfg.booty["base"]}{cfg.us["server"].lower()}-a/item/6049'
+    url = str(Path(cfg.booty["base"], cfg.wow["booty_server"]["server_url"], "item", "6049"))
 
     driver = webdriver.Chrome(cfg.booty["CHROMEDRIVER_PATH"])
     try:

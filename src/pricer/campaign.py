@@ -389,7 +389,7 @@ def write_make_policy() -> None:
     )
     content = io.reader(name=path, ftype="lua", custom="rb")
 
-    craft_mark = f'f@Alliance - {cfg.us["server"]}@internalData@crafts'
+    craft_mark = f'f@Alliance - {cfg.wow["booty_server"]["server_name"]}@internalData@crafts'
     start, end = utils.find_tsm_marker(content, f'["{craft_mark}"]'.encode("ascii"))
 
     crafting_dict = lua.decode("{" + content[start:end].decode("ascii") + "}")

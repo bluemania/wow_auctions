@@ -61,7 +61,7 @@ flask = {"CUSTOM_STATIC_PATH": data_path}
 
 booty = {
     "CHROMEDRIVER_PATH": data_path.joinpath("chromedriver"),
-    "base": "https://www.bootybaygazette.com/#us/",
+    "base": "https://www.bootybaygazette.com/",
     "api": "https://www.bootybaygazette.com/api/item.php?house=",
     "PAGE_WAIT": 1,
 }
