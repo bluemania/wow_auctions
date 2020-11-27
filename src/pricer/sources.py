@@ -225,14 +225,16 @@ def clean_arkinventory_data(run_dt: dt) -> None:
                 for bag in bag_slots:
                     for item in bag.get("slot", []):
                         # Must have item details, a count and must not be a soulbound item
-                        if item.get("h") and item.get("count") and item.get('sb') != 3:
-                            item_name = item.get("h").split("[")[1].split("]")[0]
-                            item_id = int(item.get('h').split('Hitem:')[1].split(':')[0])
+                        if item.get("h") and item.get("count") and item.get("sb") != 3:
+                            item_name: str = item.get("h").split("[")[1].split("]")[0]
+                            item_id: str = item.get("h").split("tem:")[1].split(":")[0]
                             items[f"{item_id}_{item_name}"] += item.get("count")
 
             for item_details, item_count in items.items():
-                item_id, item_name = item_details.split("_")
-                raw_data.append((character_name, loc_name, item_id, item_name, item_count))
+                item_id, item_name = item_details.split("_", 1)
+                raw_data.append(
+                    (character_name, loc_name, item_id, item_name, item_count)
+                )
 
     # Convert information to dataframe
     cols = ["character", "location", "item_id", "item_name", "count"]

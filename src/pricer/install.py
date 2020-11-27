@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Tuple
 
 from selenium import webdriver
 
-from . import config as cfg, utils
+from . import config as cfg, io, utils
 
 logger = logging.getLogger(__name__)
 
@@ -38,15 +38,21 @@ def start(default_path: str) -> None:
         wow_folder = default_path
 
     path = Path(wow_folder)
-    check_wow_folders(path)
-    make_data_folders(path)
 
+    # Check WoW Addon folders exist
+    check_wow_folders(path)
+
+    # Create data folders and initialize user items
+    make_data_folders(path)
+    initialize_user_items()
+
+    # Enter BB account information
     username = input("OPTIONAL: Enter account username for Booty Bay: ")
     password = getpass.getpass("OPTIONAL: Enter account password for Booty Bay: ")
 
+    # Get accounts, servers, characters
     accounts = get_account_info(path)
     servers, accounts_report = report_accounts(path)
-
     primary_server = input(f"Which is your primary server ({', '.join(servers)})?: ")
     assert (
         primary_server in servers or primary_server == ""
@@ -67,9 +73,11 @@ def start(default_path: str) -> None:
     ), "incorrect region selection - installation failed"
     booty_server = server_lookup(primary_server, primary_faction, primary_region)
 
+    # Get primary auctioneer character
     ahm = input("Which character is your auction house main for scans and craft?: ")
     ahm_details = get_ahm_info(ahm, primary_server)
 
+    # Write user config
     config = {
         "base": wow_folder,
         "accounts": accounts,
@@ -79,6 +87,7 @@ def start(default_path: str) -> None:
     }
     create_wow_config(config)
 
+    # Check Chromedriver installation
     message = (
         "Please download the latest Chromedriver"
         " and add to 'pricer_data' in WoW directory."
@@ -86,6 +95,7 @@ def start(default_path: str) -> None:
     )
     input(message)
     check_chromedriver(path)
+
     print(f"⭐ Installation complete! ⭐ {accounts_report}")
 
 
@@ -223,3 +233,13 @@ def get_ahm_info(ahm: str, primary_server: str) -> Dict[str, str]:
                 "server": primary_server,
             }
     return ahm_info
+
+
+def initialize_user_items() -> None:
+    """Seeds a user_item file if it does not exist."""
+    path = Path(cfg.data_path).joinpath("user_items.json")
+    if not path.exists():
+        logger.debug("User item file does not exist, creating")
+        io.writer({}, folder="", name="user_items", ftype="json")
+    else:
+        logger.debug("User item file does not exist, creating")
