@@ -1,0 +1,155 @@
+server_id,server_url,name
+1,#us/azuresong-a,Azuresong
+2,#us/windseeker-a,Windseeker
+3,#us/ashkandi-a,Ashkandi
+4,#us/atiesh-a,Atiesh
+5,#us/benediction-a,Benediction
+6,#us/kirtonos-a,Kirtonos
+7,#us/kurinnaxx-a,Kurinnaxx
+8,#us/myzrael-a,Myzrael
+9,#us/old-blanchy-a,Old Blanchy
+10,#us/rattlegore-a,Rattlegore
+11,#us/smolderweb-a,Smolderweb
+12,#us/sulfuras-a,Sulfuras
+13,#us/thunderfury-a,Thunderfury
+14,#us/westfall-a,Westfall
+15,#us/blaumeux-a,Blaumeux
+16,#us/kromcrush-a,Kromcrush
+17,#us/mankrik-a,Mankrik
+18,#us/bigglesworth-a,Bigglesworth
+19,#us/fairbanks-a,Fairbanks
+20,#us/incendius-a,Incendius
+21,#us/felstriker-a,Felstriker
+22,#us/remulos-a,Remulos
+23,#us/yojamba-a,Yojamba
+24,#us/arugal-a,Arugal
+25,#us/pagle-a,Pagle
+26,#us/herod-a,Herod
+27,#us/skeram-a,Skeram
+28,#us/stalagg-a,Stalagg
+29,#us/thalnos-a,Thalnos
+30,#us/whitemane-a,Whitemane
+31,#us/faerlina-a,Faerlina
+32,#us/azuresong-h,Azuresong
+33,#us/windseeker-h,Windseeker
+34,#us/ashkandi-h,Ashkandi
+35,#us/atiesh-h,Atiesh
+36,#us/benediction-h,Benediction
+37,#us/kirtonos-h,Kirtonos
+38,#us/kurinnaxx-h,Kurinnaxx
+39,#us/myzrael-h,Myzrael
+40,#us/old-blanchy-h,Old Blanchy
+41,#us/rattlegore-h,Rattlegore
+42,#us/smolderweb-h,Smolderweb
+43,#us/sulfuras-h,Sulfuras
+44,#us/thunderfury-h,Thunderfury
+45,#us/westfall-h,Westfall
+46,#us/blaumeux-h,Blaumeux
+47,#us/kromcrush-h,Kromcrush
+48,#us/mankrik-h,Mankrik
+49,#us/bigglesworth-h,Bigglesworth
+50,#us/fairbanks-h,Fairbanks
+51,#us/incendius-h,Incendius
+52,#us/felstriker-h,Felstriker
+53,#us/remulos-h,Remulos
+54,#us/yojamba-h,Yojamba
+55,#us/arugal-h,Arugal
+56,#us/pagle-h,Pagle
+57,#us/herod-h,Herod
+58,#us/skeram-h,Skeram
+59,#us/stalagg-h,Stalagg
+60,#us/thalnos-h,Thalnos
+61,#us/whitemane-h,Whitemane
+62,#us/faerlina-h,Faerlina
+63,#us/anathema-a,Anathema
+64,#us/netherwind-a,Netherwind
+65,#us/anathema-h,Anathema
+66,#us/netherwind-h,Netherwind
+67,#us/deviate-delight-a,Deviate Delight
+68,#us/bloodsail-buccaneers-a,Bloodsail Buccaneers
+69,#us/grobbulus-a,Grobbulus
+70,#us/deviate-delight-h,Deviate Delight
+71,#us/bloodsail-buccaneers-h,Bloodsail Buccaneers
+72,#us/grobbulus-h,Grobbulus
+73,#us/arcanite-reaper-a,Arcanite Reaper
+74,#us/earthfury-a,Earthfury
+75,#us/heartseeker-a,Heartseeker
+76,#us/arcanite-reaper-h,Arcanite Reaper
+77,#us/earthfury-h,Earthfury
+78,#us/heartseeker-h,Heartseeker
+79,#eu/ashbringer-a,Ashbringer
+80,#eu/bloodfang-a,Bloodfang
+81,#eu/dragonfang-a,Dragonfang
+82,#eu/dreadmist-a,Dreadmist
+83,#eu/earthshaker-a,Earthshaker
+84,#eu/firemaw-a,Firemaw
+85,#eu/flamelash-a,Flamelash
+86,#eu/gandling-a,Gandling
+87,#eu/gehennas-a,Gehennas
+88,#eu/golemagg-a,Golemagg
+89,#eu/hydraxian-waterlords-a,Hydraxian Waterlords
+90,#eu/judgement-a,Judgement
+91,#eu/mirage-raceway-a,Mirage Raceway
+92,#eu/auberdine-h,Auberdine
+93,#eu/finkle-h,Finkle
+94,#eu/sulfuron-h,Sulfuron
+95,#eu/dragons-call-h,Dragon's Call
+96,#eu/everlook-h,Everlook
+97,#eu/heartstriker-h,Heartstriker
+98,#eu/lakeshire-h,Lakeshire
+99,#eu/lucifron-h,Lucifron
+100,#eu/patchwerk-h,Patchwerk
+101,#eu/razorfen-h,Razorfen
+102,#eu/transcendence-h,Transcendence
+103,#eu/venoxis-h,Venoxis
+104,#eu/mograine-a,Mograine
+105,#eu/nethergarde-keep-a,Nethergarde Keep
+106,#eu/noggenfogger-a,Noggenfogger
+107,#eu/pyrewood-village-a,Pyrewood Village
+108,#eu/razorgore-a,Razorgore
+109,#eu/shazzrah-a,Shazzrah
+110,#eu/skullflame-a,Skullflame
+111,#eu/stonespine-a,Stonespine
+112,#eu/ten-storms-a,Ten Storms
+113,#eu/zandalar-tribe-a,Zandalar Tribe
+114,#eu/mandokir-a,Mandokir
+115,#eu/amnennar-a,Amnennar
+116,#eu/ashbringer-h,Ashbringer
+117,#eu/bloodfang-h,Bloodfang
+118,#eu/dragonfang-h,Dragonfang
+119,#eu/dreadmist-h,Dreadmist
+120,#eu/earthshaker-h,Earthshaker
+121,#eu/firemaw-h,Firemaw
+122,#eu/flamelash-h,Flamelash
+123,#eu/gandling-h,Gandling
+124,#eu/gehennas-h,Gehennas
+125,#eu/golemagg-h,Golemagg
+126,#eu/hydraxian-waterlords-h,Hydraxian Waterlords
+127,#eu/judgement-h,Judgement
+128,#eu/mirage-raceway-h,Mirage Raceway
+129,#eu/auberdine-a,Auberdine
+130,#eu/finkle-a,Finkle
+131,#eu/sulfuron-a,Sulfuron
+132,#eu/dragons-call-a,Dragon's Call
+133,#eu/everlook-a,Everlook
+134,#eu/heartstriker-a,Heartstriker
+135,#eu/lakeshire-a,Lakeshire
+136,#eu/lucifron-a,Lucifron
+137,#eu/patchwerk-a,Patchwerk
+138,#eu/razorfen-a,Razorfen
+139,#eu/transcendence-a,Transcendence
+140,#eu/venoxis-a,Venoxis
+141,#eu/mograine-h,Mograine
+142,#eu/nethergarde-keep-h,Nethergarde Keep
+143,#eu/noggenfogger-h,Noggenfogger
+144,#eu/pyrewood-village-h,Pyrewood Village
+145,#eu/razorgore-h,Razorgore
+146,#eu/shazzrah-h,Shazzrah
+147,#eu/skullflame-h,Skullflame
+148,#eu/stonespine-h,Stonespine
+149,#eu/ten-storms-h,Ten Storms
+150,#eu/zandalar-tribe-h,Zandalar Tribe
+151,#eu/mandokir-h,Mandokir
+152,#eu/amnennar-h,Amnennar
+153,#eu/celebras-a,Celebras
+154,#eu/celebras-h,Celebras

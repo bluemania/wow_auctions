@@ -1,7 +1,4 @@
 # Base path to WoW directory
-server: Grobbulus
-server_id: 69
-
 roles:
   - name: Amazona
     account: 396255466#1
