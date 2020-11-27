@@ -26,7 +26,9 @@ logger = logging.getLogger(__name__)
 def get_bb_item_page(driver: webdriver, item_id: int) -> Dict[Any, Any]:
     """Get Booty Bay json info for a given item_id."""
     url = f'{cfg.booty["api"]}{cfg.wow["booty_server"]["server_id"]}&item={item_id}'
-    backup_url = str(Path(cfg.booty["base"], cfg.wow["booty_server"]["server_url"], "item", "6049"))
+    backup_url = str(
+        Path(cfg.booty["base"], cfg.wow["booty_server"]["server_url"], "item", "6049")
+    )
 
     driver.get(url)
     soup = BeautifulSoup(driver.page_source)
@@ -46,7 +48,9 @@ def start_driver() -> webdriver:
     username = cfg.wow["booty_acc"].get("username")
     password = cfg.wow["booty_acc"].get("password")
 
-    url = str(Path(cfg.booty["base"], cfg.wow["booty_server"]["server_url"], "item", "6049"))
+    url = str(
+        Path(cfg.booty["base"], cfg.wow["booty_server"]["server_url"], "item", "6049")
+    )
 
     driver = webdriver.Chrome(cfg.booty["CHROMEDRIVER_PATH"])
     try:

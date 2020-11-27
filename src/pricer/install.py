@@ -48,13 +48,23 @@ def start(default_path: str) -> None:
     servers, accounts_report = report_accounts(path)
 
     primary_server = input(f"Which is your primary server ({', '.join(servers)})?: ")
-    assert primary_server in servers or primary_server == "", "Name does not match server list - installation failed"
-    if primary_server == "" and len(servers)==1:
+    assert (
+        primary_server in servers or primary_server == ""
+    ), "Name does not match server list - installation failed"
+    if primary_server == "" and len(servers) == 1:
         primary_server = servers[0]
-    primary_faction = input(f"And is your primary faction (A)lliance or (H)orde?: ").lower()
-    assert primary_faction=="h" or primary_faction=="a", "incorrect faction selection - installation failed"
-    primary_region = input(f"And is your region US/Oceania (us) or Europe (eu)?: ").lower()
-    assert primary_region=="us" or primary_faction=="eu", "incorrect region selection - installation failed"
+    primary_faction = input(
+        "And is your primary faction (A)lliance or (H)orde?: "
+    ).lower()
+    assert (
+        primary_faction == "h" or primary_faction == "a"
+    ), "incorrect faction selection - installation failed"
+    primary_region = input(
+        "And is your region US/Oceania (us) or Europe (eu)?: "
+    ).lower()
+    assert (
+        primary_region == "us" or primary_faction == "eu"
+    ), "incorrect region selection - installation failed"
     booty_server = server_lookup(primary_server, primary_faction, primary_region)
 
     config = {
@@ -183,9 +193,17 @@ def report_accounts(path: Path) -> Tuple[List[str], str]:
     return servers, message
 
 
-def server_lookup(primary_server: str, primary_faction: str, primary_region: str) -> Dict[str, Any]:
+def server_lookup(
+    primary_server: str, primary_faction: str, primary_region: str
+) -> Dict[str, Any]:
     """Get the server details to use for booty bay."""
     url_part = f"#{primary_region}/{primary_server.lower()}-{primary_faction}"
-    assert url_part in cfg.servers["server_id"], f"Incorrectly formed wow server url {url_part}"
-    server_details = {"server_url": url_part, "server_id": cfg.servers["server_id"][url_part], "server_name": primary_server}
+    assert (
+        url_part in cfg.servers["server_id"]
+    ), f"Incorrectly formed wow server url {url_part}"
+    server_details = {
+        "server_url": url_part,
+        "server_id": cfg.servers["server_id"][url_part],
+        "server_name": primary_server,
+    }
     return server_details
