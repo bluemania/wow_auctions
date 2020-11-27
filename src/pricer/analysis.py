@@ -124,12 +124,12 @@ def create_item_inventory() -> None:
     """Convert Arkinventory tabular data into dataframe of counts for user items."""
     item_inventory = io.reader("cleaned", "ark_inventory", "parquet")
 
-    roles = {char["name"]: char["role"] for char in cfg.us.get("roles", {})}
+    roles = {cfg.wow['ahm']['name'] : "ahm"}
 
     item_inventory["role"] = item_inventory["character"].apply(
         lambda x: roles[x] if x in roles else "char"
     )
-    role_types = ["ahm", "mule", "char"]
+    role_types = ["ahm", "char"]
     assert item_inventory["role"].isin(role_types).all()
 
     location_rename = {
@@ -156,9 +156,6 @@ def create_item_inventory() -> None:
 
     # Analyse aggregate; ordering important here
     item_inventory["inv_total_all"] = item_inventory.sum(axis=1)
-
-    cols = [x for x in item_inventory.columns if "ahm" in x or "mule" in x]
-    item_inventory["inv_total_hold"] = item_inventory[cols].sum(axis=1)
 
     cols = [x for x in item_inventory.columns if "ahm" in x]
     item_inventory["inv_total_ahm"] = item_inventory[cols].sum(axis=1)
