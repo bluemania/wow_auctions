@@ -198,7 +198,7 @@ def draw_profit_charts() -> None:
     alltime_profit.plot(
         title=f"Total profit over all items ({tot} gold, {daily} per day)"
     )
-    io.writer(plt, "plots", "_alltime_profits", "png")
+    io.writer(plt, "plots", "_alltime_profit", "png")
     plt.close()
 
     for item in cfg.ui:
