@@ -124,7 +124,7 @@ def create_item_inventory() -> None:
     """Convert Arkinventory tabular data into dataframe of counts for user items."""
     item_inventory = io.reader("cleaned", "ark_inventory", "parquet")
 
-    roles = {cfg.wow['ahm']['name'] : "ahm"}
+    roles = {cfg.wow["ahm"]["name"]: "ahm"}
 
     item_inventory["role"] = item_inventory["character"].apply(
         lambda x: roles[x] if x in roles else "char"

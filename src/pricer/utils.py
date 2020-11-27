@@ -121,8 +121,8 @@ def find_tsm_marker(content: bytes, initial_key: bytes) -> Tuple[int, int]:
 
 def get_ahm() -> Dict[str, str]:
     """Get the auction house main details."""
-    ahm_details = cfg.wow['ahm']
-    ahm_details["role"] = 'ahm'
+    ahm_details = cfg.wow["ahm"]
+    ahm_details["role"] = "ahm"
     return ahm_details
 
 
