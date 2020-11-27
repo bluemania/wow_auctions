@@ -224,7 +224,8 @@ def clean_arkinventory_data(run_dt: dt) -> None:
                 # Get the items from each of the bags, add to master list
                 for bag in bag_slots:
                     for item in bag.get("slot", []):
-                        if item.get("h") and item.get("count"):
+                        # Must have item details, a count and must not be a soulbound item
+                        if item.get("h") and item.get("count") and item.get('sb') != 3:
                             item_name = item.get("h").split("[")[1].split("]")[0]
                             item_id = int(item.get('h').split('Hitem:')[1].split(':')[0])
                             items[f"{item_id}_{item_name}"] += item.get("count")
