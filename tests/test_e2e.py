@@ -6,7 +6,7 @@ from pricer import analysis, campaign, config as cfg, reporting, sources
 
 def test_e2e() -> None:
     """It runs pipeline except reading raw data and lua writes."""
-    cfg.get_path = cfg.get_test_path
+    cfg.data_path = cfg.get_test_path()
     test_items = ["Mighty Rage Potion", "Gromsblood", "Crystal Vial"]
     cfg.ui = {k: v for k, v in cfg.ui.items() if k in test_items}
 

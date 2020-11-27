@@ -1,7 +1,6 @@
 """Responsible for reading and cleaning input data sources."""
 from collections import defaultdict
 from datetime import datetime as dt
-import getpass
 import json
 import logging
 from typing import Any, Dict, List
@@ -15,6 +14,7 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
+from tqdm import tqdm
 
 from pricer import config as cfg
 from pricer import io, schema, utils
@@ -24,8 +24,8 @@ logger = logging.getLogger(__name__)
 
 def get_bb_item_page(driver: webdriver, item_id: int) -> Dict[Any, Any]:
     """Get Booty Bay json info for a given item_id."""
-    url = f'{cfg.us["booty"]["api"]}{cfg.us["server_id"]}&item={item_id}'
-    backup_url = f'{cfg.us["booty"]["base"]}{cfg.us["server"].lower()}-a/item/6049'
+    url = f'{cfg.booty["api"]}{cfg.us["server_id"]}&item={item_id}'
+    backup_url = f'{cfg.booty["base"]}{cfg.us["server"].lower()}-a/item/6049'
 
     driver.get(url)
     soup = BeautifulSoup(driver.page_source)
@@ -42,31 +42,32 @@ def get_bb_item_page(driver: webdriver, item_id: int) -> Dict[Any, Any]:
 
 def start_driver() -> webdriver:
     """Spin up selenium driver for Booty Bay scraping."""
-    account = cfg.secrets.get("account")
-    password = cfg.secrets.get("password")
+    username = cfg.wow["booty_acc"].get("username")
+    password = cfg.wow["booty_acc"].get("password")
 
-    url = f'{cfg.us["booty"]["base"]}{cfg.us["server"].lower()}-a/item/6049'
+    url = f'{cfg.booty["base"]}{cfg.us["server"].lower()}-a/item/6049'
 
-    if not account:
-        account = getpass.getpass("Account:")
-    if not password:
-        password = getpass.getpass("Password:")
+    driver = webdriver.Chrome(cfg.booty["CHROMEDRIVER_PATH"])
     try:
-        driver = webdriver.Chrome(cfg.us["booty"]["CHROMEDRIVER_PATH"])
-        driver.implicitly_wait(cfg.us["booty"]["PAGE_WAIT"])
+        driver.implicitly_wait(cfg.booty["PAGE_WAIT"])
         driver.get(url)
 
         WebDriverWait(driver, 20).until(
             EC.element_to_be_clickable((By.CLASS_NAME, "battle-net"))
         ).click()
 
-        driver.find_element_by_id("accountName").send_keys(account)
-        driver.find_element_by_id("password").send_keys(password)
+        if username:
+            driver.find_element_by_id("accountName").send_keys(username)
 
-        WebDriverWait(driver, 20).until(
-            EC.element_to_be_clickable((By.ID, "submit"))
-        ).click()
+        if password:
+            driver.find_element_by_id("password").send_keys(password)
+
+        if username and password:
+            WebDriverWait(driver, 20).until(
+                EC.element_to_be_clickable((By.ID, "submit"))
+            ).click()
     except Exception:
+        driver.close()
         raise SystemError("Error connecting to bb")
 
     input("Ready to continue after authentication...")
@@ -80,13 +81,16 @@ def get_bb_data() -> None:
     user_items = cfg.ui.copy()
     user_auc_items = {k: v for k, v in user_items.items() if "vendor_price" not in v}
 
-    item_ids = utils.get_item_ids()
+    item_ids = cfg.item_ids.copy()
     items_ids = {k: v for k, v in item_ids.items() if k in user_auc_items}
 
     # Get bb data from API
     bb_data: Dict[str, Dict[Any, Any]] = defaultdict(dict)
-    for item, item_id in items_ids.items():
-        bb_data[item] = get_bb_item_page(driver, item_id)
+
+    with tqdm(total=len(items_ids), desc="Booty Items") as pbar:
+        for item, item_id in items_ids.items():
+            bb_data[item] = get_bb_item_page(driver, item_id)
+            pbar.update(1)
 
     driver.close()
     io.writer(bb_data, "raw", "bb_data", "json")
@@ -168,7 +172,7 @@ def get_item_icons() -> None:
 def get_arkinventory_data() -> None:
     """Reads WoW Addon Ark Inventory lua data and saves local copy as json."""
     acc_inv: dict = {}
-    for account_name in cfg.us.get("accounts"):
+    for account_name in cfg.wow.get("accounts", {}):
         path = utils.make_lua_path(account_name, "ArkInventory")
         data = io.reader(name=path, ftype="lua")
         acc_inv = utils.source_merge(acc_inv, data).copy()
@@ -194,10 +198,10 @@ def clean_arkinventory_data(run_dt: dt) -> None:
 
         for lkey in location_slots:
             items: Dict[str, int] = defaultdict(int)
-            if str(lkey) not in cfg.gs["location_info"]:  # pragma: no cover
+            if str(lkey) not in cfg.location_info:  # pragma: no cover
                 continue
             else:
-                loc_name = cfg.gs["location_info"][str(lkey)]
+                loc_name = cfg.location_info[str(lkey)]
 
             location_slot = location_slots[lkey]
             if location_slot:
@@ -236,7 +240,7 @@ def get_beancounter_data() -> None:
     """Reads WoW Addon Beancounter lua and saves to local json."""
     """Reads Ark Inventory json and parses into tabular format."""
     beancounter_data: dict = {}
-    for account_name in cfg.us.get("accounts"):
+    for account_name in cfg.wow.get("accounts", {}):
         path = utils.make_lua_path(account_name, "BeanCounter")
         bean = io.reader(name=path, ftype="lua")
         beancounter_data = utils.source_merge(beancounter_data, bean).copy()
@@ -247,7 +251,7 @@ def clean_beancounter_data() -> None:
     """Reads Beancounter json and parses into tabular format."""
     data = io.reader("raw", "beancounter_data", "json")
 
-    item_names = {v: k for k, v in utils.get_item_ids().items()}
+    item_names = {v: k for k, v in cfg.item_ids.copy().items()}
 
     # Parses all listings into flat python list
     parsed = []
@@ -485,9 +489,9 @@ def _process_item_skeleton(df: pd.DataFrame) -> pd.DataFrame:
     int_cols = ["user_min_holding", "user_max_holding", "user_vendor_price"]
     df[int_cols] = df[int_cols].fillna(0).astype(int)
 
-    df["user_std_holding"] = (df["user_max_holding"] - df["user_min_holding"]) / cfg.us[
-        "analysis"
-    ]["USER_STD_SPREAD"]
+    df["user_std_holding"] = (
+        df["user_max_holding"] - df["user_min_holding"]
+    ) / cfg.analysis["USER_STD_SPREAD"]
     df["user_mean_holding"] = (
         df[["user_min_holding", "user_max_holding"]].mean(axis=1).astype(int)
     )

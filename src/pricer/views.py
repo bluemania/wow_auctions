@@ -5,20 +5,14 @@ from typing import Any, Dict, List
 
 from flask import Flask, redirect, render_template, send_from_directory, url_for
 
-from .. import config as cfg, io, reporting, run, sources
+from . import config as cfg, io, reporting, run, sources
 
 
 logger = logging.getLogger(__name__)
 app = Flask(__name__)
 if app.root_path is None:
     raise
-app.config["data_path"] = Path(app.root_path).parents[2].joinpath("data")
-
-try:
-    item_icon_manifest = io.reader("item_icons", "_manifest", "json")
-
-except FileNotFoundError:
-    logger.exception("Reporting files not present, unable to start webserver")
+app.config["data_path"] = cfg.flask["CUSTOM_STATIC_PATH"]
 
 
 @app.context_processor
@@ -72,38 +66,28 @@ def item_report(item_name: str) -> Any:
 @app.route("/data_static/item_icons/<path:filename>")
 def item_icons(filename: str) -> Any:
     """Returns image icon for items."""
-    icon = item_icon_manifest.get(filename, "inv_scroll_03") + ".jpg"
-    return send_from_directory(
-        Path(app.config["data_path"]).joinpath("item_icons"), icon
-    )
+    item_icon_manifest: Dict[Any, Any] = {}
+    icon = item_icon_manifest.get(filename, False)
+    if icon == False:
+        path = Path("data")
+        filename = "default_icon.jpg"
+    else:
+        path = Path(app.config["data_path"]).joinpath("item_static")
+        filename = f"icon_{icon}.jpg"
+    return send_from_directory(path, filename)
 
 
-@app.route("/data_static/item_plot_profit/<path:item_name>")
-def item_plot_profit(item_name: str) -> Any:
+@app.route("/data_static/<string:metric>/<string:item_name>")
+def item_plot(metric: str, item_name: str) -> Any:
     """Returns profit plot for items."""
-    path = Path(app.config["data_path"]).joinpath("reporting", "feasible")
-    return send_from_directory(path, item_name + ".png")
+    path = Path(app.config["data_path"]).joinpath("plots")
+    filename = f"{item_name}_{metric}.png"
 
+    if not path.joinpath(filename).exists():
+        path = Path("data")
+        filename = "default_icon.jpg"
 
-@app.route("/data_static/item_listing_plot/<path:item_name>")
-def item_listing_plot(item_name: str) -> Any:
-    """Returns profit plot for items."""
-    path = Path(app.config["data_path"]).joinpath("reporting", "listing_item")
-    return send_from_directory(path, item_name + ".png")
-
-
-@app.route("/data_static/item_activity_plot/<path:item_name>")
-def item_activity_plot(item_name: str) -> Any:
-    """Returns profit plot for items."""
-    path = Path(app.config["data_path"]).joinpath("reporting", "activity")
-    return send_from_directory(path, item_name + ".png")
-
-
-@app.route("/data_static/item_profit_plot/<path:item_name>")
-def item_profit_plot(item_name: str) -> Any:
-    """Returns profit plot for items."""
-    path = Path(app.config["data_path"]).joinpath("reporting", "profit")
-    return send_from_directory(path, item_name + ".png")
+    return send_from_directory(path, filename)
 
 
 @app.route("/trigger_booty_bay")
@@ -119,3 +103,12 @@ def run_analytics() -> Any:
     run.run_analytics()
     run.run_reporting()
     return redirect(url_for("home"))
+
+
+@app.route("/favicon.ico")
+def favicon() -> Any:
+    """Return favicon."""
+    path = Path("data")
+    filename = "favicon.ico"
+    mimetype = "image/vnd.microsoft.icon"
+    return send_from_directory(path, filename, mimetype=mimetype)

@@ -9,15 +9,14 @@ First time running checklist
 import argparse
 from datetime import datetime as dt
 import logging
-import warnings
 
 from tqdm import tqdm
 
-from . import analysis, campaign, config as cfg, reporting, sources
-from .webserver.views import app
+import pricer
+from . import analysis, campaign, config as cfg, install, logs, reporting, sources
+from .views import app
 
 
-warnings.simplefilter(action="ignore")
 logger = logging.getLogger(__name__)
 
 
@@ -121,19 +120,25 @@ def main() -> None:
     """Main program runner."""
     run_dt = dt.now().replace(microsecond=0)
 
-    parser = argparse.ArgumentParser(description="WoW Auctions")
+    parser = argparse.ArgumentParser(
+        description=f"Pricer for WoW Auctions v{pricer.__version__}"
+    )
 
     subparsers = parser.add_subparsers(dest="command")
     install_parser = subparsers.add_parser("install")
     install_parser.add_argument(
         "-p",
         "--path",
-        help="Install pricer by attaching to WoW path",
+        help="Install pricer by attaching to WoW path and checking files",
         type=str,
         default="/Applications/World of Warcraft/_classic_/",
     )
+    install_parser.add_argument("-v", help="Verbose mode (info)", action="store_true")
+    install_parser.add_argument("-vv", help="Verbose mode (debug)", action="store_true")
 
-    parser.add_argument("-b", help="Update web booty bay analysis", action="store_true")
+    parser.add_argument(
+        "-b", help="Update web booty bay analysis (Slow)", action="store_true"
+    )
     parser.add_argument(
         "-icons", help="Get item icons for webserver", action="store_true"
     )
@@ -153,27 +158,21 @@ def main() -> None:
     parser.add_argument("-vv", help="Verbose mode (debug)", action="store_true")
     args = parser.parse_args()
 
-    cfg.set_loggers(base_logger=logger, v=args.v, vv=args.vv)
+    logs.set_loggers(log_path=cfg.log_path, base_logger=logger, v=args.v, vv=args.vv)
     logger.info("Program started, arguments parsed")
     logger.debug(args)
 
     if args.command == "install":
-        """
-        Expected process:
-        1. pip install pricer
-        2. pricer install (path)
-        3. Test/show correctly installed
-        4. Create .pricer file in ~/ with wow directory
-        """
-        cfg.set_path(args.path)
+        install.start(args.path)
     else:
+        install.check()
         if args.b:
             sources.get_bb_data()
         if args.icons:
             sources.get_item_icons()
         if args.t:
             """Test environment."""
-            cfg.get_path = cfg.get_test_path
+            cfg.data_path = cfg.get_test_path()
             test_items = ["Mighty Rage Potion", "Gromsblood", "Crystal Vial"]
             cfg.ui = {k: v for k, v in cfg.ui.items() if k in test_items}
 
