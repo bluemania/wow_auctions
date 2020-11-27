@@ -28,7 +28,7 @@ def test_predict_volume_sell_probability() -> None:
     """test."""
     # bb_fortnight = io.reader("cleaned", "bb_fortnight", "parquet")
     user_sells = utils.user_item_filter("Sell")
-    MAX_LISTINGS = cfg.us["analysis"]["MAX_LISTINGS_PROBABILITY"]
+    MAX_LISTINGS = int(cfg.analysis["MAX_LISTINGS_PROBABILITY"])
     dur_char = "m"
 
     bb_fortnight = pd.DataFrame(bb_fortnight_raw)

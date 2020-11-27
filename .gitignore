@@ -3,9 +3,6 @@
 *__pycache__
 venv/
 
-# Never save secrets!
-SECRETS.yaml
-
 # Dont save live data...
 data/*/*.parquet
 data/*/*.json
@@ -17,11 +14,11 @@ data/*/*/*.png
 !data/*/.gitkeep
 
 # Retain the test data, and the file structure
-!data/_test/raw/*
-!data/_test/*/.gitkeep
+!tests/test_data/raw/*
+!tests/test_data/*/.gitkeep
 
 # But none of the test outputs
-data/_test/*/*.parquet
+tests/test_data/*/*
 
 
 logs/*

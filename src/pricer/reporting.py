@@ -80,12 +80,12 @@ def produce_item_reporting() -> None:
 
     listing_profits = io.reader("reporting", "listing_profits", "parquet")
 
-    MAX_LISTINGS = cfg.us["analysis"]["MAX_LISTINGS_PROBABILITY"]
+    MAX_LISTINGS = cfg.analysis["MAX_LISTINGS_PROBABILITY"]
     for item in listing_profits.columns:
         plt.figure()
         listing_profits[item].plot(title=f"List profit {item}")
-        pd.Series([sell_policy.loc[item, "profit_feasible"]] * MAX_LISTINGS).plot()
-        plt.savefig(f"data/reporting/feasible/{item}.png")
+        pd.Series([sell_policy.loc[item, "profit_feasible"] * MAX_LISTINGS]).plot()
+        io.writer(plt, "plots", f"{item}_feasible", "png")
         plt.close()
 
 
@@ -105,8 +105,7 @@ def produce_listing_items() -> None:
         pd.Series(
             [item_info.loc[item, "material_make_cost"]] * list_item.shape[0]
         ).plot()
-
-        plt.savefig(f"data/reporting/listing_item/{item}.png")
+        io.writer(plt, "plots", f"{item}_listing", "png")
         plt.close()
 
 
@@ -133,7 +132,7 @@ def produce_activity_tracking() -> None:
         if item in activity.index:
             plt.figure()
             activity.loc[item][cols].plot(title=f"Historic activity {item}")
-            plt.savefig(f"data/reporting/activity/{item}.png")
+            io.writer(plt, "plots", f"{item}_activity", "png")
             plt.close()
 
 
@@ -199,7 +198,7 @@ def draw_profit_charts() -> None:
     alltime_profit.plot(
         title=f"Total profit over all items ({tot} gold, {daily} per day)"
     )
-    plt.savefig("data/reporting/profit/_alltime_profits.png")
+    io.writer(plt, "plots", "_alltime_profits", "png")
     plt.close()
 
     for item in cfg.ui:
@@ -208,5 +207,5 @@ def draw_profit_charts() -> None:
             (profits.loc[item, "total_profit"].cumsum() / 10000).plot(
                 title=f"Profit {item}"
             )
-            plt.savefig(f"data/reporting/profit/{item}.png")
+            io.writer(plt, "plots", f"{item}_profit", "png")
             plt.close()

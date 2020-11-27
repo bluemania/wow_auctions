@@ -65,7 +65,7 @@ def encode_buy_campaign(buy_policy: pd.DataFrame) -> Dict[str, Dict[str, Any]]:
     assert (buy_policy.columns == cols).all(), "Buy policy incorrectly formatted"
     buy_policy = buy_policy.set_index("item")
 
-    item_ids = utils.get_item_ids()
+    item_ids = cfg.item_ids.copy()
 
     new_snatch = {}
     for item, b in buy_policy.iterrows():
@@ -89,7 +89,7 @@ def write_buy_policy() -> None:
 
     # Read client lua, replace with
 
-    for account in cfg.us.get("accounts", []):
+    for account in cfg.wow.get("accounts", []):
         path = utils.make_lua_path(account_name=account, datasource="Auc-Advanced")
         data = io.reader(name=path, ftype="lua")
         snatch = data["AucAdvancedData"]["UtilSearchUiData"]["Current"]
@@ -114,7 +114,7 @@ def encode_sell_campaign(sell_policy: pd.DataFrame) -> Dict[str, Any]:
     assert (sell_policy.columns == cols).all(), "Sell policy incorrectly formatted"
     sell_policy = sell_policy.set_index("item")
 
-    item_ids = utils.get_item_ids()
+    item_ids = cfg.item_ids.copy()
 
     # Seed new appraiser
     new_appraiser: Dict[str, Any] = {
@@ -160,7 +160,7 @@ def write_sell_policy() -> None:
     new_appraiser = encode_sell_campaign(sell_policy[cols])
 
     # Read client lua, replace with
-    for account in cfg.us.get("accounts", []):
+    for account in cfg.wow.get("accounts", []):
         path = utils.make_lua_path(account_name=account, datasource="Auc-Advanced")
         data = io.reader(name=path, ftype="lua")
         data["AucAdvancedConfig"]["profile.Default"]["util"][

@@ -1,72 +1,82 @@
 """It collates and loads user specified configuration for data pipeline."""
+import json
 import logging
+from pathlib import Path
 from typing import Any, Dict
 
-import tqdm
+import pandas as pd
 
-from pricer import io
+from . import io
 
 logger = logging.getLogger(__name__)
 
 
-class TqdmStream(object):
-    """Allows for writing tqdm alongside logging."""
+def get_wow_config(pricer_path: Path) -> Dict[str, Any]:
+    """Gets the pricer config file."""
+    try:
+        with open(pricer_path, "r") as f:
+            path_config = json.load(f)
+    except FileNotFoundError:
+        logger.error("Pricer config does not exist")
+        path_config = {"base": ""}
+    return path_config
 
-    @classmethod
-    def write(cls: Any, msg: Any) -> Any:
-        """Writer method."""
-        tqdm.tqdm.write(msg, end="")
+
+def get_test_path() -> Path:
+    """Used to overwrite test path for testing."""
+    return Path("tests", "test_data")
 
 
-def set_loggers(
-    base_logger: Any = None, v: bool = False, vv: bool = False, test: bool = False
-) -> None:
-    """Sets up logging across modules in project.
+def get_item_ids() -> Dict[str, int]:
+    """Read item id database."""
+    path = Path(__file__).parent.joinpath("data/items.csv")
+    item_codes = pd.read_csv(path)
+    return item_codes.set_index("name")["entry"].to_dict()
 
-    Uses arguments originally specified from command line to set
-    streaming logging level. Log files are written in debug mode.
 
-    Args:
-        base_logger: base logger object instantiated at program run time.
-            Used to find other log objects across modules.
-        v: Run in verbose mode (INFO)
-        vv: Run in very verbose mode (DEBUG)
-        test: Override / runs in verbose mode (INFO), in case not
-            user specified.
-    """
-    if vv:
-        log_level = 10
-    elif v or test:
-        log_level = 20
-    else:
-        log_level = 30
+pricer_path = Path.home().joinpath(".pricer")
+wow = get_wow_config(pricer_path)
 
-    loggers = [base_logger] + [
-        logging.getLogger(name)  # type: ignore
-        for name in logging.root.manager.loggerDict  # type: ignore
-        if "pricer." in name
-    ]
-    for logger in loggers:
-        logger.setLevel(log_level)  # type: ignore
-        formatter = logging.Formatter("%(asctime)s:%(name)s:%(message)s")
+wow_path = Path(wow["base"])
+data_path = wow_path.joinpath("pricer_data")
+log_path = data_path.joinpath("logs")
 
-        file_handler = logging.FileHandler(f"logs/{logger.name}.log")  # type: ignore
-        file_handler.setLevel(10)
-        file_handler.setFormatter(formatter)
+item_ids = get_item_ids()
 
-        stream_handler = logging.StreamHandler(stream=TqdmStream)  # type: ignore
-        stream_handler.setFormatter(formatter)
+location_info = {"0": "Inventory", "2": "Bank", "5": "Mailbox", "10": "Auctions"}
+auction_type_labels = {
+    "completedAuctions": "sell_price",
+    "completedBidsBuyouts": "buy_price",
+    "failedAuctions": "failed",
+}
+flask = {"CUSTOM_STATIC_PATH": data_path}
 
-        logger.addHandler(file_handler)  # type: ignore
-        logger.addHandler(stream_handler)  # type: ignore
+booty = {
+    "CHROMEDRIVER_PATH": data_path.joinpath("chromedriver"),
+    "base": "https://www.bootybaygazette.com/#us/",
+    "api": "https://www.bootybaygazette.com/api/item.php?house=",
+    "PAGE_WAIT": 1,
+}
 
+analysis = {
+    "USER_STD_SPREAD": 7,
+    "ITEM_PRICE_OUTLIER_CAP": 0.025,
+    "ROLLING_BUYOUT_SPAN": 100,
+    "BB_MAT_PRICE_RATIO": 0.5,
+    "MAX_LISTINGS_PROBABILITY": 500,
+}
+required_addons = ["ArkInventory", "BeanCounter", "Auc-ScanData", "TradeSkillMaster"]
+pricer_subdirs = [
+    "config",
+    "cleaned",
+    "intermediate",
+    "item_icons",
+    "outputs",
+    "raw",
+    "reporting",
+    "logs",
+    "plots",
+]
 
 us = io.reader("config", "user_settings", "yaml")
 ui = io.reader("config", "user_items", "yaml")
-gs = io.reader("config", "general_settings", "yaml")
-try:
-    secrets = io.reader(name="SECRETS", ftype="yaml")
-except FileNotFoundError:
-    secrets = {"username": None, "password": None}
-
-env: Dict[str, str] = {"basepath": "data"}

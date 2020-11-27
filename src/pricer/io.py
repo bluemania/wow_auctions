@@ -2,13 +2,13 @@
 import json
 import logging
 from pathlib import Path
-from typing import Any, BinaryIO
+from typing import Any, BinaryIO, Union
 
 import pandas as pd
 from slpp import slpp as lua
 import yaml
 
-from pricer import config as cfg, schema, utils
+from . import config as cfg, schema, utils
 
 logger = logging.getLogger(__name__)
 pd.options.mode.chained_assignment = None  # default='warn'
@@ -16,17 +16,16 @@ pd.options.mode.chained_assignment = None  # default='warn'
 
 def reader(
     folder: str = "",
-    name: str = "",
+    name: Union[Path, str] = "",
     ftype: str = "",
     custom: str = "",
     self_schema: bool = False,
 ) -> Any:
     """Standard program writer, allows pathing extensibility i.e. testing or S3."""
-    if ftype == "yaml":
-        base_path = Path(__file__).parent
-    else:
-        base_path = Path(cfg.env["basepath"])
-    path = Path(base_path, folder, name + "." + ftype)
+    filename = str(name) + "." + ftype
+
+    # Defaults to data path. If filename is full path aka lua path, uses full path
+    path = cfg.data_path.joinpath(Path(folder, filename))
     logger.debug(f"Reading {name} {ftype} from {path}")
 
     if ftype == "parquet":
@@ -55,7 +54,6 @@ def reader(
     elif ftype == "yaml":
         with open(path, "r") as yaml_r:
             data = yaml.safe_load(yaml_r)
-
     if self_schema:
         getattr(schema, f"{name}_schema").validate(data)
 
@@ -65,13 +63,14 @@ def reader(
 def writer(
     data: Any,
     folder: str = "",
-    name: str = "",
+    name: Union[Path, str] = "",
     ftype: str = "",
     custom: str = "",
     self_schema: bool = False,
 ) -> None:
     """Standard program writer, allows pathing extensibility i.e. testing or S3."""
-    path = Path(cfg.env["basepath"], folder, name + "." + ftype)
+    filename = str(name) + "." + ftype
+    path = cfg.data_path.joinpath(Path(folder, filename))
     logger.debug(f"Writing {name} {ftype} to {path}")
 
     if self_schema:
@@ -92,3 +91,5 @@ def writer(
     elif ftype == "jpg":
         with open(path, "wb") as jpg_wb:
             jpg_wb.write(data)
+    elif ftype == "png":
+        data.savefig(path)
