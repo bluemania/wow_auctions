@@ -22,11 +22,6 @@ def get_wow_config(pricer_path: Path) -> Dict[str, Any]:
     return path_config
 
 
-def get_test_path() -> Path:
-    """Used to overwrite test path for testing."""
-    return Path("tests", "test_data")
-
-
 def get_item_ids() -> Dict[str, int]:
     """Read item id database."""
     path = Path(__file__).parent.joinpath("data", "items.csv")
