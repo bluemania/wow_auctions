@@ -18,7 +18,7 @@ def get_wow_config(pricer_path: Path) -> Dict[str, Any]:
             path_config = json.load(f)
     except FileNotFoundError:
         logger.error("Pricer config does not exist")
-        path_config = {"base": ""}
+        path_config = {"base": "", "booty_acc": {"username": "", "password": ""}}
     return path_config
 
 
