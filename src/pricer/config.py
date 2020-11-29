@@ -18,13 +18,8 @@ def get_wow_config(pricer_path: Path) -> Dict[str, Any]:
             path_config = json.load(f)
     except FileNotFoundError:
         logger.error("Pricer config does not exist")
-        path_config = {"base": "", "booty_acc": {"username": "", "password": ""}}
+        path_config = {"base": ""}
     return path_config
-
-
-def get_test_path() -> Path:
-    """Used to overwrite test path for testing."""
-    return Path("tests", "test_data")
 
 
 def get_item_ids() -> Dict[str, int]:

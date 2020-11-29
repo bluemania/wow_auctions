@@ -152,8 +152,6 @@ def main() -> None:
 
     parser.add_argument("-r", help="Generate reporting and plots", action="store_true")
 
-    parser.add_argument("-t", help="Run on test data", action="store_true")
-
     parser.add_argument("-v", help="Verbose mode (info)", action="store_true")
     parser.add_argument("-vv", help="Verbose mode (debug)", action="store_true")
     args = parser.parse_args()
@@ -170,15 +168,8 @@ def main() -> None:
             sources.get_bb_data()
         if args.icons:
             sources.get_item_icons()
-        if args.t:
-            """Test environment."""
-            cfg.data_path = cfg.get_test_path()
-            test_items = ["Mighty Rage Potion", "Gromsblood", "Crystal Vial"]
-            cfg.ui = {k: v for k, v in cfg.ui.items() if k in test_items}
-
         if not args.n:
             run_analytics(stack=args.s, max_sell=args.m, duration=args.d, test=args.t)
-
         if args.r:
             run_reporting()
 
