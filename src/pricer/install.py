@@ -23,7 +23,7 @@ def check() -> None:
     try:
         io.reader("", "user_items", "json")
     except FileNotFoundError as e:
-        raise FileNotFoundError("Missing user items file; run `pricer install`") from e        
+        raise FileNotFoundError("Missing user items file; run `pricer install`") from e
     try:
         path_config["base"]
     except KeyError as e:
@@ -227,7 +227,9 @@ def server_lookup(
     return server_details
 
 
-def get_ahm_info(ahm: str, primary_server: str, accounts: Dict[str, Any]) -> Dict[str, str]:
+def get_ahm_info(
+    ahm: str, primary_server: str, accounts: Dict[str, Any]
+) -> Dict[str, str]:
     """Return information about the auction house main."""
     for account, servers in accounts.items():
         if ahm in servers["servers"][primary_server]["characters"]:

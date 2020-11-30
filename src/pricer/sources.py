@@ -195,7 +195,7 @@ def _get_item_facts(driver: webdriver, item_id: int) -> Dict[str, Any]:
         else:
             raise ValueError("Weird size for Booty Bay item stats list")
 
-    item_info = {k:v for k, v in data.items() if k in cfg.item_info_fields}
+    item_info = {k: v for k, v in data.items() if k in cfg.item_info_fields}
 
     # Get icon
     if not Path(cfg.data_path, "item_icons", f"{item_info['icon']}.jpg").exists():
