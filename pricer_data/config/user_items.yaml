@@ -1,0 +1,325 @@
+
+Arcane Crystal:
+  min_holding: 8
+  max_holding: 36
+  max_sell: 4
+  Buy: True
+  Sell: True
+Essence of Water:
+  max_holding: 40
+  Sell: True
+  made_from:
+    TRANSMUTE_TIME: 120000
+    Essence of Undeath: 1
+  make_pass: True
+  max_holding: 20
+Arcanite Bar:
+  max_holding: 30
+  max_sell: 8
+  Sell: True
+  made_from:
+    Arcane Crystal: 1
+    TRANSMUTE_TIME: 90000
+  make_pass: True
+Thorium Bar:
+  min_holding: 10
+  max_holding: 40
+  Buy: True
+  Sell: True
+Black Lotus:
+  min_holding: 2
+  max_holding: 15
+  max_sell: 3
+  Buy: True
+  Sell: True
+
+# 1255 potions, 251 stacks
+# Roughly 304 stacks of materials
+Flask of the Titans:
+  min_holding: 2
+  max_holding: 20
+  max_sell: 3
+  Sell: True
+  made_from:
+    Gromsblood: 30
+    Stonescale Oil: 10
+    Black Lotus: 1
+    Crystal Vial: 1
+  make_pass: True
+Elixir of Fortitude:
+  min_holding: 20
+  max_holding: 100
+  Sell: True
+  made_from:
+    Goldthorn: 1
+    Leaded Vial: 1
+    Wild Steelbloom: 1
+Elixir of Giants:
+  min_holding: 20
+  max_holding: 100
+  Sell: True
+  made_from:
+    Crystal Vial: 1
+    Gromsblood: 1
+    Sungrass: 1
+Elixir of Greater Agility:
+  max_holding: 60
+  Sell: True
+  made_from:
+    Crystal Vial: 1
+    Goldthorn: 1
+    Sungrass: 1
+Elixir of Superior Defense:
+  min_holding: 10
+  max_holding: 15
+  made_from:
+    Crystal Vial: 1
+    Stonescale Oil: 2
+    Sungrass: 1
+Elixir of the Mongoose:
+  min_holding: 20
+  max_holding: 80
+  Sell: True
+  made_from:
+    Crystal Vial: 1
+    Mountain Silversage: 2
+    Plaguebloom: 2
+Free Action Potion:
+  min_holding: 10
+  max_holding: 15
+  made_from:
+    Leaded Vial: 1
+    Blackmouth Oil: 2
+    Stranglekelp: 1
+Greater Stoneshield Potion:
+  min_holding: 10
+  max_holding: 15
+  made_from:
+    Crystal Vial: 1
+    Stonescale Oil: 3
+    Thorium Ore: 1
+Invisibility Potion:
+  max_holding: 40
+  Sell: True
+  made_from:
+    Crystal Vial: 1
+    Ghost Mushroom: 1
+    Sungrass: 1
+Limited Invulnerability Potion:
+  max_holding: 80
+  Sell: True
+  made_from:
+    Blindweed: 2
+    Crystal Vial: 1
+    Ghost Mushroom: 1
+Mighty Rage Potion:
+  max_holding: 100
+  Sell: True
+  made_from:
+    Crystal Vial: 1
+    Gromsblood: 3
+Swiftness Potion:
+  max_holding: 40
+  Sell: True
+  made_from:
+    Briarthorn: 1
+    Empty Vial: 1
+    Swiftthistle: 1
+Greater Arcane Protection Potion:
+  min_holding: 10
+  max_holding: 50
+  Sell: True
+  made_from:
+    Crystal Vial: 1
+    Dream Dust: 1
+    Dreamfoil: 1
+  make_pass: True
+Greater Nature Protection Potion:
+  min_holding: 10
+  max_holding: 70
+  Sell: True
+  made_from:
+    Crystal Vial: 1
+    Elemental Earth: 1
+    Dreamfoil: 1
+  make_pass: True
+Greater Shadow Protection Potion:
+  min_holding: 5
+  max_holding: 25
+  Sell: True
+  made_from:
+    Crystal Vial: 1
+    Shadow Oil: 1
+    Dreamfoil: 1
+  make_pass: True
+Fire Protection Potion:
+  Sell: True
+  max_holding: 30
+  made_from:
+    Leaded Vial: 1
+    Small Flame Sac: 1
+    Fire Oil: 1
+Frost Oil:
+  Sell: True
+  max_holding: 30
+  made_from:
+    Leaded Vial: 1
+    Khadgar's Whisker: 4
+    Wintersbite: 2
+
+
+
+Blackmouth Oil:
+  max_holding: 40
+  made_from:
+    Empty Vial: 1
+    Oily Blackmouth: 2
+Stonescale Oil:
+  max_holding: 140
+  made_from:
+    Leaded Vial: 1
+    Stonescale Eel: 1
+Shadow Oil:
+  min_holding: 5
+  max_holding: 25
+  made_from:
+    Leaded Vial: 1
+    Fadeleaf: 4
+    Grave Moss: 4
+
+Oily Blackmouth:
+  max_holding: 80
+Stonescale Eel:
+  max_holding: 80
+  Buy: True
+  Sell: True
+Blindweed:
+  max_holding: 100
+  Buy: True
+  Sell: True
+Briarthorn:
+  max_holding: 100
+  Buy: True
+  Sell: True
+Dream Dust:
+  max_holding: 80
+  Buy: True
+  Sell: True
+Dreamfoil:
+  max_holding: 100
+  Buy: True
+  Sell: True
+Swiftthistle:
+  max_holding: 120
+  Buy: True
+  Sell: True
+Ghost Mushroom:
+  max_holding: 100
+  Buy: True
+  Sell: True
+Goldthorn:
+  max_holding: 100
+  Buy: True
+  Sell: True
+Gromsblood:
+  max_holding: 200
+  Buy: True
+  Sell: True
+Mountain Silversage:
+  max_holding: 120
+  Buy: True
+  Sell: True
+Plaguebloom:
+  max_holding: 100
+  Buy: True
+  Sell: True
+Stranglekelp:
+  max_holding: 100
+  Buy: True
+  Sell: True
+Sungrass:
+  max_holding: 100
+  Buy: True
+  Sell: True
+Thorium Ore:
+  max_holding: 40
+Wild Steelbloom:
+  max_holding: 100
+  Buy: True
+  Sell: True
+Fadeleaf:
+  max_holding: 40
+  Buy: True
+  Sell: True
+Grave Moss:
+  max_holding: 40
+  Buy: True
+  Sell: True
+Elemental Earth:
+  max_holding: 60
+  Buy: True
+  Sell: True
+
+Small Flame Sac:
+  Sell: True
+  Buy: True
+  max_holding: 20
+Fire Oil:
+  Sell: True
+Khadgar's Whisker:
+  max_holding: 40
+  Buy: True
+  Sell: True
+Wintersbite:
+  max_holding: 60
+  Buy: True
+  Sell: True
+
+Essence of Undeath:
+  Buy: True
+  max_holding: 20
+  make_pass: True
+# Gear for characters
+Winterfall Firewater:
+  max_holding: 30
+  max_sell: 5
+  Buy: True
+  Sell: True
+Elemental Sharpening Stone:
+  max_holding: 30
+  max_sell: 5
+  Buy: True
+  Sell: True
+Major Healing Potion:
+  max_holding: 80
+  Buy: True
+  Sell: True
+Heavy Runecloth Bandage:
+  max_holding: 100
+  Sell: True
+  made_from:
+    Runecloth: 2
+  make_pass: True
+Runecloth:
+  Buy: True
+Spider Sausage:
+  max_holding: 80
+  made_from:
+    White Spider Meat: 2
+  make_pass: True    
+White Spider Meat:
+  Buy: True
+  make_pass: True
+Dense Sharpening Stone:
+  max_holding: 80
+  Buy: True
+
+Crystal Vial:
+  vendor_price: 400
+Leaded Vial:
+  vendor_price: 32
+Empty Vial:
+  vendor_price: 3
+TRANSMUTE_TIME:
+  vendor_price: 1
+  make_pass: True

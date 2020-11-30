@@ -20,17 +20,14 @@ from .views import app
 logger = logging.getLogger(__name__)
 
 
-def run_analytics(
-    stack: int = 5, max_sell: int = 20, duration: str = "m", test: bool = False
-) -> None:
+def run_analytics(stack: int = 5, max_sell: int = 20, duration: str = "m") -> None:
     """Run the main analytics pipeline."""
     with tqdm(total=1000, desc="Analytics") as pbar:
         run_dt = dt.now().replace(microsecond=0)
-        # TODO remove this run_dt crap
-        if not test:
-            sources.get_arkinventory_data()
-            sources.get_beancounter_data()
-            sources.get_auctioneer_data()
+
+        sources.get_arkinventory_data()
+        sources.get_beancounter_data()
+        sources.get_auctioneer_data()
         pbar.update(130)
 
         sources.clean_bb_data()
@@ -152,8 +149,6 @@ def main() -> None:
 
     parser.add_argument("-r", help="Generate reporting and plots", action="store_true")
 
-    parser.add_argument("-t", help="Run on test data", action="store_true")
-
     parser.add_argument("-v", help="Verbose mode (info)", action="store_true")
     parser.add_argument("-vv", help="Verbose mode (debug)", action="store_true")
     args = parser.parse_args()
@@ -170,15 +165,8 @@ def main() -> None:
             sources.get_bb_data()
         if args.icons:
             sources.get_item_icons()
-        if args.t:
-            """Test environment."""
-            cfg.data_path = cfg.get_test_path()
-            test_items = ["Mighty Rage Potion", "Gromsblood", "Crystal Vial"]
-            cfg.ui = {k: v for k, v in cfg.ui.items() if k in test_items}
-
         if not args.n:
-            run_analytics(stack=args.s, max_sell=args.m, duration=args.d, test=args.t)
-
+            run_analytics(stack=args.s, max_sell=args.m, duration=args.d)
         if args.r:
             run_reporting()
 
