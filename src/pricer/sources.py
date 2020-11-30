@@ -237,7 +237,7 @@ def clean_arkinventory_data(run_dt: dt) -> None:
                 )
 
     # Convert information to dataframe
-    cols = ["character", "location", "item_id", "item_name", "count"]
+    cols = ["character", "location", "item_id", "item", "count"]
     ark_inventory = pd.DataFrame(raw_data)
     ark_inventory.columns = cols
     ark_inventory["item_id"] = ark_inventory["item_id"].astype(int)
