@@ -479,14 +479,15 @@ def _process_auctioneer_data(df: pd.DataFrame) -> pd.DataFrame:
     df["item"] = df[8].str.replace('"', "").str[1:-1]
     df["quantity"] = df[10].replace("nil", 0).astype(int)
     df["buy"] = df[16].astype(int)
-    df["sellername"] = df[19].str.replace('"', "").str[1:-1]
+    df["sellername"] = df[19].str.replace('"', "").str[1:-1] 
+    df["item_id"] = df[22].astype(int)
 
     df = df[df["quantity"] > 0]
 
     df["price_per"] = (df["buy"] / df["quantity"]).astype(int)
     df = df[df["price_per"] > 0]
 
-    cols = ["item", "quantity", "buy", "sellername", "price_per", "time_remaining"]
+    cols = ["item", "item_id", "quantity", "buy", "sellername", "price_per", "time_remaining"]
     df = df[cols]
     return df
 

@@ -57,6 +57,7 @@ auc_listings_raw_schema = pa.DataFrameSchema(
 auc_listings_schema = pa.DataFrameSchema(
     columns={
         "item": Column(pa.String),
+        "item_id": Column(pa.Int, nullable=False),
         "quantity": Column(pa.Int),
         "buy": Column(pa.Int),
         "sellername": Column(pa.String),
