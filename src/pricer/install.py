@@ -21,6 +21,10 @@ def check() -> None:
     except FileNotFoundError as e:
         raise FileNotFoundError("Pricer is not installed; run `pricer install`") from e
     try:
+        io.reader("", "user_items", "json")
+    except FileNotFoundError as e:
+        raise FileNotFoundError("Missing user items file; run `pricer install`") from e        
+    try:
         path_config["base"]
     except KeyError as e:
         raise KeyError(
@@ -44,7 +48,7 @@ def start(default_path: str) -> None:
 
     # Create data folders and initialize user items
     make_data_folders(path)
-    initialize_user_items()
+    initialize_user_items(path)
 
     # Enter BB account information
     username = input("OPTIONAL: Enter account username for Booty Bay: ")
@@ -75,7 +79,7 @@ def start(default_path: str) -> None:
 
     # Get primary auctioneer character
     ahm = input("Which character is your auction house main for scans and craft?: ")
-    ahm_details = get_ahm_info(ahm, primary_server)
+    ahm_details = get_ahm_info(ahm, primary_server, accounts)
 
     # Write user config
     config = {
@@ -223,9 +227,9 @@ def server_lookup(
     return server_details
 
 
-def get_ahm_info(ahm: str, primary_server: str) -> Dict[str, str]:
+def get_ahm_info(ahm: str, primary_server: str, accounts: Dict[str, Any]) -> Dict[str, str]:
     """Return information about the auction house main."""
-    for account, servers in cfg.wow["accounts"].items():
+    for account, servers in accounts.items():
         if ahm in servers["servers"][primary_server]["characters"]:
             ahm_info: Dict[str, str] = {
                 "account": account,
@@ -235,11 +239,11 @@ def get_ahm_info(ahm: str, primary_server: str) -> Dict[str, str]:
     return ahm_info
 
 
-def initialize_user_items() -> None:
+def initialize_user_items(path: Path) -> None:
     """Seeds a user_item file if it does not exist."""
-    path = Path(cfg.data_path).joinpath("user_items.json")
+    path = path.joinpath("pricer_data").joinpath("user_items.json")
     if not path.exists():
         logger.debug("User item file does not exist, creating")
         io.writer({}, folder="", name="user_items", ftype="json")
     else:
-        logger.debug("User item file does not exist, creating")
+        logger.debug("User item file already exists")
