@@ -270,20 +270,21 @@ def get_beancounter_data() -> None:
 def clean_beancounter_data() -> None:
     """Reads Beancounter json and parses into tabular format."""
     data = io.reader("raw", "beancounter_data", "json")
-
-    item_names = {v: k for k, v in cfg.item_ids.copy().items()}
+    item_ids = cfg.get_item_ids_fixed()
 
     # Parses all listings into flat python list
     parsed = []
-    for character, auction_data in data["BeanCounterDB"]["Grobbulus"].items():
-        for auction_type, item_listings in auction_data.items():
-            for item_id, listings in item_listings.items():
-                for _, listing in listings.items():
-                    for auction in listing:
-                        if int(item_id) in item_names:  # bugfix #145
+    for server, server_data in data["BeanCounterDB"].items():
+        for character, auction_data in server_data.items():
+            for auction_type, item_listings in auction_data.items():
+                for item_id, listings in item_listings.items():
+                    for _, listing in listings.items():
+                        for auction in listing:
                             parsed.append(
                                 [auction_type]
-                                + [item_names[int(item_id)]]
+                                + [int(item_id)]
+                                + [server]
+                                + [item_ids[int(item_id)]]
                                 + [character]
                                 + auction.split(";")
                             )
@@ -314,6 +315,8 @@ def _clean_beancounter_purchases(df: pd.DataFrame) -> pd.DataFrame:
 
     columns = [
         "auction_type",
+        "item_id",
+        "server_name",
         "item",
         "buyer",
         "qty",
@@ -352,6 +355,8 @@ def clean_beancounter_posted(df: pd.DataFrame) -> pd.DataFrame:
 
     columns = [
         "auction_type",
+        "item_id",
+        "server_name",
         "item",
         "seller",
         "qty",
@@ -389,6 +394,8 @@ def _clean_beancounter_failed(df: pd.DataFrame) -> pd.DataFrame:
 
     columns = [
         "auction_type",
+        "item_id",
+        "server_name",
         "item",
         "seller",
         "qty",
@@ -423,6 +430,8 @@ def _clean_beancounter_success(df: pd.DataFrame) -> pd.DataFrame:
 
     columns = [
         "auction_type",
+        "item_id",
+        "server_name",
         "item",
         "seller",
         "qty",
@@ -479,7 +488,7 @@ def _process_auctioneer_data(df: pd.DataFrame) -> pd.DataFrame:
     df["item"] = df[8].str.replace('"', "").str[1:-1]
     df["quantity"] = df[10].replace("nil", 0).astype(int)
     df["buy"] = df[16].astype(int)
-    df["sellername"] = df[19].str.replace('"', "").str[1:-1] 
+    df["sellername"] = df[19].str.replace('"', "").str[1:-1]
     df["item_id"] = df[22].astype(int)
 
     df = df[df["quantity"] > 0]
@@ -487,7 +496,15 @@ def _process_auctioneer_data(df: pd.DataFrame) -> pd.DataFrame:
     df["price_per"] = (df["buy"] / df["quantity"]).astype(int)
     df = df[df["price_per"] > 0]
 
-    cols = ["item", "item_id", "quantity", "buy", "sellername", "price_per", "time_remaining"]
+    cols = [
+        "item",
+        "item_id",
+        "quantity",
+        "buy",
+        "sellername",
+        "price_per",
+        "time_remaining",
+    ]
     df = df[cols]
     return df
 

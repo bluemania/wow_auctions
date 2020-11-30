@@ -114,9 +114,9 @@ bb_fortnight_schema = pa.DataFrameSchema(
 
 beancounter_raw_schema = pa.DataFrameSchema(
     columns={
-        0: Column(pa.String, nullable=True),
-        1: Column(pa.String, nullable=True),
-        2: Column(pa.String, nullable=True),
+        0: Column(pa.String, nullable=False),
+        1: Column(pa.Int, nullable=False),
+        2: Column(pa.String, nullable=False),
         3: Column(pa.String, nullable=True),
         4: Column(pa.String, nullable=True),
         5: Column(pa.String, nullable=True),
@@ -127,6 +127,8 @@ beancounter_raw_schema = pa.DataFrameSchema(
         10: Column(pa.String, nullable=True),
         11: Column(pa.String, nullable=True),
         12: Column(pa.String, nullable=True),
+        13: Column(pa.String, nullable=True),
+        14: Column(pa.String, nullable=True),
     },
     strict=True,
 )
@@ -134,6 +136,8 @@ beancounter_raw_schema = pa.DataFrameSchema(
 bean_purchases_schema = pa.DataFrameSchema(
     columns={
         "auction_type": Column(pa.String),
+        "item_id": Column(pa.Int),
+        "server_name": Column(pa.String),
         "item": Column(pa.String),
         "buyer": Column(pa.String),
         "qty": Column(pa.Int),
@@ -150,6 +154,8 @@ bean_purchases_schema = pa.DataFrameSchema(
 bean_posted_schema = pa.DataFrameSchema(
     columns={
         "auction_type": Column(pa.String),
+        "item_id": Column(pa.Int),
+        "server_name": Column(pa.String),
         "item": Column(pa.String),
         "seller": Column(pa.String),
         "qty": Column(pa.Int),
@@ -166,6 +172,8 @@ bean_posted_schema = pa.DataFrameSchema(
 bean_failed_schema = pa.DataFrameSchema(
     columns={
         "auction_type": Column(pa.String),
+        "item_id": Column(pa.Int),
+        "server_name": Column(pa.String),
         "item": Column(pa.String),
         "seller": Column(pa.String),
         "qty": Column(pa.Int),
@@ -182,6 +190,8 @@ bean_failed_schema = pa.DataFrameSchema(
 bean_success_schema = pa.DataFrameSchema(
     columns={
         "auction_type": Column(pa.String),
+        "item_id": Column(pa.Int),
+        "server_name": Column(pa.String),
         "item": Column(pa.String),
         "seller": Column(pa.String),
         "qty": Column(pa.Int),
@@ -202,6 +212,8 @@ bean_success_schema = pa.DataFrameSchema(
 bean_results_schema = pa.DataFrameSchema(
     columns={
         "auction_type": Column(pa.String),
+        "item_id": Column(pa.Int),
+        "server_name": Column(pa.String),
         "item": Column(pa.String),
         "seller": Column(pa.String),
         "qty": Column(pa.Int),

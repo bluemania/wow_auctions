@@ -29,6 +29,13 @@ def get_item_ids() -> Dict[str, int]:
     return item_codes.set_index("name")["entry"].to_dict()
 
 
+def get_item_ids_fixed() -> Dict[int, str]:
+    """Read item id database."""
+    path = Path(__file__).parent.joinpath("data", "items.csv")
+    item_codes = pd.read_csv(path)
+    return item_codes.set_index("entry")["name"].to_dict()
+
+
 def get_servers() -> Dict[str, Dict[str, Union[int, str]]]:
     """Get server_ids and info from booty bay."""
     path = Path(__file__).parent.joinpath("data", "servers.csv")
