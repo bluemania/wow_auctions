@@ -111,7 +111,11 @@ def run_reporting() -> None:
 
 
 def update_items() -> None:
-    pass
+    """Check current inventory for items not included in master table."""
+    run_dt = dt.now().replace(microsecond=0)
+    sources.get_arkinventory_data()
+    sources.clean_arkinventory_data(run_dt)
+    sources.update_items()
 
 
 def main() -> None:
@@ -123,7 +127,7 @@ def main() -> None:
     )
 
     parser.add_argument("-v", help="Verbose mode (info)", action="store_true")
-    parser.add_argument("-vv", help="Verbose mode (debug)", action="store_true")    
+    parser.add_argument("-vv", help="Verbose mode (debug)", action="store_true")
 
     subparsers = parser.add_subparsers(dest="command")
 
@@ -142,14 +146,19 @@ def main() -> None:
     install_parser.add_argument("-vv", help="Verbose mode (debug)", action="store_true")
 
     parser.add_argument(
-        "-b", "--booty", help="Update web booty bay analysis (Slow)", action="store_true"
+        "-b",
+        "--booty",
+        help="Update web booty bay analysis (Slow)",
+        action="store_true",
     )
 
     parser.add_argument("-s", type=int, default=5, help="Stack size")
     parser.add_argument("-m", type=int, default=20, help="Max sell")
     parser.add_argument("-d", type=str, default="m", help="Duration")
 
-    parser.add_argument("-r", "--reporting", help="Generate reporting and plots", action="store_true")
+    parser.add_argument(
+        "-r", "--reporting", help="Generate reporting and plots", action="store_true"
+    )
 
     args = parser.parse_args()
 

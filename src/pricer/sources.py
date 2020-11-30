@@ -157,21 +157,79 @@ def clean_bb_data() -> None:
     )
 
 
-def get_item_icons() -> None:
-    """Reads the booty bay data to determine item icons, and downloads them."""
-    bb_data = io.reader("raw", "bb_data", "json")
-    item_icons = {k: v["stats"][0]["icon"] for k, v in bb_data.items()}
+def _character_most_items(ark_inventory: pd.DataFrame) -> Dict[int, str]:
+    """Use Arkinventory data to determine which character has most of an item_id."""
+    ark_character = pd.DataFrame(
+        ark_inventory.groupby(["item_id", "character"])["count"].sum().reset_index()
+    )
+    max_count = ark_character.groupby("item_id")["count"].max()
+    ark_most = pd.merge(
+        ark_character, max_count, how="left", left_on="item_id", right_index=True
+    )
+    ark_most = ark_most[ark_most["count_x"] == ark_most["count_y"]]
+    item_character = ark_most.groupby("item_id").first()["character"].to_dict()
+    return item_character
 
-    for _, icon_name in item_icons.items():
-        url = f"https://wow.zamimg.com/images/wow/icons/large/{icon_name}.jpg"
+
+def _get_item_facts(driver: webdriver, item_id: int) -> Dict[str, Any]:
+    """Given an item_id get info from BB and icon."""
+    # Get Booty Bay basic data
+    if Path(cfg.data_path, "item_info", f"{item_id}.json").exists():
+        result = io.reader("item_info", str(item_id), "json")
+    else:
+        result = get_bb_item_page(driver, item_id)
+        io.writer(result, folder="item_info", name=str(item_id), ftype="json")
+        if not result:
+            logger.debug(f"No item info for {item_id}")
+            # continue
+
+    if isinstance(result["stats"], list):
+        if len(result["stats"]) == 1:
+            data = result["stats"][0]
+        else:
+            raise ValueError("Weird size for Booty Bay item stats list")
+    elif isinstance(result["stats"], dict):
+        if len(result["stats"]) == 1:
+            for _, data in result["stats"].items():
+                data
+        else:
+            raise ValueError("Weird size for Booty Bay item stats list")
+
+    info_fields = ["icon", "auctionable", "selltovendor", "stacksize"]
+    item_info = {k: v for k, v in data.items() if k in info_fields}
+
+    # Get icon
+    if not Path(cfg.data_path, "item_icons", f"{item_info['icon']}.jpg").exists():
+        url = cfg.icons_path + item_info["icon"] + ".jpg"
         r = requests.get(url)
-        io.writer(r.content, "item_icons", icon_name, "jpg")
+        io.writer(r.content, "item_icons", item_info["icon"], "jpg")
 
-    # Default for failures
-    url = "https://wow.zamimg.com/images/wow/icons/large/inv_scroll_03.jpg"
-    r = requests.get(url)
-    io.writer(r.content, "item_icons", "inv_scroll_03", "jpg")
-    io.writer(item_icons, "item_icons", "_manifest", "json")
+    return item_info
+
+
+def update_items() -> None:
+    """Check current inventory for items not included in master table."""
+    driver = start_driver()
+    ark_inventory = io.reader("cleaned", "ark_inventory", "parquet", self_schema=True)
+    user_items = io.reader(folder="", name="user_items", ftype="json")
+
+    items_character = _character_most_items(ark_inventory)
+    update_items = list(set(items_character) - set(user_items))
+
+    with tqdm(total=len(update_items), desc="Items for update") as pbar:
+        for item_id in update_items:
+            user_items[item_id] = _get_item_facts(driver, item_id)
+            user_items[item_id]["ahm"] = items_character[item_id]
+            user_items[item_id]["active"] = True
+            user_items[item_id]["ignore"] = False
+            user_items[item_id]["Sell"] = False
+            user_items[item_id]["Buy"] = False
+            user_items[item_id]["make_pass"] = True
+            pbar.update(1)
+
+    io.writer(user_items, folder="", name="user_items", ftype="json")
+
+    driver.close()
 
 
 def get_arkinventory_data() -> None:

@@ -73,6 +73,16 @@ booty: Dict[str, Any] = {
     "PAGE_WAIT": 1,
 }
 
+icons_path = "https://wow.zamimg.com/images/wow/icons/large/"
+item_info_fields = [
+    "icon",
+    "auctionable",
+    "selltovendor",
+    "stacksize",
+    "name_enus",
+    "price",
+]
+
 analysis: Dict[str, Union[int, float]] = {
     "USER_STD_SPREAD": 7,
     "ITEM_PRICE_OUTLIER_CAP": 0.025,
@@ -90,6 +100,7 @@ pricer_subdirs: List[str] = [
     "config",
     "cleaned",
     "intermediate",
+    "item_info",
     "item_icons",
     "outputs",
     "raw",
