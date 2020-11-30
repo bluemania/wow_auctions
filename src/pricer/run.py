@@ -24,23 +24,20 @@ def run_analytics(stack: int = 5, max_sell: int = 20, duration: str = "m") -> No
     """Run the main analytics pipeline."""
     with tqdm(total=1000, desc="Analytics") as pbar:
         run_dt = dt.now().replace(microsecond=0)
-
-        sources.get_arkinventory_data()
-        sources.get_beancounter_data()
-        sources.get_auctioneer_data()
-        pbar.update(130)
-
         sources.clean_bb_data()
         pbar.update(106)
 
+        sources.get_arkinventory_data()
         sources.clean_arkinventory_data(run_dt)
-        pbar.update(2)
+        pbar.update(32)
 
+        sources.get_beancounter_data()
         sources.clean_beancounter_data()
-        pbar.update(26)
+        pbar.update(76)
 
+        sources.get_auctioneer_data()
         sources.clean_auctioneer_data()
-        pbar.update(74)
+        pbar.update(124)
 
         sources.clean_item_skeleton()
         pbar.update(4)
@@ -113,6 +110,10 @@ def run_reporting() -> None:
         pbar.update(347)
 
 
+def update_items() -> None:
+    pass
+
+
 def main() -> None:
     """Main program runner."""
     run_dt = dt.now().replace(microsecond=0)
@@ -121,7 +122,14 @@ def main() -> None:
         description=f"Pricer for WoW Auctions v{pricer.__version__}"
     )
 
+    parser.add_argument("-v", help="Verbose mode (info)", action="store_true")
+    parser.add_argument("-vv", help="Verbose mode (debug)", action="store_true")    
+
     subparsers = parser.add_subparsers(dest="command")
+
+    subparsers.add_parser("server")
+    subparsers.add_parser("update_items")
+
     install_parser = subparsers.add_parser("install")
     install_parser.add_argument(
         "-p",
@@ -134,23 +142,15 @@ def main() -> None:
     install_parser.add_argument("-vv", help="Verbose mode (debug)", action="store_true")
 
     parser.add_argument(
-        "-b", help="Update web booty bay analysis (Slow)", action="store_true"
-    )
-    parser.add_argument(
-        "-icons", help="Get item icons for webserver", action="store_true"
+        "-b", "--booty", help="Update web booty bay analysis (Slow)", action="store_true"
     )
 
     parser.add_argument("-s", type=int, default=5, help="Stack size")
     parser.add_argument("-m", type=int, default=20, help="Max sell")
     parser.add_argument("-d", type=str, default="m", help="Duration")
 
-    parser.add_argument("-f", help="Start flask webserver", action="store_true")
-    parser.add_argument("-n", help="No analysis, skip", action="store_true")
+    parser.add_argument("-r", "--reporting", help="Generate reporting and plots", action="store_true")
 
-    parser.add_argument("-r", help="Generate reporting and plots", action="store_true")
-
-    parser.add_argument("-v", help="Verbose mode (info)", action="store_true")
-    parser.add_argument("-vv", help="Verbose mode (debug)", action="store_true")
     args = parser.parse_args()
 
     logs.set_loggers(log_path=cfg.log_path, base_logger=logger, v=args.v, vv=args.vv)
@@ -161,20 +161,20 @@ def main() -> None:
         install.start(args.path)
     else:
         install.check()
-        if args.b:
-            sources.get_bb_data()
-        if args.icons:
-            sources.get_item_icons()
-        if not args.n:
-            run_analytics(stack=args.s, max_sell=args.m, duration=args.d)
-        if args.r:
-            run_reporting()
-
-        logger.info(f"Program end, seconds {(dt.now() - run_dt).total_seconds()}")
-
-        if args.f:
+        if args.command == "server":
+            install.check()
             logger.info("Starting webserver")
             app.run(debug=True, threaded=True)
+        elif args.command == "update_items":
+            update_items()
+        else:
+            if args.booty:
+                sources.get_bb_data()
+            run_analytics(stack=args.s, max_sell=args.m, duration=args.d)
+            if args.reporting:
+                run_reporting()
+
+    logger.info(f"Program end, seconds {(dt.now() - run_dt).total_seconds()}")
 
 
 if __name__ == "__main__":
