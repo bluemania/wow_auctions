@@ -83,18 +83,15 @@ def get_bb_data() -> None:
     """Reads Booty Bay web API data using selenium and blizzard login."""
     driver = start_driver()
     # Get item_ids for user specified items of interest
-    user_items = cfg.ui.copy()
-    user_auc_items = {k: v for k, v in user_items.items() if "vendor_price" not in v}
-
-    item_ids = cfg.item_ids.copy()
-    items_ids = {k: v for k, v in item_ids.items() if k in user_auc_items}
+    user_items = io.reader("", "user_items", "json")
+    auctionable_items = [item_id for item_id, v in user_items.items() if v["true_auctionable"]]
 
     # Get bb data from API
     bb_data: Dict[str, Dict[Any, Any]] = defaultdict(dict)
 
-    with tqdm(total=len(items_ids), desc="Booty Items") as pbar:
-        for item, item_id in items_ids.items():
-            bb_data[item] = get_bb_item_page(driver, item_id)
+    with tqdm(total=len(auctionable_items), desc="Booty Items") as pbar:
+        for item_id in auctionable_items:
+            bb_data[item_id] = get_bb_item_page(driver, item_id)
             pbar.update(1)
 
     driver.close()
@@ -103,45 +100,44 @@ def get_bb_data() -> None:
 
 def clean_bb_data() -> None:
     """Parses all Booty Bay item json into tabular formats."""
+    """Parses all Booty Bay item json into tabular formats."""
     item_data = io.reader("raw", "bb_data", "json")
+    user_items = io.reader("", "user_items", "json")
 
     bb_fortnight: List = []
     bb_history: List = []
     bb_alltime: List = []
-    bb_deposit: Dict[str, int] = {}
 
-    for item, data in item_data.items():
-
-        bb_fortnight_data = pd.DataFrame(data["history"][0])
+    for item_id, data in item_data.items():
+        item_name = user_items[item_id].get('name_enus')
+        
+        bb_fortnight_data = pd.DataFrame(utils.get_bb_fields(data, 'history'))
         bb_fortnight_data["snapshot"] = pd.to_datetime(
             bb_fortnight_data["snapshot"], unit="s"
         )
-        bb_fortnight_data["item"] = item
+        bb_fortnight_data["item"] = item_name
         bb_fortnight.append(bb_fortnight_data)
 
         bb_history_data = pd.DataFrame(data["daily"])
-        bb_history_data["item"] = item
+        bb_history_data["item"] = item_name
         bb_history.append(bb_history_data)
 
-        bb_alltime_data = pd.DataFrame(data["monthly"][0])
-        bb_alltime_data["item"] = item
+        bb_alltime_data = pd.DataFrame(utils.get_bb_fields(data, 'monthly'))
+        bb_alltime_data["item"] = item_name
         bb_alltime.append(bb_alltime_data)
 
-        vendorprice = item_data[item]["stats"][0]["selltovendor"]
-        bb_deposit[item] = int(vendorprice / 20 * 12)
 
     bb_fortnight_df = pd.concat(bb_fortnight)
     bb_fortnight_df["snapshot"] = pd.to_datetime(bb_fortnight_df["snapshot"])
 
     bb_history_df = pd.concat(bb_history)
+    for col in bb_history_df.columns:
+        if col!='date' and col!='item':
+            bb_history_df[col] = bb_history_df[col].astype(int)    
     bb_history_df["date"] = pd.to_datetime(bb_history_df["date"])
 
     bb_alltime_df = pd.concat(bb_alltime)
     bb_alltime_df["date"] = pd.to_datetime(bb_alltime_df["date"])
-
-    bb_deposit_df = pd.DataFrame.from_dict(bb_deposit, orient="index")
-    bb_deposit_df.columns = ["item_deposit"]
-    bb_deposit_df.index.name = "item"
 
     io.writer(
         bb_fortnight_df, "cleaned", "bb_fortnight", "parquet", self_schema=True,
@@ -151,9 +147,6 @@ def clean_bb_data() -> None:
     )
     io.writer(
         bb_alltime_df, "cleaned", "bb_alltime", "parquet", self_schema=True,
-    )
-    io.writer(
-        bb_deposit_df, "cleaned", "bb_deposit", "parquet", self_schema=True,
     )
 
 
@@ -183,19 +176,11 @@ def _get_item_facts(driver: webdriver, item_id: int) -> Dict[str, Any]:
             logger.debug(f"No item info for {item_id}")
             # continue
 
-    if isinstance(result["stats"], list):
-        if len(result["stats"]) == 1:
-            data = result["stats"][0]
-        else:
-            raise ValueError("Weird size for Booty Bay item stats list")
-    elif isinstance(result["stats"], dict):
-        if len(result["stats"]) == 1:
-            for _, data in result["stats"].items():
-                data
-        else:
-            raise ValueError("Weird size for Booty Bay item stats list")
+    data = utils.get_bb_fields(result, 'stats')
+    history = utils.get_bb_fields(result, 'history')
 
     item_info = {k: v for k, v in data.items() if k in cfg.item_info_fields}
+    item_info['true_auctionable'] = bool("vendor_price" not in item_info) and bool(item_info['auctionable']) and not bool(item_info['vendornpccount']) and bool(item_info['price']) and bool(history)
 
     # Get icon
     if not Path(cfg.data_path, "item_icons", f"{item_info['icon']}.jpg").exists():
@@ -577,53 +562,70 @@ def clean_auctioneer_data() -> None:
     io.writer(auc_listings, "cleaned", "auc_listings", "parquet")
 
 
-@check_input(schema.item_skeleton_raw_schema)
-@check_output(schema.item_skeleton_schema)
-def _process_item_skeleton(df: pd.DataFrame) -> pd.DataFrame:
-    """Make transformation to item skeleton."""
-    int_cols = ["user_min_holding", "user_max_holding", "user_vendor_price"]
-    df[int_cols] = df[int_cols].fillna(0).astype(int)
+# @check_input(schema.item_skeleton_raw_schema)
+# @check_output(schema.item_skeleton_schema)
+# def _process_item_skeleton(df: pd.DataFrame) -> pd.DataFrame:
+#     """Make transformation to item skeleton."""
+#     int_cols = ["user_min_holding", "user_max_holding", "user_vendor_price"]
+#     df[int_cols] = df[int_cols].fillna(0).astype(int)
 
-    df["user_std_holding"] = (
-        df["user_max_holding"] - df["user_min_holding"]
-    ) / cfg.analysis["USER_STD_SPREAD"]
-    df["user_mean_holding"] = (
-        df[["user_min_holding", "user_max_holding"]].mean(axis=1).astype(int)
-    )
+#     df["user_std_holding"] = (
+#         df["user_max_holding"] - df["user_min_holding"]
+#     ) / cfg.analysis["USER_STD_SPREAD"]
+#     df["user_mean_holding"] = (
+#         df[["user_min_holding", "user_max_holding"]].mean(axis=1).astype(int)
+#     )
 
-    df["user_Make"] = (df["user_made_from"] == df["user_made_from"]) & (
-        df["user_make_pass"] != True
-    )
-    df = df.drop("user_made_from", axis=1)
+#     df["user_Make"] = (df["user_made_from"] == df["user_made_from"]) & (
+#         df["user_make_pass"] != True
+#     )
+#     df = df.drop("user_made_from", axis=1)
 
-    bool_cols = ["user_Buy", "user_Sell", "user_Make", "user_make_pass"]
-    df[bool_cols] = df[bool_cols].fillna(False).astype(int)
-    return df
+#     bool_cols = ["user_Buy", "user_Sell", "user_Make", "user_make_pass"]
+#     df[bool_cols] = df[bool_cols].fillna(False).astype(int)
+#     return df
 
 
 def clean_item_skeleton() -> None:
     """Creates basic dataframe from user items information."""
-    user_items = cfg.ui.copy()
-    item_skeleton_raw = pd.DataFrame(user_items).T
+    user_items = io.reader("", "user_items", "json")
 
-    item_skeleton_raw.columns = ["user_" + x for x in item_skeleton_raw.columns]
+    item_facts = pd.DataFrame(user_items).T
+    item_facts.index.name = "item_id"
 
-    user_items_ensure_columns = [
-        "user_min_holding",
-        "user_max_holding",
-        "user_max_sell",
-        "user_Buy",
-        "user_Sell",
-        "user_Make",
-        "user_made_from",
-        "user_make_pass",
-        "user_vendor_price",
-    ]
+    # Add made_from as a json string on item_id
+    item_facts['made_from'] = False
+    for item_id, facts in user_items.items():
+        item_facts.loc[item_id, 'made_from'] = bool(facts.get('made_from', False))
 
-    for col in user_items_ensure_columns:
-        if col not in item_skeleton_raw:
-            item_skeleton_raw[col] = nan
+    item_facts = item_facts.reset_index()
+    item_facts = item_facts.rename(columns={"name_enus": "item"})
+    item_facts = item_facts.set_index('item')
 
-    item_skeleton = _process_item_skeleton(item_skeleton_raw)
-    item_skeleton.index.name = "item"
-    io.writer(item_skeleton, "cleaned", "item_skeleton", "parquet")
+    # # Rename fields and set index
+    user_columns = ['ahm',  'active', 'ignore', 'Sell', 'Buy', 'made_from', 'max_holding', 'max_sell', 'mean_holding', 'min_holding', 'std_holding', 'vendor_price', 'make_pass']
+    item_facts = item_facts.rename(columns={k: f"user_{k}" for k in user_columns})
+    item_fact_columns = ['icon', 'stacksize', 'selltovendor', 'auctionable', 'price', 'vendornpccount', 'true_auctionable']
+    item_facts = item_facts.rename(columns={k: f"item_{k}" for k in item_fact_columns})
+
+    # # Additional standardization and cleaning
+    item_facts['item_deposit'] = (item_facts['item_selltovendor'] / 20 * 12).astype(int)
+
+    int_cols = ["user_min_holding", "user_max_holding", "user_vendor_price", 'item_id']
+    item_facts[int_cols] = item_facts[int_cols].fillna(0).astype(int)
+
+    item_facts["user_std_holding"] = (
+        item_facts["user_max_holding"] - item_facts["user_min_holding"]
+    ) / cfg.analysis["USER_STD_SPREAD"]
+    item_facts["user_mean_holding"] = (
+        item_facts[["user_min_holding", "user_max_holding"]].mean(axis=1).astype(int)
+    )
+
+    item_facts["user_Make"] = item_facts["user_made_from"] & (item_facts["user_make_pass"]==False)
+
+    item_facts = item_facts.drop("user_made_from", axis=1)
+
+    bool_cols = ["user_Buy", "user_Sell", "user_Make", "user_make_pass"]
+    item_facts[bool_cols] = item_facts[bool_cols].fillna(False).astype(int)
+
+    io.writer(item_facts, "cleaned", "item_skeleton", "parquet")

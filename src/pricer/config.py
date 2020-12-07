@@ -81,6 +81,7 @@ item_info_fields = [
     "stacksize",
     "name_enus",
     "price",
+    'vendornpccount',
 ]
 
 analysis: Dict[str, Union[int, float]] = {

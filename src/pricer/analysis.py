@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 def predict_item_prices() -> None:
     """Analyse exponential average mean and std of items given 14 day, 2 hour history."""
     bb_fortnight = io.reader("cleaned", "bb_fortnight", "parquet")
-    user_items = cfg.ui.copy()
+    user_items = io.reader("", "user_items", "json")
 
     predicted_prices = _predict_item_prices(bb_fortnight, user_items)
     io.writer(predicted_prices, "intermediate", "predicted_prices", "parquet")
@@ -25,12 +25,15 @@ def _predict_item_prices(
 ) -> pd.DataFrame:
     # Work out if an item is auctionable, or get default price
     item_prices = pd.DataFrame()
-    for item_name, item_details in user_items.items():
+    for item_id, item_details in user_items.items():
         user_vendor_price = item_details.get("vendor_price")
+        item_name = item_details.get('name_enus')
 
         if user_vendor_price:
             item_prices.loc[item_name, "bbpred_price"] = user_vendor_price
             item_prices.loc[item_name, "bbpred_std"] = 0
+        elif not item_details['true_auctionable']:
+            continue
         else:
             q = cfg.analysis["ITEM_PRICE_OUTLIER_CAP"]
             df = bb_fortnight[bb_fortnight["item"] == item_name]
@@ -93,6 +96,9 @@ def analyse_material_cost() -> None:
     item_prices = io.reader("intermediate", "predicted_prices", "parquet")
     mat_prices = item_prices.join(bean_rolling_buyout)
 
+    user_items = io.reader("", "user_items", "json")
+    auctionable_items = {item_id: v for item_id, v in user_items.items() if v["true_auctionable"]}
+
     r = cfg.analysis["BB_MAT_PRICE_RATIO"]
 
     # Material costs are taken as a ratio of booty bay prices, and (recent) actual buyouts
@@ -104,7 +110,8 @@ def analyse_material_cost() -> None:
     mat_prices["material_make_cost"] = 0
 
     # Determine raw material cost for manufactured items
-    for item_name, item_details in cfg.ui.items():
+    for item_id, item_details in auctionable_items.items():
+        item_name = item_details.get('name_enus')
         material_cost = 0
         user_made_from = item_details.get("made_from", {})
         if user_made_from:
@@ -168,9 +175,10 @@ def analyse_replenishment() -> None:
     item_skeleton = io.reader("cleaned", "item_skeleton", "parquet")
     item_inventory = io.reader("intermediate", "item_inventory", "parquet")
 
-    replenish = item_skeleton.join(item_inventory).fillna(0).astype(int)
+    replenish = item_skeleton.join(item_inventory).fillna(0)
 
-    user_items = cfg.ui.copy()
+    user_items = io.reader("", "user_items", "json")
+    item_ids = {v.get('name_enus'): item_id for item_id, v in user_items.items()}
 
     replenish["replenish_qty"] = (
         replenish["user_mean_holding"] - replenish["inv_total_all"]
@@ -178,8 +186,10 @@ def analyse_replenishment() -> None:
 
     # Update replenish list with user_made_from
     for item, row in replenish.iterrows():
-        if row["replenish_qty"] > 0:
-            for ingredient, count in user_items[item].get("made_from", {}).items():
+        item_id = item_ids[item]
+
+        if row["replenish_qty"] > 0:        
+            for ingredient, count in user_items[item_id].get("made_from", {}).items():
                 replenish.loc[ingredient, "replenish_qty"] += (
                     count * row["replenish_qty"]
                 )
@@ -197,25 +207,25 @@ def analyse_replenishment() -> None:
     io.writer(replenish, "intermediate", "replenish", "parquet")
 
 
-def create_item_facts() -> None:
-    """Collate simple item facts."""
-    item_skeleton = io.reader("cleaned", "item_skeleton", "parquet")
-    bb_deposit = io.reader("cleaned", "bb_deposit", "parquet")
-    item_ids = cfg.item_ids.copy()
+# def create_item_facts() -> None:
+#     """Collate simple item facts."""
+#     item_skeleton = io.reader("cleaned", "item_skeleton", "parquet")
+#     bb_deposit = io.reader("cleaned", "bb_deposit", "parquet")
+#     item_ids = cfg.item_ids.copy()
 
-    item_facts = item_skeleton.join(bb_deposit)[["item_deposit"]].join(
-        pd.Series(item_ids, name="item_id")
-    )
-    item_facts = item_facts.fillna(0).astype(int)
+#     item_facts = item_skeleton.join(bb_deposit)[["item_deposit"]].join(
+#         pd.Series(item_ids, name="item_id")
+#     )
+#     item_facts = item_facts.fillna(0).astype(int)
 
-    io.writer(item_facts, "cleaned", "item_facts", "parquet")
+#     io.writer(item_facts, "cleaned", "item_facts", "parquet")
 
 
 def merge_item_table() -> None:
     """Combine item information into single master table."""
     item_skeleton = io.reader("cleaned", "item_skeleton", "parquet")
     mat_prices = io.reader("intermediate", "mat_prices", "parquet")
-    item_facts = io.reader("cleaned", "item_facts", "parquet")
+#     item_facts = io.reader("cleaned", "item_facts", "parquet")
     item_inventory = io.reader("intermediate", "item_inventory", "parquet")
     predicted_prices = io.reader("intermediate", "predicted_prices", "parquet")
     replenish = io.reader("intermediate", "replenish", "parquet")
@@ -224,7 +234,7 @@ def merge_item_table() -> None:
         item_skeleton.join(mat_prices)
         .join(predicted_prices)
         .join(item_inventory)
-        .join(item_facts)
+#         .join(item_facts)
         .join(replenish)
     ).fillna(0)
 

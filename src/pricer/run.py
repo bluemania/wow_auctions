@@ -43,10 +43,7 @@ def run_analytics(stack: int = 5, max_sell: int = 20, duration: str = "m") -> No
         pbar.update(4)
 
         analysis.create_item_inventory()
-        pbar.update(22)
-
-        analysis.create_item_facts()
-        pbar.update(115)
+        pbar.update(137)
 
         analysis.predict_item_prices()
         pbar.update(23)
@@ -110,7 +107,7 @@ def run_reporting() -> None:
         pbar.update(347)
 
 
-def update_items() -> None:
+def run_update_items() -> None:
     """Check current inventory for items not included in master table."""
     run_dt = dt.now().replace(microsecond=0)
     sources.get_arkinventory_data()
@@ -132,7 +129,10 @@ def main() -> None:
     subparsers = parser.add_subparsers(dest="command")
 
     subparsers.add_parser("server")
-    subparsers.add_parser("update_items")
+
+    update_items = subparsers.add_parser("update_items")
+    update_items.add_argument("-v", help="Verbose mode (info)", action="store_true")
+    update_items.add_argument("-vv", help="Verbose mode (debug)", action="store_true")
 
     install_parser = subparsers.add_parser("install")
     install_parser.add_argument(
@@ -175,7 +175,7 @@ def main() -> None:
             logger.info("Starting webserver")
             app.run(debug=True, threaded=True)
         elif args.command == "update_items":
-            update_items()
+            run_update_items()
         else:
             if args.booty:
                 sources.get_bb_data()

@@ -36,6 +36,23 @@ def duration_str_to_mins(dur_char: str = "m") -> int:
     return choices[dur_char]
 
 
+def get_bb_fields(result: Dict[Any, Any], field: str) -> Dict[Any, Any]:              
+    if isinstance(result[field], list):
+        if len(result[field]) == 1:
+            data = result[field][0]
+        elif len(result[field]) == 0:
+            data = []
+        else:
+            raise ValueError("Weird size for Booty Bay item stats list")
+    elif isinstance(result[field], dict):
+        if len(result[field]) == 1:
+            for _, data in result[field].items():
+                data
+        else:
+            raise ValueError("Weird size for Booty Bay item stats list")
+    return data
+
+
 def source_merge(a: dict, b: dict, path: list = None) -> Dict[Any, Any]:
     """Merges b into a."""
     if path is None:
