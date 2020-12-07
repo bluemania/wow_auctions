@@ -25,14 +25,14 @@ def _predict_item_prices(
 ) -> pd.DataFrame:
     # Work out if an item is auctionable, or get default price
     item_prices = pd.DataFrame()
-    for item_id, item_details in user_items.items():
+    for _, item_details in user_items.items():
         user_vendor_price = item_details.get("vendor_price")
-        item_name = item_details.get('name_enus')
+        item_name = item_details.get("name_enus")
 
         if user_vendor_price:
             item_prices.loc[item_name, "bbpred_price"] = user_vendor_price
             item_prices.loc[item_name, "bbpred_std"] = 0
-        elif not item_details['true_auctionable']:
+        elif not item_details.get("true_auctionable", False):
             continue
         else:
             q = cfg.analysis["ITEM_PRICE_OUTLIER_CAP"]
@@ -97,7 +97,9 @@ def analyse_material_cost() -> None:
     mat_prices = item_prices.join(bean_rolling_buyout)
 
     user_items = io.reader("", "user_items", "json")
-    auctionable_items = {item_id: v for item_id, v in user_items.items() if v["true_auctionable"]}
+    auctionable_items = {
+        item_id: v for item_id, v in user_items.items() if v["true_auctionable"]
+    }
 
     r = cfg.analysis["BB_MAT_PRICE_RATIO"]
 
@@ -110,8 +112,8 @@ def analyse_material_cost() -> None:
     mat_prices["material_make_cost"] = 0
 
     # Determine raw material cost for manufactured items
-    for item_id, item_details in auctionable_items.items():
-        item_name = item_details.get('name_enus')
+    for _, item_details in auctionable_items.items():
+        item_name = item_details.get("name_enus")
         material_cost = 0
         user_made_from = item_details.get("made_from", {})
         if user_made_from:
@@ -178,7 +180,7 @@ def analyse_replenishment() -> None:
     replenish = item_skeleton.join(item_inventory).fillna(0)
 
     user_items = io.reader("", "user_items", "json")
-    item_ids = {v.get('name_enus'): item_id for item_id, v in user_items.items()}
+    item_ids = {v.get("name_enus"): item_id for item_id, v in user_items.items()}
 
     replenish["replenish_qty"] = (
         replenish["user_mean_holding"] - replenish["inv_total_all"]
@@ -188,7 +190,7 @@ def analyse_replenishment() -> None:
     for item, row in replenish.iterrows():
         item_id = item_ids[item]
 
-        if row["replenish_qty"] > 0:        
+        if row["replenish_qty"] > 0:
             for ingredient, count in user_items[item_id].get("made_from", {}).items():
                 replenish.loc[ingredient, "replenish_qty"] += (
                     count * row["replenish_qty"]
@@ -225,7 +227,7 @@ def merge_item_table() -> None:
     """Combine item information into single master table."""
     item_skeleton = io.reader("cleaned", "item_skeleton", "parquet")
     mat_prices = io.reader("intermediate", "mat_prices", "parquet")
-#     item_facts = io.reader("cleaned", "item_facts", "parquet")
+    #     item_facts = io.reader("cleaned", "item_facts", "parquet")
     item_inventory = io.reader("intermediate", "item_inventory", "parquet")
     predicted_prices = io.reader("intermediate", "predicted_prices", "parquet")
     replenish = io.reader("intermediate", "replenish", "parquet")
@@ -234,7 +236,7 @@ def merge_item_table() -> None:
         item_skeleton.join(mat_prices)
         .join(predicted_prices)
         .join(item_inventory)
-#         .join(item_facts)
+        #         .join(item_facts)
         .join(replenish)
     ).fillna(0)
 
@@ -244,7 +246,9 @@ def merge_item_table() -> None:
 def analyse_listings() -> None:
     """Convert live listings into single items."""
     auc_listings = io.reader("cleaned", "auc_listings", "parquet")
-    auc_listings = auc_listings[auc_listings["item"].isin(cfg.ui)]
+    user_items = io.reader("", "user_items", "json")
+
+    auc_listings = auc_listings[auc_listings["item_id"].isin(user_items)]
 
     predicted_prices = io.reader("intermediate", "predicted_prices", "parquet")
 
@@ -337,10 +341,16 @@ def predict_volume_sell_probability(dur_char: str = "m") -> None:
     )
 
 
-def _report_profits(
-    bean_results: pd.DataFrame, bean_purchases: pd.DataFrame, bb_history: pd.DataFrame
-) -> pd.DataFrame:
-    """Internal report profits."""
+def report_profits() -> None:
+    """Compare purchases and sales to expected value to derive profit from action."""
+    bean_results = io.reader("cleaned", "bean_results", "parquet")
+    bean_purchases = io.reader("cleaned", "bean_purchases", "parquet")
+    bb_history = io.reader("cleaned", "bb_history", "parquet")
+
+    user_items = io.reader("", "user_items", "json")
+    item_names = {item_id: v.get("name_enus") for item_id, v in user_items.items()}
+    item_ids = {v.get("name_enus"): item_id for item_id, v in user_items.items()}
+
     bean_results["date"] = bean_results["timestamp"].dt.date.astype("datetime64")
     bean_results["profit"] = bean_results["received"].fillna(
         -bean_results["item_deposit"]
@@ -386,7 +396,8 @@ def _report_profits(
 
     # vector style material cost calculation
     material_update = []
-    for item_name, item_details in cfg.ui.items():
+    for item_id, item_details in user_items.items():
+        item_name = item_names[item_id]
         if item_name in profits.index:
             material_cost = pd.Series(
                 0, index=profits.loc[item_name].index, name="silveravg"
@@ -397,7 +408,9 @@ def _report_profits(
                     if ingredient in profits.index:
                         material_cost += profits.loc[ingredient, "silveravg"] * count
                     else:
-                        material_cost += cfg.ui[ingredient]["vendor_price"] * count
+                        material_cost += (
+                            user_items[item_ids[ingredient]]["vendor_price"] * count
+                        )
             else:
                 material_cost = profits.loc[item_name, "silveravg"]
             material_cost = material_cost.reset_index()
@@ -411,16 +424,6 @@ def _report_profits(
     )
     profits["total_materials"] = -profits["silveravg_cost"] * profits["total_qty"]
     profits["total_profit"] = profits["total_action"] - profits["total_materials"]
-    return profits
-
-
-def report_profits() -> None:
-    """Compare purchases and sales to expected value to derive profit from action."""
-    bean_results = io.reader("cleaned", "bean_results", "parquet")
-    bean_purchases = io.reader("cleaned", "bean_purchases", "parquet")
-    bb_history = io.reader("cleaned", "bb_history", "parquet")
-
-    profits = _report_profits(bean_results, bean_purchases, bb_history)
 
     io.writer(profits, "reporting", "profits", "parquet")
 
@@ -430,7 +433,10 @@ def calculate_inventory_valuation() -> None:
     item_inventory = io.reader("intermediate", "item_inventory", "parquet")
     predicted_prices = io.reader("intermediate", "predicted_prices", "parquet")
 
-    item_trade = item_inventory.loc[item_inventory.index.isin(cfg.ui)]
+    user_items = io.reader("", "user_items", "json")
+    item_ids = {v.get("name_enus"): item_id for item_id, v in user_items.items()}
+
+    item_trade = item_inventory.loc[item_inventory.index.isin(item_ids)]
 
     bbpred_price = predicted_prices["bbpred_price"]
     bbpred_price.name = "item"

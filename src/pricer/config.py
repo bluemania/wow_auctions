@@ -6,7 +6,6 @@ from typing import Any, Dict, List, Union
 
 import pandas as pd
 
-from . import io
 
 logger = logging.getLogger(__name__)
 
@@ -81,7 +80,7 @@ item_info_fields = [
     "stacksize",
     "name_enus",
     "price",
-    'vendornpccount',
+    "vendornpccount",
 ]
 
 analysis: Dict[str, Union[int, float]] = {
@@ -109,5 +108,3 @@ pricer_subdirs: List[str] = [
     "logs",
     "plots",
 ]
-
-ui = io.reader("config", "user_items", "yaml")

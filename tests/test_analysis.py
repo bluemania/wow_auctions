@@ -17,7 +17,7 @@ bb_fortnight_raw = {
 
 def test_predict_item_prices() -> None:
     """It runs pipeline except reading raw data and lua writes."""
-    user_items: Dict[str, Any] = {"Fake item": {}}
+    user_items: Dict[str, Any] = {"Fake item string": {"true_auctionable": True}}
     bb_fortnight = pd.DataFrame(bb_fortnight_raw)
 
     with pytest.raises(IndexError):

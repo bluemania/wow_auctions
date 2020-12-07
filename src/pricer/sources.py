@@ -7,7 +7,6 @@ from pathlib import Path
 from typing import Any, Dict, List
 
 from bs4 import BeautifulSoup
-from numpy import nan
 import pandas as pd
 from pandera import check_input, check_output
 import requests
@@ -84,7 +83,9 @@ def get_bb_data() -> None:
     driver = start_driver()
     # Get item_ids for user specified items of interest
     user_items = io.reader("", "user_items", "json")
-    auctionable_items = [item_id for item_id, v in user_items.items() if v["true_auctionable"]]
+    auctionable_items = [
+        item_id for item_id, v in user_items.items() if v["true_auctionable"]
+    ]
 
     # Get bb data from API
     bb_data: Dict[str, Dict[Any, Any]] = defaultdict(dict)
@@ -109,9 +110,9 @@ def clean_bb_data() -> None:
     bb_alltime: List = []
 
     for item_id, data in item_data.items():
-        item_name = user_items[item_id].get('name_enus')
-        
-        bb_fortnight_data = pd.DataFrame(utils.get_bb_fields(data, 'history'))
+        item_name = user_items[item_id].get("name_enus")
+
+        bb_fortnight_data = pd.DataFrame(utils.get_bb_fields(data, "history"))
         bb_fortnight_data["snapshot"] = pd.to_datetime(
             bb_fortnight_data["snapshot"], unit="s"
         )
@@ -122,18 +123,17 @@ def clean_bb_data() -> None:
         bb_history_data["item"] = item_name
         bb_history.append(bb_history_data)
 
-        bb_alltime_data = pd.DataFrame(utils.get_bb_fields(data, 'monthly'))
+        bb_alltime_data = pd.DataFrame(utils.get_bb_fields(data, "monthly"))
         bb_alltime_data["item"] = item_name
         bb_alltime.append(bb_alltime_data)
-
 
     bb_fortnight_df = pd.concat(bb_fortnight)
     bb_fortnight_df["snapshot"] = pd.to_datetime(bb_fortnight_df["snapshot"])
 
     bb_history_df = pd.concat(bb_history)
     for col in bb_history_df.columns:
-        if col!='date' and col!='item':
-            bb_history_df[col] = bb_history_df[col].astype(int)    
+        if col != "date" and col != "item":
+            bb_history_df[col] = bb_history_df[col].astype(int)
     bb_history_df["date"] = pd.to_datetime(bb_history_df["date"])
 
     bb_alltime_df = pd.concat(bb_alltime)
@@ -176,11 +176,17 @@ def _get_item_facts(driver: webdriver, item_id: int) -> Dict[str, Any]:
             logger.debug(f"No item info for {item_id}")
             # continue
 
-    data = utils.get_bb_fields(result, 'stats')
-    history = utils.get_bb_fields(result, 'history')
+    data = utils.get_bb_fields(result, "stats")
+    history = utils.get_bb_fields(result, "history")
 
     item_info = {k: v for k, v in data.items() if k in cfg.item_info_fields}
-    item_info['true_auctionable'] = bool("vendor_price" not in item_info) and bool(item_info['auctionable']) and not bool(item_info['vendornpccount']) and bool(item_info['price']) and bool(history)
+    item_info["true_auctionable"] = (
+        bool("vendor_price" not in item_info)
+        and bool(item_info["auctionable"])
+        and not bool(item_info["vendornpccount"])
+        and bool(item_info["price"])
+        and bool(history)
+    )
 
     # Get icon
     if not Path(cfg.data_path, "item_icons", f"{item_info['icon']}.jpg").exists():
@@ -594,24 +600,46 @@ def clean_item_skeleton() -> None:
     item_facts.index.name = "item_id"
 
     # Add made_from as a json string on item_id
-    item_facts['made_from'] = False
+    item_facts["made_from"] = False
     for item_id, facts in user_items.items():
-        item_facts.loc[item_id, 'made_from'] = bool(facts.get('made_from', False))
+        item_facts.loc[item_id, "made_from"] = bool(facts.get("made_from", False))
 
     item_facts = item_facts.reset_index()
     item_facts = item_facts.rename(columns={"name_enus": "item"})
-    item_facts = item_facts.set_index('item')
+    item_facts = item_facts.set_index("item")
 
     # # Rename fields and set index
-    user_columns = ['ahm',  'active', 'ignore', 'Sell', 'Buy', 'made_from', 'max_holding', 'max_sell', 'mean_holding', 'min_holding', 'std_holding', 'vendor_price', 'make_pass']
+    user_columns = [
+        "ahm",
+        "active",
+        "ignore",
+        "Sell",
+        "Buy",
+        "made_from",
+        "max_holding",
+        "max_sell",
+        "mean_holding",
+        "min_holding",
+        "std_holding",
+        "vendor_price",
+        "make_pass",
+    ]
     item_facts = item_facts.rename(columns={k: f"user_{k}" for k in user_columns})
-    item_fact_columns = ['icon', 'stacksize', 'selltovendor', 'auctionable', 'price', 'vendornpccount', 'true_auctionable']
+    item_fact_columns = [
+        "icon",
+        "stacksize",
+        "selltovendor",
+        "auctionable",
+        "price",
+        "vendornpccount",
+        "true_auctionable",
+    ]
     item_facts = item_facts.rename(columns={k: f"item_{k}" for k in item_fact_columns})
 
     # # Additional standardization and cleaning
-    item_facts['item_deposit'] = (item_facts['item_selltovendor'] / 20 * 12).astype(int)
+    item_facts["item_deposit"] = (item_facts["item_selltovendor"] / 20 * 12).astype(int)
 
-    int_cols = ["user_min_holding", "user_max_holding", "user_vendor_price", 'item_id']
+    int_cols = ["user_min_holding", "user_max_holding", "user_vendor_price", "item_id"]
     item_facts[int_cols] = item_facts[int_cols].fillna(0).astype(int)
 
     item_facts["user_std_holding"] = (
@@ -621,7 +649,9 @@ def clean_item_skeleton() -> None:
         item_facts[["user_min_holding", "user_max_holding"]].mean(axis=1).astype(int)
     )
 
-    item_facts["user_Make"] = item_facts["user_made_from"] & (item_facts["user_make_pass"]==False)
+    item_facts["user_Make"] = item_facts["user_made_from"] & (
+        item_facts["user_make_pass"] == False
+    )
 
     item_facts = item_facts.drop("user_made_from", axis=1)
 
