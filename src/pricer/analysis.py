@@ -131,13 +131,15 @@ def analyse_material_cost() -> None:
 
 def create_item_inventory() -> None:
     """Convert Arkinventory tabular data into dataframe of counts for user items."""
-    item_inventory = io.reader("cleaned", "ark_inventory", "parquet")
+    ark_inventory = io.reader("cleaned", "ark_inventory", "parquet")
 
-    roles = {cfg.wow["ahm"]["name"]: "ahm"}
+    item_skeleton = io.reader("cleaned", "item_skeleton", "parquet")
+    user_ahm = item_skeleton.set_index('item_id')['user_ahm']
 
-    item_inventory["role"] = item_inventory["character"].apply(
-        lambda x: roles[x] if x in roles else "char"
-    )
+    ark_inventory['ahm'] = ark_inventory['item_id'].replace(user_ahm)
+    ark_inventory['role'] = (ark_inventory['character'] == ark_inventory['ahm']).replace({True: "ahm", False: "char"})
+    item_inventory = ark_inventory
+
     role_types = ["ahm", "char"]
     assert item_inventory["role"].isin(role_types).all()
 
@@ -151,6 +153,7 @@ def create_item_inventory() -> None:
     item_inventory["inv"] = (
         "inv_" + item_inventory["role"] + "_" + item_inventory["loc_short"]
     )
+
 
     item_inventory = item_inventory.groupby(["inv", "item"]).sum()["count"].unstack().T
 
