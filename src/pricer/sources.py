@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any, Dict, List
 
 from bs4 import BeautifulSoup
+from numpy import nan
 import pandas as pd
 from pandera import check_input, check_output
 import requests
@@ -635,6 +636,23 @@ def clean_item_skeleton() -> None:
         "true_auctionable",
     ]
     item_facts = item_facts.rename(columns={k: f"item_{k}" for k in item_fact_columns})
+
+    # Ensure user columns exist
+    user_items_ensure_columns = [
+        "user_min_holding",
+        "user_max_holding",
+        "user_max_sell",
+        "user_Buy",
+        "user_Sell",
+        "user_Make",
+        "user_made_from",
+        "user_make_pass",
+        "user_vendor_price",
+    ]
+
+    for col in user_items_ensure_columns:
+        if col not in item_facts:
+            item_facts[col] = nan
 
     # # Additional standardization and cleaning
     item_facts["item_deposit"] = (item_facts["item_selltovendor"] / 20 * 12).astype(int)
