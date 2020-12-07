@@ -271,10 +271,13 @@ def analyse_listings() -> None:
     io.writer(listing_each, "intermediate", "listing_each", "parquet")
 
 
-def _predict_volume_sell_probability(
-    bb_fortnight: pd.DataFrame, user_sells: List[str], MAX_LISTINGS: int, dur_char: str,
-) -> pd.DataFrame:
-    """Calculated volume sell probability."""
+def predict_volume_sell_probability(dur_char: str = "m") -> None:
+    """Expected volume changes as a probability of sale given BB recent history."""
+    bb_fortnight = io.reader("cleaned", "bb_fortnight", "parquet")
+    user_items = io.reader("", "user_items", "json")
+    
+    user_sells = [item.get('name_enus') for _, item in user_items.items() if item['true_auctionable'] and item['Sell']]
+
     duration_mins = utils.duration_str_to_mins(dur_char)
     polls = int(duration_mins / 60 / 2)
     logger.debug(f"Analysing volume sell prob based on {polls} snapshot periods")
@@ -306,7 +309,7 @@ def _predict_volume_sell_probability(
                 f"Could not analyse {item}, is this new and needs bb?"
             ) from e
 
-        listing_range = range(-MAX_LISTINGS + 1, 1)
+        listing_range = range(-cfg.analysis['MAX_LISTINGS_PROBABILITY'] + 1, 1)
         probability = pd.Series(gkde(listing_range), index=listing_range)
 
         probability = probability.cumsum()
@@ -319,19 +322,6 @@ def _predict_volume_sell_probability(
     item_volume_change_probability = item_volume_change_probability.stack()
     item_volume_change_probability.name = "sell_probability"
     item_volume_change_probability = item_volume_change_probability.reset_index()
-    return item_volume_change_probability
-
-
-def predict_volume_sell_probability(dur_char: str = "m") -> None:
-    """Expected volume changes as a probability of sale given BB recent history."""
-    bb_fortnight = io.reader("cleaned", "bb_fortnight", "parquet")
-    user_sells = utils.user_item_filter("Sell")
-    item_volume_change_probability = _predict_volume_sell_probability(
-        bb_fortnight,
-        user_sells,
-        int(cfg.analysis["MAX_LISTINGS_PROBABILITY"]),
-        dur_char,
-    )
 
     io.writer(
         item_volume_change_probability,
