@@ -134,10 +134,12 @@ def create_item_inventory() -> None:
     ark_inventory = io.reader("cleaned", "ark_inventory", "parquet")
 
     item_skeleton = io.reader("cleaned", "item_skeleton", "parquet")
-    user_ahm = item_skeleton.set_index('item_id')['user_ahm']
+    user_ahm = item_skeleton.set_index("item_id")["user_ahm"]
 
-    ark_inventory['ahm'] = ark_inventory['item_id'].replace(user_ahm)
-    ark_inventory['role'] = (ark_inventory['character'] == ark_inventory['ahm']).replace({True: "ahm", False: "char"})
+    ark_inventory["ahm"] = ark_inventory["item_id"].replace(user_ahm)
+    ark_inventory["role"] = (
+        ark_inventory["character"] == ark_inventory["ahm"]
+    ).replace({True: "ahm", False: "char"})
     item_inventory = ark_inventory
 
     role_types = ["ahm", "char"]
@@ -153,7 +155,6 @@ def create_item_inventory() -> None:
     item_inventory["inv"] = (
         "inv_" + item_inventory["role"] + "_" + item_inventory["loc_short"]
     )
-
 
     item_inventory = item_inventory.groupby(["inv", "item"]).sum()["count"].unstack().T
 
@@ -278,8 +279,12 @@ def predict_volume_sell_probability(dur_char: str = "m") -> None:
     """Expected volume changes as a probability of sale given BB recent history."""
     bb_fortnight = io.reader("cleaned", "bb_fortnight", "parquet")
     user_items = io.reader("", "user_items", "json")
-    
-    user_sells = [item.get('name_enus') for _, item in user_items.items() if item['true_auctionable'] and item['Sell']]
+
+    user_sells = [
+        item.get("name_enus")
+        for _, item in user_items.items()
+        if item["true_auctionable"] and item["Sell"]
+    ]
 
     duration_mins = utils.duration_str_to_mins(dur_char)
     polls = int(duration_mins / 60 / 2)
@@ -312,7 +317,7 @@ def predict_volume_sell_probability(dur_char: str = "m") -> None:
                 f"Could not analyse {item}, is this new and needs bb?"
             ) from e
 
-        listing_range = range(-cfg.analysis['MAX_LISTINGS_PROBABILITY'] + 1, 1)
+        listing_range = range(-cfg.analysis["MAX_LISTINGS_PROBABILITY"] + 1, 1)
         probability = pd.Series(gkde(listing_range), index=listing_range)
 
         probability = probability.cumsum()
