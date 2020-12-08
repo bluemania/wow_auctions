@@ -20,6 +20,7 @@ data/*/*/*.png
 # But none of the test outputs
 tests/test_data/*/*
 
+docs/_build/*
 
 logs/*
 !logs/.gitkeep

@@ -3,11 +3,11 @@
 nox.option.sessions is default run for 'nox' on command line inc:
     * lint: python linting
     * mypy^: strict variable type checking
-    * pytype:
     * tests (pytest^): runs our test suite
 
 Additional options:
     * black^: codestyle alignment
+    * pytype
     * safety^: security checks
     * typeguard: strict type checking of functions
     * coverage: in addition to tests, tells us how much code coverage
@@ -149,8 +149,7 @@ def xdoctest(session: Session) -> None:
     """Run examples with xdoctest."""
     args = session.posargs or ["all"]
     session.install(".")
-    # session.run("poetry", "install", "--no-dev", external=True)
-    install_with_constraints(session, "xdoctest")
+    session.install("xdoctest")
     session.run("python", "-m", "xdoctest", package, *args)
 
 
