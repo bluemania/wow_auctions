@@ -4,7 +4,7 @@ from typing import Any, Dict
 import pandas as pd
 import pytest
 
-from pricer import analysis, config as cfg, utils
+from pricer import analysis
 
 
 bb_fortnight_raw = {
@@ -17,23 +17,8 @@ bb_fortnight_raw = {
 
 def test_predict_item_prices() -> None:
     """It runs pipeline except reading raw data and lua writes."""
-    user_items: Dict[str, Any] = {"Fake item": {}}
+    user_items: Dict[str, Any] = {"Fake item string": {"true_auctionable": True}}
     bb_fortnight = pd.DataFrame(bb_fortnight_raw)
 
     with pytest.raises(IndexError):
         analysis._predict_item_prices(bb_fortnight, user_items)
-
-
-def test_predict_volume_sell_probability() -> None:
-    """test."""
-    # bb_fortnight = io.reader("cleaned", "bb_fortnight", "parquet")
-    user_sells = utils.user_item_filter("Sell")
-    MAX_LISTINGS = int(cfg.analysis["MAX_LISTINGS_PROBABILITY"])
-    dur_char = "m"
-
-    bb_fortnight = pd.DataFrame(bb_fortnight_raw)
-
-    with pytest.raises(ValueError):
-        analysis._predict_volume_sell_probability(
-            bb_fortnight, user_sells, MAX_LISTINGS, dur_char
-        )

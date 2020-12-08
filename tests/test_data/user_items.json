@@ -1,0 +1,57 @@
+{
+    "8846": {
+        "name_enus": "Gromsblood",
+        "icon": "inv_misc_herb_16",
+        "stacksize": 20,
+        "selltovendor": 250,
+        "auctionable": 1,
+        "price": 3782,
+        "vendornpccount": null,
+        "true_auctionable": true,
+        "ahm": "Amazona",
+        "active": true,
+        "ignore": false,
+        "Sell": true,
+        "Buy": true,
+        "make_pass": true,
+        "max_holding": 200
+    },
+    "13442": {
+        "name_enus": "Mighty Rage Potion",
+        "icon": "inv_potion_41",
+        "stacksize": 5,
+        "selltovendor": 500,
+        "auctionable": 1,
+        "price": 17989,
+        "vendornpccount": null,
+        "true_auctionable": true,
+        "ahm": "Amazona",
+        "active": true,
+        "ignore": false,
+        "Sell": true,
+        "Buy": false,
+        "make_pass": true,
+        "max_holding": 100,
+        "made_from": {
+            "Crystal Vial": 1,
+            "Gromsblood": 3
+        }
+    },
+    "8925": {
+        "name_enus": "Crystal Vial",
+        "icon": "inv_drink_06",
+        "stacksize": 20,
+        "selltovendor": 125,
+        "auctionable": 1,
+        "price": 2375,
+        "vendornpccount": 82,
+        "true_auctionable": false,
+        "ahm": "Quicksa",
+        "active": true,
+        "ignore": false,
+        "Sell": false,
+        "Buy": false,
+        "make_pass": true,
+        "vendor_price": 400
+    }
+}

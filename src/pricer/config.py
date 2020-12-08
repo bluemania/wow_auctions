@@ -6,7 +6,6 @@ from typing import Any, Dict, List, Union
 
 import pandas as pd
 
-from . import io
 
 logger = logging.getLogger(__name__)
 
@@ -27,6 +26,13 @@ def get_item_ids() -> Dict[str, int]:
     path = Path(__file__).parent.joinpath("data", "items.csv")
     item_codes = pd.read_csv(path)
     return item_codes.set_index("name")["entry"].to_dict()
+
+
+def get_item_ids_fixed() -> Dict[int, str]:
+    """Read item id database."""
+    path = Path(__file__).parent.joinpath("data", "items.csv")
+    item_codes = pd.read_csv(path)
+    return item_codes.set_index("entry")["name"].to_dict()
 
 
 def get_servers() -> Dict[str, Dict[str, Union[int, str]]]:
@@ -66,7 +72,18 @@ booty: Dict[str, Any] = {
     "PAGE_WAIT": 1,
 }
 
-analysis: Dict[str, Union[int, float]] = {
+icons_path = "https://wow.zamimg.com/images/wow/icons/large/"
+item_info_fields = [
+    "icon",
+    "auctionable",
+    "selltovendor",
+    "stacksize",
+    "name_enus",
+    "price",
+    "vendornpccount",
+]
+
+analysis: Dict[str, Any] = {
     "USER_STD_SPREAD": 7,
     "ITEM_PRICE_OUTLIER_CAP": 0.025,
     "ROLLING_BUYOUT_SPAN": 100,
@@ -83,6 +100,7 @@ pricer_subdirs: List[str] = [
     "config",
     "cleaned",
     "intermediate",
+    "item_info",
     "item_icons",
     "outputs",
     "raw",
@@ -90,5 +108,3 @@ pricer_subdirs: List[str] = [
     "logs",
     "plots",
 ]
-
-ui = io.reader("config", "user_items", "yaml")

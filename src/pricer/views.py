@@ -26,7 +26,9 @@ def g() -> Dict[Any, Any]:
         return reporting.make_missing()
 
     def user_items() -> List[str]:
-        return sorted(cfg.ui.keys())
+        user_items = io.reader("", "user_items", "json")
+        item_ids = {v.get("name_enus"): item_id for item_id, v in user_items.items()}
+        return sorted(item_ids.keys())
 
     def profit_per_item() -> str:
         return reporting.profit_per_item()

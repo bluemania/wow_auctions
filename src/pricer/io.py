@@ -54,6 +54,9 @@ def reader(
     elif ftype == "yaml":
         with open(path, "r") as yaml_r:
             data = yaml.safe_load(yaml_r)
+    elif ftype == "jpg":
+        data = True
+
     if self_schema:
         getattr(schema, f"{name}_schema").validate(data)
 

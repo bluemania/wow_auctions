@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Tuple, Union
 
 import pandas as pd
 
-from . import config as cfg
+from . import config as cfg, io
 
 logger = logging.getLogger(__name__)
 
@@ -34,6 +34,24 @@ def duration_str_to_mins(dur_char: str = "m") -> int:
     """Convert duration string to auction minutes."""
     choices: Dict[str, int] = {"s": 120, "m": 480, "l": 1440}
     return choices[dur_char]
+
+
+def get_bb_fields(result: Dict[Any, Any], field: str) -> Dict[Any, Any]:
+    """Booty bay data contains some strange nesting, retrieves data."""
+    if isinstance(result[field], list):
+        if len(result[field]) == 1:
+            data = result[field][0]
+        elif len(result[field]) == 0:
+            data = []
+        else:
+            raise ValueError("Weird size for Booty Bay item stats list")
+    elif isinstance(result[field], dict):
+        if len(result[field]) == 1:
+            for _, data in result[field].items():
+                data
+        else:
+            raise ValueError("Weird size for Booty Bay item stats list")
+    return data
 
 
 def source_merge(a: dict, b: dict, path: list = None) -> Dict[Any, Any]:
@@ -143,7 +161,12 @@ def enumerate_quantities(
 
 def user_item_filter(field: str) -> List[str]:
     """Returns user items filtered by a field."""
-    return [k for k, v in cfg.ui.items() if v.get(field)]
+    user_items = io.reader("", "user_items", "json")
+    return [
+        item_details.get("name_enus")
+        for item_id, item_details in user_items.items()
+        if item_details.get(field)
+    ]
 
 
 def list_flatten(t: List[Any]) -> List[Any]:

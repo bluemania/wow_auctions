@@ -13,7 +13,6 @@ def test_e2e() -> None:
     sources.clean_item_skeleton()
 
     analysis.create_item_inventory()
-    analysis.create_item_facts()
 
     analysis.predict_item_prices()
     analysis.analyse_rolling_buyout()
