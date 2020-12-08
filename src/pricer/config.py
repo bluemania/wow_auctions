@@ -83,7 +83,7 @@ item_info_fields = [
     "vendornpccount",
 ]
 
-analysis: Dict[str, Union[int, float]] = {
+analysis: Dict[str, Any] = {
     "USER_STD_SPREAD": 7,
     "ITEM_PRICE_OUTLIER_CAP": 0.025,
     "ROLLING_BUYOUT_SPAN": 100,
