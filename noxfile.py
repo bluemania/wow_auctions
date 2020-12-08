@@ -24,7 +24,7 @@ import nox_poetry.patch  # noqa: F401
 from nox.sessions import Session  # noqa: I100
 
 locations = "src", "tests", "noxfile.py", "docs/conf.py"
-nox.options.sessions = "black", "mypy", "lint", "tests"  # "pytype",
+nox.options.sessions = "mypy", "lint", "tests"  # "pytype",
 package = "pricer"
 
 
