@@ -20,7 +20,7 @@ import tempfile
 from typing import Any
 
 import nox
-import nox_poetry.patch  # noqa: F401
+import nox_poetry.patch
 from nox.sessions import Session  # noqa: I100
 
 locations = "src", "tests", "noxfile.py", "docs/conf.py"
@@ -71,8 +71,7 @@ def black(session: Session) -> None:
 def lint(session: Session) -> None:
     """Lint using flake8."""
     args = session.posargs or locations
-    install_with_constraints(
-        session,
+    session.install(
         "flake8",
         "flake8-annotations",
         "flake8-bandit",
@@ -107,7 +106,7 @@ def mypy(session: Session) -> None:
     """Type-check using mypy."""
     args = session.posargs or locations
     session.install(".")
-    install_with_constraints(session, "mypy")
+    session.install("mypy")
     session.run("mypy", *args)
 
 
