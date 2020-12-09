@@ -13,6 +13,7 @@ jobs:
       with:
         python-version: '3.7'
         architecture: x64
+    - run: pip install --user --upgrade pip
     - run: pip install poetry==1.1.4
     - run: >-
         poetry version patch &&
