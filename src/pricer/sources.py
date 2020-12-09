@@ -140,15 +140,9 @@ def clean_bb_data() -> None:
     bb_alltime_df = pd.concat(bb_alltime)
     bb_alltime_df["date"] = pd.to_datetime(bb_alltime_df["date"])
 
-    io.writer(
-        bb_fortnight_df, "cleaned", "bb_fortnight", "parquet", self_schema=True,
-    )
-    io.writer(
-        bb_history_df, "cleaned", "bb_history", "parquet", self_schema=True,
-    )
-    io.writer(
-        bb_alltime_df, "cleaned", "bb_alltime", "parquet", self_schema=True,
-    )
+    io.writer(bb_fortnight_df, "cleaned", "bb_fortnight", "parquet", self_schema=True)
+    io.writer(bb_history_df, "cleaned", "bb_history", "parquet", self_schema=True)
+    io.writer(bb_alltime_df, "cleaned", "bb_alltime", "parquet", self_schema=True)
 
 
 def _character_most_items(ark_inventory: pd.DataFrame) -> Dict[int, str]:
@@ -292,7 +286,11 @@ def clean_arkinventory_data(run_dt: dt) -> None:
     ark_inventory["item_id"] = ark_inventory["item_id"].astype(int)
     ark_inventory["timestamp"] = run_dt
     io.writer(
-        ark_inventory, "cleaned", "ark_inventory", "parquet", self_schema=True,
+        ark_inventory,
+        "cleaned",
+        "ark_inventory",
+        "parquet",
+        self_schema=True,
     )
 
     ark_monies = pd.Series(monies)
@@ -301,7 +299,11 @@ def clean_arkinventory_data(run_dt: dt) -> None:
     ark_monies = pd.DataFrame(ark_monies)
     ark_monies["timestamp"] = run_dt
     io.writer(
-        ark_monies, "cleaned", "ark_monies", "parquet", self_schema=True,
+        ark_monies,
+        "cleaned",
+        "ark_monies",
+        "parquet",
+        self_schema=True,
     )
 
 
@@ -352,7 +354,11 @@ def clean_beancounter_data() -> None:
         {"completedAuctions": 1, "failedAuctions": 0}
     )
     io.writer(
-        bean_results, "cleaned", "bean_results", "parquet", self_schema=True,
+        bean_results,
+        "cleaned",
+        "bean_results",
+        "parquet",
+        self_schema=True,
     )
 
 

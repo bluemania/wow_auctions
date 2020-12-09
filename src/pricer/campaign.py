@@ -405,7 +405,8 @@ def write_make_policy() -> None:
 
     new_craft = utils.dict_to_lua(crafting_dict).encode("ascii")
     new_craft = new_craft.replace(
-        f"\n{craft_mark}".encode("ascii"), f'\n["{craft_mark}"]'.encode("ascii"),
+        f"\n{craft_mark}".encode("ascii"),
+        f'\n["{craft_mark}"]'.encode("ascii"),
     )
     content = content[:start] + new_craft + content[end:]
 

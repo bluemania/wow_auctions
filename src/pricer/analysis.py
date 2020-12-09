@@ -38,7 +38,8 @@ def _predict_item_prices(
             q = cfg.analysis["ITEM_PRICE_OUTLIER_CAP"]
             df = bb_fortnight[bb_fortnight["item"] == item_name]
             df["silver"] = df["silver"].clip(
-                lower=df["silver"].quantile(q), upper=df["silver"].quantile(1 - q),
+                lower=df["silver"].quantile(q),
+                upper=df["silver"].quantile(1 - q),
             )
             try:
                 item_prices.loc[item_name, "bbpred_price"] = int(
