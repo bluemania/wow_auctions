@@ -20,7 +20,6 @@ import tempfile
 from typing import Any
 
 import nox
-import nox_poetry.patch  # noqa: F401
 from nox.sessions import Session  # noqa: I100
 
 locations = "src", "tests", "noxfile.py", "docs/conf.py"
