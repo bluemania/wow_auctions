@@ -9,6 +9,7 @@ jobs:
       with:
         python-version: '3.7'
         architecture: x64
+    - run: /opt/hostedtoolcache/Python/3.7.9/x64/bin/python -m pip install --upgrade pip==20.1.1
     - run: pip install nox==2020.8.22
     - run: pip install poetry==1.0.10
     - run: pip install nox-poetry==0.6.0
