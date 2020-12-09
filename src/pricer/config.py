@@ -2,11 +2,10 @@
 import json
 import logging
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, List, Union
 
 import pandas as pd
 
-from . import io
 
 logger = logging.getLogger(__name__)
 pricer_config = Path.home().joinpath(".pricer")
@@ -23,16 +22,25 @@ def get_wow_config(pricer_path: Path) -> Dict[str, Any]:
     return path_config
 
 
-def get_test_path() -> Path:
-    """Used to overwrite test path for testing."""
-    return Path("tests", "test_data")
-
-
 def get_item_ids() -> Dict[str, int]:
     """Read item id database."""
-    path = Path(__file__).parent.joinpath("data/items.csv")
+    path = Path(__file__).parent.joinpath("data", "items.csv")
     item_codes = pd.read_csv(path)
     return item_codes.set_index("name")["entry"].to_dict()
+
+
+def get_item_ids_fixed() -> Dict[int, str]:
+    """Read item id database."""
+    path = Path(__file__).parent.joinpath("data", "items.csv")
+    item_codes = pd.read_csv(path)
+    return item_codes.set_index("entry")["name"].to_dict()
+
+
+def get_servers() -> Dict[str, Dict[str, Union[int, str]]]:
+    """Get server_ids and info from booty bay."""
+    path = Path(__file__).parent.joinpath("data", "servers.csv")
+    servers = pd.read_csv(path)
+    return servers.set_index("server_url")[["server_id", "name"]].to_dict()
 
 
 pricer_path = Path.home().joinpath(".pricer")
@@ -43,34 +51,57 @@ data_path = wow_path.joinpath("pricer_data")
 log_path = data_path.joinpath("logs")
 
 item_ids = get_item_ids()
+servers = get_servers()
 
-location_info = {"0": "Inventory", "2": "Bank", "5": "Mailbox", "10": "Auctions"}
-auction_type_labels = {
+location_info: Dict[str, str] = {
+    "0": "Inventory",
+    "2": "Bank",
+    "5": "Mailbox",
+    "10": "Auctions",
+}
+auction_type_labels: Dict[str, str] = {
     "completedAuctions": "sell_price",
     "completedBidsBuyouts": "buy_price",
     "failedAuctions": "failed",
 }
-flask = {"CUSTOM_STATIC_PATH": data_path}
+flask: Dict[str, Union[Path]] = {"CUSTOM_STATIC_PATH": data_path}
 
-booty = {
+booty: Dict[str, Any] = {
     "CHROMEDRIVER_PATH": data_path.joinpath("chromedriver"),
-    "base": "https://www.bootybaygazette.com/#us/",
+    "base": "https://www.bootybaygazette.com/",
     "api": "https://www.bootybaygazette.com/api/item.php?house=",
     "PAGE_WAIT": 1,
 }
 
-analysis = {
+icons_path = "https://wow.zamimg.com/images/wow/icons/large/"
+item_info_fields = [
+    "icon",
+    "auctionable",
+    "selltovendor",
+    "stacksize",
+    "name_enus",
+    "price",
+    "vendornpccount",
+]
+
+analysis: Dict[str, Any] = {
     "USER_STD_SPREAD": 7,
     "ITEM_PRICE_OUTLIER_CAP": 0.025,
     "ROLLING_BUYOUT_SPAN": 100,
     "BB_MAT_PRICE_RATIO": 0.5,
     "MAX_LISTINGS_PROBABILITY": 500,
 }
-required_addons = ["ArkInventory", "BeanCounter", "Auc-ScanData", "TradeSkillMaster"]
-pricer_subdirs = [
+required_addons: List[str] = [
+    "ArkInventory",
+    "BeanCounter",
+    "Auc-ScanData",
+    "TradeSkillMaster",
+]
+pricer_subdirs: List[str] = [
     "config",
     "cleaned",
     "intermediate",
+    "item_info",
     "item_icons",
     "outputs",
     "raw",
@@ -78,30 +109,3 @@ pricer_subdirs = [
     "logs",
     "plots",
 ]
-
-def set_path(path: str) -> None:
-    """If not present, create a pricer config file."""
-    config = {"WOWPATH": path}
-    pricer_config = Path.home().joinpath(".pricer")
-    with open(pricer_config, "w") as f:
-        json.dump(config, f)
-
-
-def get_path() -> Any:
-    """Gets the pricer config file."""
-    pricer_config = Path.home().joinpath(".pricer")
-    try:
-        with open(pricer_config, "r") as f:
-            path_config = json.load(f)
-    except FileNotFoundError:
-        pass
-    return Path(path_config.get("WOWPATH", "")).joinpath("pricer_data")
-
-
-def get_test_path() -> str:
-    """Used to overwrite test path for testing."""
-    return "data/_test"
-
-
-us = io.reader("config", "user_settings", "yaml")
-ui = io.reader("config", "user_items", "yaml")

@@ -320,7 +320,8 @@ def analyse_make_policy() -> None:
     make_policy["make_actual"] = 0
     make_policy["make_mat_flag"] = 0
 
-    user_items = cfg.ui.copy()
+    user_items = io.reader("", "user_items", "json")
+    item_ids = {v.get("name_enus"): item_id for item_id, v in user_items.items()}
 
     # Iterates through the table one at a time, to ensure fair distribution of mat usage
     # Tests if reached counter and is made from stuff
@@ -331,8 +332,9 @@ def analyse_make_policy() -> None:
         change = []
 
         for item, row in make_policy.iterrows():
+            item_id = item_ids[item]
 
-            made_from = user_items[item].get("made_from", {})
+            made_from = user_items[item_id].get("made_from", {})
             under_counter = row["make_actual"] < row["make_counter"]
             user_make_pass = row["user_make_pass"]
 
@@ -389,7 +391,9 @@ def write_make_policy() -> None:
     )
     content = io.reader(name=path, ftype="lua", custom="rb")
 
-    craft_mark = f'f@Alliance - {cfg.us["server"]}@internalData@crafts'
+    craft_mark = (
+        f'f@Alliance - {cfg.wow["booty_server"]["server_name"]}@internalData@crafts'
+    )
     start, end = utils.find_tsm_marker(content, f'["{craft_mark}"]'.encode("ascii"))
 
     crafting_dict = lua.decode("{" + content[start:end].decode("ascii") + "}")

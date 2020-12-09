@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pricer"
-version = "0.6.0"
+version = "0.6.7"
 description = "Use WoW addon data to optimize auction buying and selling policies"
 authors = ["bluemania <damnthatswack@hotmail.com>"]
 license = "MIT"

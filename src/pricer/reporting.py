@@ -94,7 +94,11 @@ def produce_listing_items() -> None:
     listing_each = io.reader("intermediate", "listing_each", "parquet")
     item_info = io.reader("reporting", "item_info", "parquet")
 
-    for item in cfg.ui:
+    user_items = io.reader("", "user_items", "json")
+    item_names = {item_id: v.get("name_enus") for item_id, v in user_items.items()}
+
+    for item_id, _ in user_items.items():
+        item = item_names[item_id]
         plt.figure()
         list_item = listing_each[
             (listing_each["item"] == item) & (listing_each["list_price_z"] < 10)
@@ -128,7 +132,11 @@ def produce_activity_tracking() -> None:
     activity = bb_history.join(bean_buys).join(bean_sales)
     cols = ["silveravg", "buy_price", "sell_price"]
 
-    for item in cfg.ui:
+    user_items = io.reader("", "user_items", "json")
+    item_names = {item_id: v.get("name_enus") for item_id, v in user_items.items()}
+
+    for item_id, _ in user_items.items():
+        item = item_names[item_id]
         if item in activity.index:
             plt.figure()
             activity.loc[item][cols].plot(title=f"Historic activity {item}")
@@ -198,10 +206,14 @@ def draw_profit_charts() -> None:
     alltime_profit.plot(
         title=f"Total profit over all items ({tot} gold, {daily} per day)"
     )
-    io.writer(plt, "plots", "_alltime_profits", "png")
+    io.writer(plt, "plots", "_alltime_profit", "png")
     plt.close()
 
-    for item in cfg.ui:
+    user_items = io.reader("", "user_items", "json")
+    item_names = {item_id: v.get("name_enus") for item_id, v in user_items.items()}
+
+    for item_id, _ in user_items.items():
+        item = item_names[item_id]
         if item in profits.index:
             plt.figure()
             (profits.loc[item, "total_profit"].cumsum() / 10000).plot(

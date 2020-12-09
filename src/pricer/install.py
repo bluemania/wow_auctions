@@ -4,11 +4,11 @@ import json
 import logging
 from pathlib import Path
 import sys
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Tuple
 
 from selenium import webdriver
 
-from . import config as cfg, utils
+from . import config as cfg, io, utils
 
 logger = logging.getLogger(__name__)
 
@@ -20,6 +20,10 @@ def check() -> None:
             path_config = json.load(f)
     except FileNotFoundError as e:
         raise FileNotFoundError("Pricer is not installed; run `pricer install`") from e
+    try:
+        io.reader("", "user_items", "json")
+    except FileNotFoundError as e:
+        raise FileNotFoundError("Missing user items file; run `pricer install`") from e
     try:
         path_config["base"]
     except KeyError as e:
@@ -38,21 +42,56 @@ def start(default_path: str) -> None:
         wow_folder = default_path
 
     path = Path(wow_folder)
-    check_wow_folders(path)
-    make_data_folders(path)
 
+    # Check WoW Addon folders exist
+    check_wow_folders(path)
+
+    # Create data folders and initialize user items
+    make_data_folders(path)
+    initialize_user_items(path)
+
+    # Enter BB account information
     username = input("OPTIONAL: Enter account username for Booty Bay: ")
     password = getpass.getpass("OPTIONAL: Enter account password for Booty Bay: ")
 
+    # Get accounts, servers, characters
     accounts = get_account_info(path)
+    servers, accounts_report = report_accounts(path)
+    primary_server = input(f"Which is your primary server ({', '.join(servers)})?: ")
+    assert (
+        primary_server in servers or primary_server == ""
+    ), "Name does not match server list - installation failed"
+    if primary_server == "" and len(servers) == 1:
+        primary_server = servers[0]
+    primary_faction = input(
+        "And is your primary faction (A)lliance or (H)orde?: "
+    ).lower()
+    assert (
+        primary_faction == "h" or primary_faction == "a"
+    ), "incorrect faction selection - installation failed"
+    primary_region = input(
+        "And is your region US/Oceania (us) or Europe (eu)?: "
+    ).lower()
+    assert (
+        primary_region == "us" or primary_faction == "eu"
+    ), "incorrect region selection - installation failed"
+    booty_server = server_lookup(primary_server, primary_faction, primary_region)
 
+    # Get primary auctioneer character
+    ahm = input("Which character is your auction house main for scans and craft?: ")
+    ahm_details = get_ahm_info(ahm, primary_server, accounts)
+
+    # Write user config
     config = {
         "base": wow_folder,
         "accounts": accounts,
         "booty_acc": {"username": username, "password": password},
+        "booty_server": booty_server,
+        "ahm": ahm_details,
     }
     create_wow_config(config)
 
+    # Check Chromedriver installation
     message = (
         "Please download the latest Chromedriver"
         " and add to 'pricer_data' in WoW directory."
@@ -60,8 +99,8 @@ def start(default_path: str) -> None:
     )
     input(message)
     check_chromedriver(path)
-    message = report_char_count(path)
-    print(f"⭐ Installation complete! ⭐ {message}")
+
+    print(f"⭐ Installation complete! ⭐ {accounts_report}")
 
 
 def check_wow_folders(path: Path) -> None:
@@ -143,7 +182,7 @@ def check_chromedriver(path: Path) -> None:
         sys.exit(1)
 
 
-def report_char_count(path: Path) -> str:
+def report_accounts(path: Path) -> Tuple[List[str], str]:
     """Produces a message with scanned account info."""
     accounts = get_account_info(path)
     account_num = len(accounts)
@@ -152,7 +191,8 @@ def report_char_count(path: Path) -> str:
         list(servers["servers"].keys()) for account, servers in accounts.items()
     ]
 
-    server_num = len(set(utils.list_flatten(server_lists)))
+    servers = list(set(utils.list_flatten(server_lists)))
+    server_num = len(servers)
 
     character_servers = utils.list_flatten(
         [servers["servers"].values() for account, servers in accounts.items()]
@@ -168,4 +208,44 @@ def report_char_count(path: Path) -> str:
         f" {server_num} servers,"
         f" {character_num} characters"
     )
-    return message
+    return servers, message
+
+
+def server_lookup(
+    primary_server: str, primary_faction: str, primary_region: str
+) -> Dict[str, Any]:
+    """Get the server details to use for booty bay."""
+    url_part = f"#{primary_region}/{primary_server.lower()}-{primary_faction}"
+    assert (
+        url_part in cfg.servers["server_id"]
+    ), f"Incorrectly formed wow server url {url_part}"
+    server_details = {
+        "server_url": url_part,
+        "server_id": cfg.servers["server_id"][url_part],
+        "server_name": primary_server,
+    }
+    return server_details
+
+
+def get_ahm_info(
+    ahm: str, primary_server: str, accounts: Dict[str, Any]
+) -> Dict[str, str]:
+    """Return information about the auction house main."""
+    for account, servers in accounts.items():
+        if ahm in servers["servers"][primary_server]["characters"]:
+            ahm_info: Dict[str, str] = {
+                "account": account,
+                "name": ahm,
+                "server": primary_server,
+            }
+    return ahm_info
+
+
+def initialize_user_items(path: Path) -> None:
+    """Seeds a user_item file if it does not exist."""
+    path = path.joinpath("pricer_data").joinpath("user_items.json")
+    if not path.exists():
+        logger.debug("User item file does not exist, creating")
+        io.writer({}, folder="", name="user_items", ftype="json")
+    else:
+        logger.debug("User item file already exists")

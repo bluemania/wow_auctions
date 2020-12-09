@@ -1,0 +1,19 @@
+{
+  "base": "",
+  "accounts": {
+  },
+  "booty_acc": {
+    "username": "",
+    "password": ""
+  },
+  "booty_server": {
+    "server_url": "#us/grobbulus-a",
+    "server_id": 69,
+    "server_name": "Grobbulus"
+  },
+  "ahm": {
+    "account": "test",
+    "name": "Amazona",
+    "server": "Grobbulus"
+  }
+}
