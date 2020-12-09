@@ -3,11 +3,11 @@
 nox.option.sessions is default run for 'nox' on command line inc:
     * lint: python linting
     * mypy^: strict variable type checking
-    * pytype:
     * tests (pytest^): runs our test suite
 
 Additional options:
     * black^: codestyle alignment
+    * pytype
     * safety^: security checks
     * typeguard: strict type checking of functions
     * coverage: in addition to tests, tells us how much code coverage
@@ -20,7 +20,8 @@ import tempfile
 from typing import Any
 
 import nox
-from nox.sessions import Session
+import nox_poetry.patch  # noqa: F401
+from nox.sessions import Session  # noqa: I100
 
 locations = "src", "tests", "noxfile.py", "docs/conf.py"
 nox.options.sessions = "mypy", "lint", "tests"  # "pytype",
@@ -62,7 +63,7 @@ def install_with_constraints_nohash(
 def black(session: Session) -> None:
     """Run black code formatter."""
     args = session.posargs or locations
-    install_with_constraints(session, "black")
+    session.install("black")
     session.run("black", *args)
 
 
@@ -70,8 +71,7 @@ def black(session: Session) -> None:
 def lint(session: Session) -> None:
     """Lint using flake8."""
     args = session.posargs or locations
-    install_with_constraints(
-        session,
+    session.install(
         "flake8",
         "flake8-annotations",
         "flake8-bandit",
@@ -105,8 +105,8 @@ def safety(session: Session) -> None:
 def mypy(session: Session) -> None:
     """Type-check using mypy."""
     args = session.posargs or locations
-
-    install_with_constraints_nohash(session, "mypy")
+    session.install(".")
+    session.install("mypy")
     session.run("mypy", *args)
 
 
@@ -121,13 +121,9 @@ def pytype(session: Session) -> None:
 @nox.session(python=["3.7"])
 def tests(session: Session) -> None:
     """Run the test suite."""
-    # Updated with fix from:
-    # https://stackoverflow.com/questions/59768651/how-to-use-nox-with-poetry
     args = session.posargs or ["--cov", "-m", "not e2e"]
     session.install(".")
-    install_with_constraints(
-        session, "coverage[toml]", "pytest", "pytest-cov", "pytest-mock", "mock"
-    )
+    session.install("coverage[toml]", "pytest", "pytest-cov", "pytest-mock", "mock")
     session.run("pytest", *args)
 
 
@@ -153,18 +149,15 @@ def xdoctest(session: Session) -> None:
     """Run examples with xdoctest."""
     args = session.posargs or ["all"]
     session.install(".")
-    # session.run("poetry", "install", "--no-dev", external=True)
-    install_with_constraints(session, "xdoctest")
+    session.install("xdoctest")
     session.run("python", "-m", "xdoctest", package, *args)
 
 
 @nox.session(python="3.7")
 def docs(session: Session) -> None:
     """Build the documentation."""
+    args = session.posargs
     session.install(".")
-    # session.run("poetry", "install", "--no-dev", external=True)
-    install_with_constraints(
-        session, "sphinx", "sphinx-autodoc-typehints", "m2r2", "sphinx_rtd_theme"
-    )
+    session.install("sphinx", "sphinx-autodoc-typehints", "m2r2", "sphinx_rtd_theme")
     session.run("rm", "-rf", "docs/_build")
-    session.run("sphinx-build", "docs", "docs/_build", *session.posargs)
+    session.run("sphinx-build", "docs", "docs/_build", *args)
