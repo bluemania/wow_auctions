@@ -20,7 +20,7 @@ import tempfile
 from typing import Any
 
 import nox
-#import nox_poetry.patch
+import nox_poetry.patch
 from nox.sessions import Session  # noqa: I100
 
 locations = "src", "tests", "noxfile.py", "docs/conf.py"
@@ -71,7 +71,6 @@ def black(session: Session) -> None:
 def lint(session: Session) -> None:
     """Lint using flake8."""
     args = session.posargs or locations
-    session.run("echo updated")
     install_with_constraints_nohash(
         session,
         "flake8",
@@ -143,7 +142,7 @@ def typeguard(session: Session) -> None:
 @nox.session(python="3.7")
 def coverage(session: Session) -> None:
     """Upload coverage data."""
-    install_with_constraints(session, "coverage[toml]", "codecov")
+    install_with_constraints_nohash(session, "coverage[toml]", "codecov")
     session.run("coverage", "xml", "--fail-under=0")
     session.run("codecov", *session.posargs)
 
