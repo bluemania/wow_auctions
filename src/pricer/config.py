@@ -8,6 +8,7 @@ import pandas as pd
 
 
 logger = logging.getLogger(__name__)
+pricer_config = Path.home().joinpath(".pricer")
 
 
 def get_wow_config(pricer_path: Path) -> Dict[str, Any]:
