@@ -71,7 +71,8 @@ def black(session: Session) -> None:
 def lint(session: Session) -> None:
     """Lint using flake8."""
     args = session.posargs or locations
-    session.install(
+    install_with_constraints(
+        session,
         "flake8",
         "flake8-annotations",
         "flake8-bandit",
@@ -106,7 +107,7 @@ def mypy(session: Session) -> None:
     """Type-check using mypy."""
     args = session.posargs or locations
     session.install(".")
-    session.install("mypy")
+    install_with_constraints(session, "mypy")
     session.run("mypy", *args)
 
 
