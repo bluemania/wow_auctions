@@ -71,7 +71,8 @@ def black(session: Session) -> None:
 def lint(session: Session) -> None:
     """Lint using flake8."""
     args = session.posargs or locations
-    install_with_constraints_nohash(session,
+    install_with_constraints_nohash(
+        session,
         "flake8",
         "flake8-annotations",
         "flake8-bandit",
@@ -123,7 +124,9 @@ def tests(session: Session) -> None:
     """Run the test suite."""
     args = session.posargs or ["--cov", "-m", "not e2e"]
     session.install(".")
-    session.install("coverage[toml]", "pytest", "pytest-cov", "pytest-mock", "mock")
+    install_with_constraints_nohash(
+        session, "coverage[toml]", "pytest", "pytest-cov", "pytest-mock", "mock"
+    )
     session.run("pytest", *args)
 
 
