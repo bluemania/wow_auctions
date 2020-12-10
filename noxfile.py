@@ -123,9 +123,7 @@ def tests(session: Session) -> None:
     """Run the test suite."""
     args = session.posargs or ["--cov", "-m", "not e2e"]
     session.install(".")
-    install_with_constraints_nohash(
-        session, "coverage[toml]", "pytest", "pytest-cov", "pytest-mock", "mock"
-    )
+    session.install("coverage[toml]", "pytest", "pytest-cov", "pytest-mock", "mock")
     session.run("pytest", *args)
 
 
