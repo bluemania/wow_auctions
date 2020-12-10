@@ -140,15 +140,9 @@ def clean_bb_data() -> None:
     bb_alltime_df = pd.concat(bb_alltime)
     bb_alltime_df["date"] = pd.to_datetime(bb_alltime_df["date"])
 
-    io.writer(
-        bb_fortnight_df, "cleaned", "bb_fortnight", "parquet", self_schema=True,
-    )
-    io.writer(
-        bb_history_df, "cleaned", "bb_history", "parquet", self_schema=True,
-    )
-    io.writer(
-        bb_alltime_df, "cleaned", "bb_alltime", "parquet", self_schema=True,
-    )
+    io.writer(bb_fortnight_df, "cleaned", "bb_fortnight", "parquet", self_schema=True)
+    io.writer(bb_history_df, "cleaned", "bb_history", "parquet", self_schema=True)
+    io.writer(bb_alltime_df, "cleaned", "bb_alltime", "parquet", self_schema=True)
 
 
 def _character_most_items(ark_inventory: pd.DataFrame) -> Dict[int, str]:
