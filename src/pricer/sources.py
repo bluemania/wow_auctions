@@ -113,12 +113,18 @@ def clean_bb_data() -> None:
     for item_id, data in item_data.items():
         item_name = user_items[item_id].get("name_enus")
 
-        bb_fortnight_data = pd.DataFrame(utils.get_bb_fields(data, "history"))
-        bb_fortnight_data["snapshot"] = pd.to_datetime(
-            bb_fortnight_data["snapshot"], unit="s"
-        )
-        bb_fortnight_data["item"] = item_name
-        bb_fortnight.append(bb_fortnight_data)
+        if 'captcha' in data:
+            raise SystemError(f"Booty bay data incorrectly captured; redo-booty bay")
+
+        try:
+            bb_fortnight_data = pd.DataFrame(utils.get_bb_fields(data, "history"))
+            bb_fortnight_data["snapshot"] = pd.to_datetime(
+                bb_fortnight_data["snapshot"], unit="s"
+            )
+            bb_fortnight_data["item"] = item_name
+            bb_fortnight.append(bb_fortnight_data)
+        except KeyError as e:
+            logger.exception(f"{item_id}, {item_name} issue in history check")
 
         bb_history_data = pd.DataFrame(data["daily"])
         bb_history_data["item"] = item_name
