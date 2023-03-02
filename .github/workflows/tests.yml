@@ -1,6 +1,10 @@
 # .github/workflows/tests.yml
 name: Tests
-on: push
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
 jobs:
   tests:
     runs-on: ubuntu-latest
